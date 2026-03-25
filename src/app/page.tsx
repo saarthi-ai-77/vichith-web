@@ -77,7 +77,7 @@ export default function LandingPage() {
               boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
               background: 'var(--surface2)'
             }}>
-              <img src="/images/ai-assistant.png" alt="AI Assistant" style={{ width: '100%', display: 'block' }} />
+              <img src="/images/editor-ai-full.png" alt="AI Assistant" style={{ width: '100%', display: 'block' }} />
             </div>
           </div>
         </div>
