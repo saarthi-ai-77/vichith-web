@@ -30,13 +30,13 @@ const LogoSVG = () => (
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
-};
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } }
+} as const;
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } }
-};
+} as const;
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -125,14 +125,14 @@ export default function LandingPage() {
           className="hero-title"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 1, ease: "easeOut" as const }}
         >
           You describe it, <br />
           <span className="gradient-text">Vichith gets it done.</span>
         </motion.h1>
 
         <motion.p variants={fadeInUp} className="hero-sub">
-          The world's first AI-native platform that transforms your raw ideas into cinematic content instantly. Stop clicking, start creating.
+          The world&apos;s first AI-native platform that transforms your raw ideas into cinematic content instantly. Stop clicking, start creating.
         </motion.p>
 
         <motion.div variants={fadeInUp} style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
@@ -327,7 +327,7 @@ export default function LandingPage() {
           <AnimatePresence>
             {status === 'success' && (
               <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ color: '#00e5c3', fontSize: '0.9rem', marginTop: '8px' }}>
-                You're on the list! Keep an eye on your inbox.
+                You&apos;re on the list! Keep an eye on your inbox.
               </motion.p>
             )}
             {status === 'error' && (
