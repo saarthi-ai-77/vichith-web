@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vichith",
-  description: "The AI-Native platform that transforms your ideas into cinematic content instantly. Edit videos with AI agents, generate B-roll, and create content faster.",
+  title: "Vichith | Modern Video Workflow Platform",
+  description: "A desktop-native editing environment with real-time playback, keyframe systems, and AI-assisted orchestration. Unifying editing, captions, audio, and motion.",
   icons: {
     icon: "/favicon_io/favicon-32x32.png",
     apple: "/favicon_io/apple-touch-icon.png",
