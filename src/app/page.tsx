@@ -1,89 +1,74 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-// Reusable Layered Logo matching the screenshot
-const LogoSVG = ({ size = 26 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4 6L12 3L20 6L12 9L4 6Z" fill="url(#logo-grad)" stroke="#00e5c3" strokeWidth="1.2" strokeLinejoin="round" />
-    <path d="M4 11L12 8L20 11L12 14L4 11Z" fill="url(#logo-grad)" stroke="#00e5c3" strokeWidth="1.2" strokeLinejoin="round" />
-    <path d="M4 16L12 13L20 16L12 19L4 16Z" fill="url(#logo-grad)" stroke="#00e5c3" strokeWidth="1.2" strokeLinejoin="round" />
-    <defs>
-      <linearGradient id="logo-grad" x1="4" y1="3" x2="20" y2="19" gradientUnits="userSpaceOnUse">
-        <stop stopColor="rgba(0, 229, 195, 0.45)" />
-        <stop offset="1" stopColor="rgba(67, 97, 238, 0.45)" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
-
-// Feature details mapping for the Image Feature Explorer
-const featuresData = {
-  navigation: {
-    num: "01",
-    title: "Navigation Sidebar",
-    desc: "Quickly toggle between Media assets, Audio isolator controls, Text captioning layouts, and spatial vector Adjustments. Kept compact to maximize timeline space.",
-    zoomStyle: "scale(1.9) translate(40%, 14%)",
-    x: "2.5%",
-    y: "28%"
-  },
-  media: {
-    num: "02",
-    title: "Asset Library Panel",
-    desc: "Manage project media, record voiceovers, and search local folders. Features instant metadata ingestion that tracks file formats, frame sizes, and durations.",
-    zoomStyle: "scale(1.7) translate(24%, -2%)",
-    x: "12.5%",
-    y: "42%"
-  },
-  player: {
-    num: "03",
-    title: "Viewer Viewport",
-    desc: "Real-time frame preview. Manipulate visual assets directly in the canvas using a bounding-box transform gizmo, with precise timecode feedback.",
-    zoomStyle: "scale(1.3) translate(2%, 4%)",
-    x: "49%",
-    y: "38%"
-  },
-  ai: {
-    num: "04",
-    title: "AI Command Core",
-    desc: "Execute context-aware command chains via the search bar or the '+ Vichith AI' button. Accelerate edits like transient beat matching or dialog segmentation directly on timeline tracks.",
-    zoomStyle: "scale(1.8) translate(-14%, 22%)",
-    x: "68%",
-    y: "8%"
-  },
-  inspector: {
-    num: "05",
-    title: "Project Inspector",
-    desc: "Direct access to sequence parameters, FPS, active GPU backends, and active clip transform metrics like translation offset, scale, and rotation.",
-    zoomStyle: "scale(1.7) translate(-22%, 8%)",
-    x: "89%",
-    y: "32%"
-  },
-  timeline: {
-    num: "06",
-    title: "Timeline & Tracks",
-    desc: "Frame-accurate timeline supporting V1 video clips, keyframe interpolation nodes, A1 audio waveforms, and text captions synced directly in a unified timeline model.",
-    zoomStyle: "scale(1.5) translate(3%, -18%)",
-    x: "45%",
-    y: "82%"
-  }
-};
+import React, { useState, useEffect } from 'react';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  
-  // Feature explorer tab state
-  const [activeTab, setActiveTab] = useState<'navigation' | 'media' | 'player' | 'ai' | 'inspector' | 'timeline'>('navigation');
+  const [feedbackMsg, setFeedbackMsg] = useState('No spam. No waitlist games. We\'ll reach out directly.');
 
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
+  // NAV scrolled state
+  const [scrolled, setScrolled] = useState(false);
+
+  // Timeline playhead position state
+  const [cursorPos, setCursorPos] = useState(47);
+
+  // Scroll active nav listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 60);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // IntersectionObserver reveals and initial animations
+  useEffect(() => {
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    revealEls.forEach(el => observer.observe(el));
+
+    // Immediately reveal hero fold
+    document.querySelectorAll('#hero .reveal').forEach(el => {
+      el.classList.add('visible');
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Timeline cursor simulation loop
+  useEffect(() => {
+    let dir = 1;
+    const interval = setInterval(() => {
+      setCursorPos(prev => {
+        let next = prev + dir * 0.3;
+        if (next > 90 || next < 5) {
+          dir *= -1;
+        }
+        return next;
+      });
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Waitlist email form submit action
+  const handleBetaSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!email || !email.includes('@')) {
+      setStatus('error');
+      setFeedbackMsg('Please enter a valid email address.');
+      return;
+    }
     setStatus('loading');
-    setErrorMessage('');
-    
+    setFeedbackMsg('Requesting access...');
+
     try {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
@@ -91,420 +76,563 @@ export default function LandingPage() {
         body: JSON.stringify({ email })
       });
       const data = await res.json();
-      
+
       if (res.ok || data.success) {
         setStatus('success');
+        setFeedbackMsg(`You're on the list, ${email.split('@')[0]}. We'll be in touch.`);
         setEmail('');
       } else {
         setStatus('error');
-        setErrorMessage(data.error || 'Unable to join the list.');
+        setFeedbackMsg(data.error || 'Unable to join waitlist.');
       }
     } catch (err) {
       setStatus('error');
-      setErrorMessage('Network error. Please try again.');
+      setFeedbackMsg('Network error. Please try again.');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBetaSubmit();
     }
   };
 
   return (
-    <main style={{ position: 'relative', overflowX: 'hidden' }}>
-      
-      {/* Soft background ambient glow */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div style={{ position: 'absolute', top: '-10%', left: '10%', width: '700px', height: '700px', background: 'radial-gradient(circle, rgba(0, 229, 195, 0.02) 0%, transparent 60%)', filter: 'blur(120px)' }} />
-        <div style={{ position: 'absolute', bottom: '15%', right: '5%', width: '800px', height: '800px', background: 'radial-gradient(circle, rgba(67, 97, 238, 0.015) 0%, transparent 60%)', filter: 'blur(140px)' }} />
-      </div>
-
-      {/* Sleek transparent navbar */}
-      <nav className="nav-container">
-        <a href="#" className="logo">
-          <span style={{ display: 'flex', alignItems: 'center' }}><LogoSVG /></span>
-          <span className="logo-text">Vichith</span>
+    <>
+      {/* NAV */}
+      <nav id="nav" className={scrolled ? 'scrolled' : ''}>
+        <a href="#" className="nav-logo">
+          <img src="/favicon_io/android-chrome-512x512.png" alt="Vichith Logo" style={{ height: '28px', width: 'auto' }} />
+          <span>vi<span>chith</span></span>
         </a>
         <div className="nav-links">
-          <a href="#fragmentation">Workflow Friction</a>
-          <a href="#workspace">Product Workspace</a>
-          <a href="#features">Platform Features</a>
-          <a href="#waitlist" className="btn-waitlist-nav">Join Waitlist</a>
+          <a href="#howitworks">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#studio">Studio</a>
+          <a href="#vision">Vision</a>
+          <a href="#beta" className="nav-cta">Join Beta</a>
         </div>
       </nav>
 
-      {/* Layer 1: Hero & Vision */}
-      <header className="hero container">
-        <div className="hero-glow" />
-        <motion.div 
-          className="hero-badge"
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block', boxShadow: '0 0 8px var(--teal)' }}></span>
-          <span>A Unified Video Workflow Platform</span>
-        </motion.div>
-        
-        <motion.h1 
-          className="hero-title"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-        >
-          A Unified Environment <br />
-          <span style={{ background: 'linear-gradient(135deg, var(--teal) 0%, #4361ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>For Professional Editing</span>
-        </motion.h1>
-
-        <motion.p 
-          className="hero-sub"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          Stop context-switching between fragmented tools. Vichith unifies timeline editing, keyframe motion curves, audio clean-up, and speech captioning into one high-performance desktop application.
-        </motion.p>
-
-        <motion.div 
-          className="hero-ctas"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-        >
-          <a href="#waitlist" className="btn-primary">Join the Waitlist</a>
-          <a href="#workspace" className="btn-secondary">Explore the Workspace</a>
-        </motion.div>
-      </header>
-
-      {/* Layer 2: Workflow Fragmentation (Emotional Friction) */}
-      <section id="fragmentation" className="container">
-        <div className="section-header" style={{ maxWidth: '640px' }}>
-          <span className="section-label">Workflow Friction</span>
-          <h2 className="section-title">The Pain of Disjointed Tools</h2>
-          <p className="section-desc">Traditional creative production splits your edit across five different environments. It breaks continuity and creates constant technical barriers.</p>
+      {/* HERO */}
+      <section id="hero">
+        <div className="hero-bg-glow"></div>
+        <div className="hero-bg-glow2"></div>
+        <div className="hero-badge reveal"><span className="dot"></span>Now in Private Beta</div>
+        <h1 className="reveal reveal-delay-1">
+          The workflow layer for<br /><span className="line-accent">modern video editing.</span>
+        </h1>
+        <p className="hero-sub reveal reveal-delay-2">
+          Describe your video. Generate a timeline. Edit with full control.
+          Vichith replaces the chaos of five tools with one intelligent workspace.
+        </p>
+        <div className="hero-actions reveal reveal-delay-3">
+          <a href="#beta" className="btn-primary">Join the Beta</a>
+          <a href="#howitworks" className="btn-ghost">
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <polygon points="10,8 16,12 10,16" />
+            </svg>
+            See how it works
+          </a>
         </div>
 
-        <div className="friction-layout">
-          
-          {/* Chaos Stack */}
-          <motion.div 
-            className="friction-column chaos"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="friction-badge">The Disjointed Stack</div>
-            <h3 className="friction-title">Constant App Switching</h3>
-            <p className="friction-desc">Editing a single sequence forces you to manually manage file links and exports across conflicting engines.</p>
-
-            <div className="flow-lane-container">
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">1</span>
-                  <span className="flow-lane-title">Cut footage in Premiere</span>
+        {/* UI MOCKUP */}
+        <div className="hero-visual reveal reveal-delay-4">
+          <div className="hero-screen">
+            <div className="screen-bar">
+              <div className="screen-dot"></div>
+              <div className="screen-dot"></div>
+              <div className="screen-dot"></div>
+              <span className="screen-title">Vichith Studio — Untitled Project</span>
+            </div>
+            <div className="screen-body">
+              <div className="screen-sidebar">
+                <div className="sidebar-label">Workspace</div>
+                <div className="sidebar-item active">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M15 10l4.5-4.5M3 3h18v18H3z" />
+                  </svg>
+                  Timeline
                 </div>
-                <span className="flow-lane-tag">Export XML</span>
+                <div className="sidebar-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2" />
+                    <path d="M12 8v4l3 3" />
+                  </svg>
+                  Assets
+                </div>
+                <div className="sidebar-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                  </svg>
+                  AI Studio
+                </div>
+                <div className="sidebar-label">Recent</div>
+                <div className="sidebar-item">Product Launch v2</div>
+                <div className="sidebar-item">Tutorial Series</div>
+                <div className="sidebar-item">Vlog — March</div>
               </div>
-              
-              <div className="flow-lane-arrow" />
-              
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">2</span>
-                  <span className="flow-lane-title">Animate keyframes in After Effects</span>
+              <div className="screen-main">
+                <div className="screen-toolbar">
+                  <div className="tool-btn primary">▶ Generate</div>
+                  <div className="tool-btn ghost">Export</div>
+                  <div className="tool-btn ghost">AI Edit</div>
+                  <div style={{ flex: 1 }}></div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-3)', fontFamily: 'var(--font-display)' }}>
+                    00:02:34 / 00:05:00
+                  </span>
                 </div>
-                <span className="flow-lane-tag">Render Video</span>
-              </div>
-
-              <div className="flow-lane-arrow" />
-              
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">3</span>
-                  <span className="flow-lane-title">Isolate dialogue noise in Audition</span>
+                <div className="timeline-area">
+                  <div className="timeline-prompt">
+                    <div className="prompt-label">AI Prompt</div>
+                    Create a 5-minute product walkthrough. Start with the problem, demo the main features,
+                    end with a strong CTA. Use upbeat background music.
+                  </div>
+                  <div className="timeline-tracks">
+                    <div className="track-row">
+                      <div className="track-label">Video 1</div>
+                      <div className="track-line">
+                        <div className="track-clip video" style={{ left: '2%', width: '30%' }}>Intro Scene</div>
+                        <div className="track-clip video" style={{ left: '34%', width: '38%' }}>Feature Demo</div>
+                        <div className="track-clip video" style={{ left: '74%', width: '24%' }}>CTA Outro</div>
+                        <div className="timeline-cursor" style={{ left: `${cursorPos}%` }}></div>
+                      </div>
+                    </div>
+                    <div className="track-row">
+                      <div className="track-label">Audio</div>
+                      <div className="track-line">
+                        <div className="track-clip audio" style={{ left: '2%', width: '96%' }}>Background Music — Upbeat Corporate</div>
+                      </div>
+                    </div>
+                    <div className="track-row">
+                      <div className="track-label">Voice</div>
+                      <div className="track-line">
+                        <div className="track-clip audio" style={{ left: '2%', width: '28%' }}>Narration 1</div>
+                        <div className="track-clip audio" style={{ left: '32%', width: '40%' }}>Narration 2</div>
+                        <div className="track-clip audio" style={{ left: '74%', width: '22%' }}>Narration 3</div>
+                      </div>
+                    </div>
+                    <div className="track-row">
+                      <div className="track-label">Captions</div>
+                      <div className="track-line">
+                        <div className="track-clip text" style={{ left: '2%', width: '96%' }}>Auto-generated — Hindi/English</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="flow-lane-tag">Export WAV</span>
-              </div>
-
-              <div className="flow-lane-arrow" />
-              
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">4</span>
-                  <span className="flow-lane-title">Generate transcript captions in CapCut</span>
-                </div>
-                <span className="flow-lane-tag">Export SRT</span>
-              </div>
-
-              <div className="flow-lane-arrow" />
-              
-              <div className="flow-lane" style={{ background: 'rgba(239,68,68,0.02)', borderColor: 'rgba(239,68,68,0.1)' }}>
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num" style={{ background: '#ef4444', color: '#fff' }}>!</span>
-                  <span className="flow-lane-title" style={{ color: 'var(--text-primary)' }}>Re-align files & fix desync issues</span>
-                </div>
-                <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 600 }}>Workflow Break</span>
               </div>
             </div>
-          </motion.div>
-
-          {/* Unified Vichith Stack */}
-          <motion.div 
-            className="friction-column calm"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-          >
-            <div className="friction-badge">The Vichith Workflow</div>
-            <h3 className="friction-title">Creative Continuity</h3>
-            <p className="friction-desc">A single environment holding a single source of truth for your entire timeline structure.</p>
-
-            <div className="flow-lane-container">
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">1</span>
-                  <span className="flow-lane-title">Timeline Editing</span>
-                </div>
-                <span className="flow-lane-subtext">Assemble visual clips</span>
-              </div>
-              
-              <div className="flow-lane-arrow unified" />
-              
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">2</span>
-                  <span className="flow-lane-title">Keyframe & Spatial Motion</span>
-                </div>
-                <span className="flow-lane-subtext">Direct canvas control</span>
-              </div>
-
-              <div className="flow-lane-arrow unified" />
-              
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">3</span>
-                  <span className="flow-lane-title">Dialogue Captions & Audio Isolation</span>
-                </div>
-                <span className="flow-lane-subtext">Context-aware layers</span>
-              </div>
-
-              <div className="flow-lane-arrow unified" />
-              
-              <div className="flow-lane">
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">4</span>
-                  <span className="flow-lane-title">Supervised AI Orchestration</span>
-                </div>
-                <span className="flow-lane-subtext">Timeline acceleration</span>
-              </div>
-
-              <div className="flow-lane-arrow unified" />
-              
-              <div className="flow-lane" style={{ background: 'rgba(0,229,195,0.03)', borderColor: 'var(--teal-glow)' }}>
-                <div className="flow-lane-step">
-                  <span className="flow-lane-num">✓</span>
-                  <span className="flow-lane-title" style={{ color: 'var(--teal)' }}>Direct Render</span>
-                </div>
-                <span className="flow-lane-tag">No Desync</span>
-              </div>
-            </div>
-          </motion.div>
-
+          </div>
         </div>
       </section>
 
-      {/* Layer 3: Workspace Explorer (Animate around Real UI Screenshots) */}
-      <section id="workspace" className="container">
-        <div className="section-header center">
-          <span className="section-label">Product Showcase</span>
-          <h2 className="section-title">Designed for Real Workflows</h2>
-          <p className="section-desc" style={{ maxWidth: '600px', margin: '0 auto' }}>Explore the actual Vichith desktop editor layout. Click tabs or hotspot dots to zoom into specific workflow layers.</p>
+      {/* TICKER */}
+      <div className="ticker-container">
+        <div className="ticker-track">
+          <span className="ticker-item"><span>→</span>Prompt to Timeline</span>
+          <span className="ticker-item"><span>→</span>Voice-to-Video</span>
+          <span className="ticker-item"><span>→</span>AI Auto-Edit</span>
+          <span className="ticker-item"><span>→</span>Multi-Language Captions</span>
+          <span className="ticker-item"><span>→</span>Timeline Intelligence</span>
+          <span className="ticker-item"><span>→</span>One Platform</span>
+          <span className="ticker-item"><span>→</span>No Context Switching</span>
+          <span className="ticker-item"><span>→</span>Prompt to Timeline</span>
+          <span className="ticker-item"><span>→</span>Voice-to-Video</span>
+          <span className="ticker-item"><span>→</span>AI Auto-Edit</span>
+          <span className="ticker-item"><span>→</span>Multi-Language Captions</span>
+          <span className="ticker-item"><span>→</span>Timeline Intelligence</span>
+          <span className="ticker-item"><span>→</span>One Platform</span>
+          <span className="ticker-item"><span>→</span>No Context Switching</span>
         </div>
+      </div>
 
-        {/* Feature Explorer Showcase Container */}
-        <div className="showcase-container">
-          
-          {/* OS Window header */}
-          <div className="showcase-window-header">
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(255, 95, 87, 0.4)' }} />
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(254, 188, 46, 0.4)' }} />
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(40, 200, 64, 0.4)' }} />
-            </div>
-            
-            <div className="window-title-bar">
-              <LogoSVG size={14} />
-              <span>Vichith Workspace — Project_01.vch</span>
-            </div>
-
-            <div style={{ width: '40px' }} /> {/* Balance space */}
-          </div>
-
-          {/* Viewport viewport */}
-          <div className="screenshot-viewport">
-            
-            {/* The Real Screenshot */}
-            <img 
-              src="/images/vichith-web.png" 
-              alt="Vichith Desktop Editor UI" 
-              className="screenshot-image"
-              style={{
-                transform: featuresData[activeTab].zoomStyle
-              }}
-            />
-
-            {/* Hotspots Overlay */}
-            <div className="hotspot-overlay-layer">
-              {Object.entries(featuresData).map(([key, data]) => (
-                <div 
-                  key={key}
-                  className={`hotspot ${activeTab === key ? 'active' : ''}`}
-                  style={{ left: data.x, top: data.y }}
-                  onClick={() => setActiveTab(key as any)}
-                >
-                  <div className="hotspot-pulse" />
-                  <div className="hotspot-inner" />
-                </div>
-              ))}
-            </div>
-
-          </div>
-
-          {/* Selector Tabs */}
-          <div className="explorer-tabs-container">
-            {Object.entries(featuresData).map(([key, data]) => (
-              <button 
-                key={key}
-                className={`explorer-tab-btn ${activeTab === key ? 'active' : ''}`}
-                onClick={() => setActiveTab(key as any)}
-              >
-                <span className="tab-num">Section {data.num}</span>
-                <span className="tab-name">{data.title}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Details Card */}
-          <div className="explorer-content-card">
-            <h4 className="explorer-card-title">{featuresData[activeTab].title}</h4>
-            <p className="explorer-card-desc">{featuresData[activeTab].desc}</p>
-          </div>
-
-        </div>
-      </section>
-
-      {/* Layer 4: Platform Features (Creator-Focused) */}
-      <section id="features" style={{ background: '#030508', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      {/* STATS */}
+      <section style={{ padding: '5rem 0' }}>
         <div className="container">
-          <div className="section-header">
-            <span className="section-label">Creative Speed</span>
-            <h2 className="section-title">Built for Performance</h2>
-            <p className="section-desc">Vichith is designed to keep you in the flow, replacing slow cloud exports and sluggish playback buffers with high-performance desktop tools.</p>
-          </div>
-
-          <div className="creator-specs-grid">
-            <div className="creator-spec-card">
-              <div className="creator-spec-icon">⚡</div>
-              <h3 className="creator-spec-title">Zero Export Lags</h3>
-              <p className="creator-spec-desc">Adjust subtitles, modify crop keyframes, and isolate audio layers on the same timeline without rendering proxy files or intermediate sequences.</p>
+          <div className="stat-row reveal">
+            <div className="stat-cell">
+              <div className="stat-num">5<span>→</span>1</div>
+              <div className="stat-label">Tools replaced by one workspace</div>
             </div>
-
-            <div className="creator-spec-card">
-              <div className="creator-spec-icon">🎯</div>
-              <h3 className="creator-spec-title">Preserved Track Metadata</h3>
-              <p className="creator-spec-desc">Keep transcripts, speech intervals, and motion paths structurally bound to visual frames. Rearranging cuts immediately adjusts matching text and audio.</p>
+            <div className="stat-cell">
+              <div className="stat-num"><span>~</span>80<span>%</span></div>
+              <div className="stat-label">Reduction in editing time</div>
             </div>
-
-            <div className="creator-spec-card">
-              <div className="creator-spec-icon">🛡️</div>
-              <h3 className="creator-spec-title">Creator-in-Control AI</h3>
-              <p className="creator-spec-desc">Automate tedious pacing, transient slicing, and caption alignment. The AI operates directly on your tracks under your visual supervision.</p>
-            </div>
-
-            <div className="creator-spec-card">
-              <div className="creator-spec-icon">💻</div>
-              <h3 className="creator-spec-title">Desktop-Native Efficiency</h3>
-              <p className="creator-spec-desc">A lightweight desktop editor designed to load instantly and run locally on your workstation, leaving CPU and RAM free for your footage rendering.</p>
+            <div className="stat-cell">
+              <div className="stat-num">4<span>+</span></div>
+              <div className="stat-label">Indian languages supported at launch</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Layer 5: Waitlist & Join */}
-      <section id="waitlist" className="container">
-        <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}>
-          <span className="section-label">Early Adopter Cohorts</span>
-          <h2 className="section-title">Redefine Your Creative Workflow</h2>
-          <p className="section-desc">We are currently hosting private preview releases of the desktop client. Sign up to secure early access and update announcements.</p>
+      {/* PROBLEM */}
+      <section id="problem">
+        <div className="container">
+          <div className="problem-grid">
+            <div>
+              <div className="section-kicker reveal">The Problem</div>
+              <h2 className="reveal reveal-delay-1">Creators live inside<br />five broken tools.</h2>
+              <p className="lead reveal reveal-delay-2" style={{ marginTop: '1.25rem' }}>
+                Every workflow jump costs time, focus, and creative momentum. You export. You import. You switch. You start over.
+              </p>
+              <div className="tools-chaos reveal reveal-delay-3" style={{ marginTop: '2rem' }}>
+                <div className="tool-tag strikethrough">
+                  <div className="tool-icon" style={{ background: '#ff5f5720', color: '#ff5f57' }}>AI</div>
+                  AI Video Generator
+                </div>
+                <div className="arrow-chaos">↓ export · re-upload</div>
+                <div className="tool-tag strikethrough">
+                  <div className="tool-icon" style={{ background: '#ffbd2e20', color: '#ffbd2e' }}>Ed</div>
+                  Video Editor
+                </div>
+                <div className="arrow-chaos">↓ export · switch tabs</div>
+                <div className="tool-tag strikethrough">
+                  <div className="tool-icon" style={{ background: '#28ca4120', color: '#28ca41' }}>CC</div>
+                  Caption Tool
+                </div>
+                <div className="arrow-chaos">↓ export · re-import</div>
+                <div className="tool-tag strikethrough">
+                  <div className="tool-icon" style={{ background: '#0091a820', color: '#00d4c8' }}>🎵</div>
+                  Audio & Music
+                </div>
+                <div className="arrow-chaos">↓ export one more time</div>
+                <div className="tool-tag strikethrough">
+                  <div className="tool-icon" style={{ background: '#a855f720', color: '#d08aff' }}>Im</div>
+                  Image Generator
+                </div>
+              </div>
+            </div>
+            <div className="reveal reveal-delay-2">
+              <div className="vichith-unify">
+                <div className="unify-label">With Vichith</div>
+                <div className="unify-flow">
+                  <div className="flow-step">
+                    <div className="flow-num">1</div>
+                    <div className="flow-text"><strong>Describe your video</strong> — via text prompt or voice</div>
+                  </div>
+                  <div className="flow-step">
+                    <div className="flow-num">2</div>
+                    <div className="flow-text"><strong>AI generates a timeline</strong> — structured, editable, intelligent</div>
+                  </div>
+                  <div className="flow-step">
+                    <div className="flow-num">3</div>
+                    <div className="flow-text"><strong>Edit with full control</strong> — clips, captions, audio, all inside one interface</div>
+                  </div>
+                  <div className="flow-step">
+                    <div className="flow-num">4</div>
+                    <div className="flow-text"><strong>Generate assets in-context</strong> — video, images, audio without leaving</div>
+                  </div>
+                  <div className="flow-step">
+                    <div className="flow-num">5</div>
+                    <div className="flow-text"><strong>Export when ready</strong> — no re-imports, no re-syncing</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div className="waitlist-card">
-          <h3 className="waitlist-title">Secure Early Access</h3>
-          <p className="waitlist-desc">A premium desktop video editing workspace designed to streamline creative orchestration. No browser wrappers, no export desync.</p>
-          
-          <form className="waitlist-form" onSubmit={handleWaitlistSubmit}>
-            <input 
-              type="email" 
-              className="waitlist-input" 
-              placeholder="Enter your professional email" 
+      {/* HOW IT WORKS */}
+      <section id="howitworks">
+        <div className="container">
+          <div className="reveal" style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+            <div className="section-kicker">How it works</div>
+            <h2>From idea to export<br />in four steps.</h2>
+          </div>
+          <div className="steps-grid reveal reveal-delay-2">
+            <div className="step-card">
+              <div className="step-num">01</div>
+              <div className="step-title">Describe your video</div>
+              <div className="step-desc">Type a prompt or speak your idea. Tell Vichith the topic, tone, length, and structure you need.</div>
+            </div>
+            <div className="step-card">
+              <div className="step-num">02</div>
+              <div className="step-title">Generate structure</div>
+              <div className="step-desc">AI converts your intent into a fully structured timeline — scenes, captions, audio cues, and pacing included.</div>
+            </div>
+            <div className="step-card">
+              <div className="step-num">03</div>
+              <div className="step-title">Edit with control</div>
+              <div className="step-desc">Tweak every element directly in the workspace. Move clips. Swap assets. Adjust captions. The AI adapts with you.</div>
+            </div>
+            <div className="step-card">
+              <div className="step-num">04</div>
+              <div className="step-title">Export anywhere</div>
+              <div className="step-desc">Render to any format. No re-importing. No re-syncing. What you see is what ships.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section id="features">
+        <div className="container">
+          <div className="features-header reveal">
+            <div className="section-kicker">Features</div>
+            <h2>Intelligence at every layer of your workflow.</h2>
+          </div>
+          <div className="features-grid reveal reveal-delay-1">
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M9 17H5a2 2 0 0 0-2 2v2" />
+                  <path d="M11 11h8a2 2 0 0 1 2 2v3" />
+                  <rect x="1" y="3" width="14" height="8" rx="1" />
+                  <rect x="13" y="13" width="8" height="8" rx="1" />
+                </svg>
+              </div>
+              <div className="feature-title">Timeline Intelligence</div>
+              <div className="feature-desc">AI reads your intent and arranges scenes into a professional timeline with proper pacing, cuts, and transitions.</div>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              </div>
+              <div className="feature-title">Voice-to-Video</div>
+              <div className="feature-desc">Narrate your video concept out loud. Vichith transcribes, structures, and turns your spoken ideas into editable timelines.</div>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m4.93 4.93 14.14 14.14" />
+                </svg>
+              </div>
+              <div className="feature-title">AI Auto-Edit</div>
+              <div className="feature-desc">Describe an edit in plain language. "Make the intro tighter" or "add B-roll between scene 2 and 3." Vichith executes.</div>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="7" width="20" height="15" rx="2" />
+                  <polyline points="17 2 12 7 7 2" />
+                </svg>
+              </div>
+              <div className="feature-title">Multi-Language Captions</div>
+              <div className="feature-desc">Auto-generated captions with full support for Hindi, Telugu, Tamil, and Kannada — with proper script rendering.</div>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </div>
+              <div className="feature-title">Creator Control</div>
+              <div className="feature-desc">AI assists, you decide. Every AI action is a suggestion. You approve, reject, or modify anything the model produces.</div>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 12h14" />
+                  <path d="M12 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="feature-title">Local-First Privacy</div>
+              <div className="feature-desc">All processing runs on your device. No cloud uploads, no data storage, no third-party AI training on your content.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* STUDIO */}
+      <section id="studio">
+        <div className="container">
+          <div className="studio-inner">
+            <div>
+              <div className="section-kicker reveal">Vichith Studio — Coming Soon</div>
+              <h2 className="reveal reveal-delay-1">Every AI model.<br />One workspace.</h2>
+              <p className="lead reveal reveal-delay-2" style={{ marginTop: '1.25rem' }}>
+                The future of Vichith is a unified creative environment where you generate video, images, and audio — all inside the same timeline, all connected.
+              </p>
+              <div className="studio-models reveal reveal-delay-3">
+                <div className="model-card">
+                  <div className="model-card-type">Video</div>
+                  <div className="model-card-name">Video Generation</div>
+                  <div className="model-card-desc">Generate clips directly from text prompts inside your timeline.</div>
+                </div>
+                <div className="model-card">
+                  <div className="model-card-type">Image</div>
+                  <div className="model-card-name">Image Generation</div>
+                  <div className="model-card-desc">Create thumbnails, B-roll stills, and motion graphics in-context.</div>
+                </div>
+                <div className="model-card">
+                  <div className="model-card-type">Audio</div>
+                  <div className="model-card-name">Audio & Music</div>
+                  <div className="model-card-desc">Generate background scores and voiceovers tuned to your edit.</div>
+                </div>
+                <div className="model-card">
+                  <div className="model-card-type">Language</div>
+                  <div className="model-card-name">Script Intelligence</div>
+                  <div className="model-card-desc">Rewrite, translate, and restructure scripts in any regional language.</div>
+                </div>
+              </div>
+            </div>
+            <div className="studio-orbit reveal reveal-delay-2">
+              <div className="orbit-ring orbit-ring-1">
+                <div className="orbit-dot" style={{ top: '-16px', left: 'calc(50% - 16px)' }}>Vid</div>
+              </div>
+              <div className="orbit-ring orbit-ring-2">
+                <div className="orbit-dot" style={{ top: '-16px', left: 'calc(50% - 16px)' }}>Img</div>
+                <div className="orbit-dot" style={{ bottom: '-16px', left: 'calc(50% - 16px)' }}>Aud</div>
+              </div>
+              <div className="orbit-ring orbit-ring-3">
+                <div className="orbit-dot" style={{ top: '-16px', left: 'calc(50% - 16px)' }}>TTS</div>
+                <div className="orbit-dot" style={{ bottom: '-16px', left: 'calc(50% - 16px)' }}>LLM</div>
+                <div className="orbit-dot" style={{ left: '-16px', top: 'calc(50% - 16px)' }}>STT</div>
+              </div>
+              <div className="orbit-center">
+                <div className="orbit-center-text">VICHITH</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* VISION */}
+      <section id="vision">
+        <div className="vision-glow"></div>
+        <div className="container-sm">
+          <div className="section-kicker reveal" style={{ textAlign: 'center' }}>Our vision</div>
+          <div className="vision-quote reveal reveal-delay-1">
+            The future isn't AI <em>generating</em> videos.<br />The future is AI <em>understanding</em> workflows.
+          </div>
+          <p className="vision-body reveal reveal-delay-2">
+            Every creator today loses hours to toolchain friction — not creative work. Vichith is building the missing layer: an intelligent operating system where your intent becomes content, without the chaos in between.
+          </p>
+          <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center' }} className="reveal reveal-delay-3">
+            <a href="#beta" className="btn-primary">Be part of the story</a>
+          </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF */}
+      <section id="proof">
+        <div className="container">
+          <div className="reveal" style={{ textAlign: 'center', maxWidth: '560px', margin: '0 auto' }}>
+            <div className="section-kicker">Early Access</div>
+            <h2>Built for creators,<br />by builders who get it.</h2>
+          </div>
+          <div className="proof-grid">
+            <div className="proof-card reveal">
+              <div className="proof-stars">
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+              </div>
+              <div className="proof-text">
+                "I've been waiting for something like this. Jumping between CapCut, ElevenLabs, and Canva for every video is exhausting. Vichith feels like the thing that should have existed two years ago."
+              </div>
+              <div className="proof-author">
+                <div className="proof-avatar">RK</div>
+                <div>
+                  <div className="proof-name">Ravi Kumar</div>
+                  <div className="proof-role">Telugu YouTuber · 240K subscribers</div>
+                </div>
+              </div>
+            </div>
+            <div className="proof-card reveal reveal-delay-1">
+              <div className="proof-stars">
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+              </div>
+              <div className="proof-text">
+                "The prompt-to-timeline feature alone saves me 3–4 hours per video. The AI understands context in a way I haven't seen in any other tool. The Hindi caption support is exactly what the creator space needed."
+              </div>
+              <div className="proof-author">
+                <div className="proof-avatar">PS</div>
+                <div>
+                  <div className="proof-name">Priya Sharma</div>
+                  <div className="proof-role">Solo Creator · Tech & Finance · Hindi</div>
+                </div>
+              </div>
+            </div>
+            <div className="proof-card reveal reveal-delay-2">
+              <div className="proof-stars">
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+              </div>
+              <div className="proof-text">
+                "What Linear did for project management, Vichith is doing for video. It respects my intelligence as a creator and gives me AI that assists rather than decides. Local-first is a massive differentiator."
+              </div>
+              <div className="proof-author">
+                <div className="proof-avatar">AJ</div>
+                <div>
+                  <div className="proof-name">Arjun J.</div>
+                  <div className="proof-role">Indie Filmmaker · Beta Tester</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BETA CTA */}
+      <section id="beta">
+        <div className="beta-glow"></div>
+        <div className="container-sm" style={{ textAlign: 'center' }}>
+          <div className="section-kicker reveal">Private Beta</div>
+          <h2 className="beta-title reveal reveal-delay-1">
+            Start creating<br />without the <span className="accent">chaos.</span>
+          </h2>
+          <p className="beta-sub reveal reveal-delay-2">
+            Join early access and help shape the future of video creation for Indian creators and beyond.
+          </p>
+          <div className="beta-input-row reveal reveal-delay-3">
+            <input
+              className="beta-input"
+              type="email"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              onKeyDown={handleKeyDown}
               disabled={status === 'loading' || status === 'success'}
             />
-            <button 
-              type="submit" 
-              className="btn-waitlist-submit"
+            <button
+              className="btn-primary"
+              onClick={() => handleBetaSubmit()}
               disabled={status === 'loading' || status === 'success'}
             >
-              {status === 'loading' ? 'Joining...' : status === 'success' ? 'Joined!' : 'Join Now'}
+              {status === 'loading' ? 'Requesting...' : 'Request Access'}
             </button>
-          </form>
-
-          <AnimatePresence>
-            {status === 'success' && (
-              <motion.p 
-                className="waitlist-success-text"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                ✓ You have been added to the waitlist queue.
-              </motion.p>
-            )}
-            {status === 'error' && (
-              <motion.p 
-                className="waitlist-error-text"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                ✗ {errorMessage}
-              </motion.p>
-            )}
-          </AnimatePresence>
+          </div>
+          <div className="beta-note reveal reveal-delay-4" style={{ color: status === 'error' ? '#ff6b6b' : status === 'success' ? 'var(--cyan)' : 'var(--text-3)' }}>
+            {feedbackMsg}
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* FOOTER */}
       <footer>
-        <div className="container footer-inner">
-          <a href="#" className="logo" style={{ fontSize: '1.1rem' }}>
-            <span style={{ display: 'flex', alignItems: 'center' }}><LogoSVG size={22} /></span>
-            <span className="logo-text">Vichith</span>
-          </a>
-
-          {/* Quick keyboard shortcuts list */}
-          <div className="footer-shortcuts">
-            <span className="shortcut-pill">Space = Play/Pause</span>
-            <span className="shortcut-pill">C = Blade Tool</span>
-            <span className="shortcut-pill">V = Select Tool</span>
-            <span className="shortcut-pill">Ctrl+K = Quick Actions</span>
-          </div>
-
-          <div className="footer-copy">
-            © 2026 Vichith. Built for creative speed.
+        <div className="container">
+          <div className="footer-inner">
+            <a href="#" className="footer-logo">vi<span>chith</span></a>
+            <div className="footer-links">
+              <a href="#">Twitter</a>
+              <a href="#">LinkedIn</a>
+              <a href="#">GitHub</a>
+              <a href="#">Contact</a>
+            </div>
+            <div className="footer-copy">© 2025 Vichith. All rights reserved.</div>
           </div>
         </div>
       </footer>
-
-    </main>
+    </>
   );
 }
