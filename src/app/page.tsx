@@ -429,16 +429,7 @@ export default function LandingPage() {
               <div className="feature-title">Creator Control</div>
               <div className="feature-desc">AI assists, you decide. Every AI action is a suggestion. You approve, reject, or modify anything the model produces.</div>
             </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M5 12h14" />
-                  <path d="M12 5l7 7-7 7" />
-                </svg>
-              </div>
-              <div className="feature-title">Local-First Privacy</div>
-              <div className="feature-desc">All processing runs on your device. No cloud uploads, no data storage, no third-party AI training on your content.</div>
-            </div>
+
           </div>
         </div>
       </section>
@@ -624,12 +615,11 @@ export default function LandingPage() {
           <div className="footer-inner">
             <a href="#" className="footer-logo">vi<span>chith</span></a>
             <div className="footer-links">
-              <a href="#">Twitter</a>
-              <a href="#">LinkedIn</a>
-              <a href="#">GitHub</a>
+              <a href="https://www.linkedin.com/in/nikshith-yadagiri-884985375/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a href="https://discord.gg/baBZSv5s" target="_blank" rel="noopener noreferrer">Discord</a>
               <a href="#">Contact</a>
             </div>
-            <div className="footer-copy">© 2025 Vichith. All rights reserved.</div>
+            <div className="footer-copy">© 2026 Vichith. All rights reserved.</div>
           </div>
         </div>
       </footer>
