@@ -340,7 +340,9 @@ h1 .line-accent {
     margin-top: 5rem;
     width: 100%;
     max-width: 1000px;
-    position: relative
+    position: relative;
+    margin-left: auto;
+    margin-right: auto
 }
 
 .hero-screen {

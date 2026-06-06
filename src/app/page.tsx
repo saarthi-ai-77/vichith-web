@@ -136,96 +136,6 @@ export default function LandingPage() {
             See how it works
           </a>
         </div>
-
-        {/* UI MOCKUP */}
-        <div className="hero-visual reveal reveal-delay-4">
-          <div className="hero-screen">
-            <div className="screen-bar">
-              <div className="screen-dot"></div>
-              <div className="screen-dot"></div>
-              <div className="screen-dot"></div>
-              <span className="screen-title">Vichith Studio — Untitled Project</span>
-            </div>
-            <div className="screen-body">
-              <div className="screen-sidebar">
-                <div className="sidebar-label">Workspace</div>
-                <div className="sidebar-item active">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M15 10l4.5-4.5M3 3h18v18H3z" />
-                  </svg>
-                  Timeline
-                </div>
-                <div className="sidebar-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2" />
-                    <path d="M12 8v4l3 3" />
-                  </svg>
-                  Assets
-                </div>
-                <div className="sidebar-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-                  </svg>
-                  AI Studio
-                </div>
-                <div className="sidebar-label">Recent</div>
-                <div className="sidebar-item">Product Launch v2</div>
-                <div className="sidebar-item">Tutorial Series</div>
-                <div className="sidebar-item">Vlog — March</div>
-              </div>
-              <div className="screen-main">
-                <div className="screen-toolbar">
-                  <div className="tool-btn primary">▶ Generate</div>
-                  <div className="tool-btn ghost">Export</div>
-                  <div className="tool-btn ghost">AI Edit</div>
-                  <div style={{ flex: 1 }}></div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-3)', fontFamily: 'var(--font-display)' }}>
-                    00:02:34 / 00:05:00
-                  </span>
-                </div>
-                <div className="timeline-area">
-                  <div className="timeline-prompt">
-                    <div className="prompt-label">AI Prompt</div>
-                    Create a 5-minute product walkthrough. Start with the problem, demo the main features,
-                    end with a strong CTA. Use upbeat background music.
-                  </div>
-                  <div className="timeline-tracks">
-                    <div className="track-row">
-                      <div className="track-label">Video 1</div>
-                      <div className="track-line">
-                        <div className="track-clip video" style={{ left: '2%', width: '30%' }}>Intro Scene</div>
-                        <div className="track-clip video" style={{ left: '34%', width: '38%' }}>Feature Demo</div>
-                        <div className="track-clip video" style={{ left: '74%', width: '24%' }}>CTA Outro</div>
-                        <div className="timeline-cursor" style={{ left: `${cursorPos}%` }}></div>
-                      </div>
-                    </div>
-                    <div className="track-row">
-                      <div className="track-label">Audio</div>
-                      <div className="track-line">
-                        <div className="track-clip audio" style={{ left: '2%', width: '96%' }}>Background Music — Upbeat Corporate</div>
-                      </div>
-                    </div>
-                    <div className="track-row">
-                      <div className="track-label">Voice</div>
-                      <div className="track-line">
-                        <div className="track-clip audio" style={{ left: '2%', width: '28%' }}>Narration 1</div>
-                        <div className="track-clip audio" style={{ left: '32%', width: '40%' }}>Narration 2</div>
-                        <div className="track-clip audio" style={{ left: '74%', width: '22%' }}>Narration 3</div>
-                      </div>
-                    </div>
-                    <div className="track-row">
-                      <div className="track-label">Captions</div>
-                      <div className="track-line">
-                        <div className="track-clip text" style={{ left: '2%', width: '96%' }}>Auto-generated — Hindi/English</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* TICKER */}
@@ -482,6 +392,96 @@ export default function LandingPage() {
               </div>
               <div className="orbit-center">
                 <div className="orbit-center-text">VICHITH</div>
+              </div>
+            </div>
+          </div>
+
+          {/* UI MOCKUP */}
+          <div className="hero-visual reveal reveal-delay-4">
+            <div className="hero-screen">
+              <div className="screen-bar">
+                <div className="screen-dot"></div>
+                <div className="screen-dot"></div>
+                <div className="screen-dot"></div>
+                <span className="screen-title">Vichith Studio — Untitled Project</span>
+              </div>
+              <div className="screen-body">
+                <div className="screen-sidebar">
+                  <div className="sidebar-label">Workspace</div>
+                  <div className="sidebar-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M15 10l4.5-4.5M3 3h18v18H3z" />
+                    </svg>
+                    Timeline
+                  </div>
+                  <div className="sidebar-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2" />
+                      <path d="M12 8v4l3 3" />
+                    </svg>
+                    Assets
+                  </div>
+                  <div className="sidebar-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                    </svg>
+                    AI Studio
+                  </div>
+                  <div className="sidebar-label">Recent</div>
+                  <div className="sidebar-item">Product Launch v2</div>
+                  <div className="sidebar-item">Tutorial Series</div>
+                  <div className="sidebar-item">Vlog — March</div>
+                </div>
+                <div className="screen-main">
+                  <div className="screen-toolbar">
+                    <div className="tool-btn primary">▶ Generate</div>
+                    <div className="tool-btn ghost">Export</div>
+                    <div className="tool-btn ghost">AI Edit</div>
+                    <div style={{ flex: 1 }}></div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-3)', fontFamily: 'var(--font-display)' }}>
+                      00:02:34 / 00:05:00
+                    </span>
+                  </div>
+                  <div className="timeline-area">
+                    <div className="timeline-prompt">
+                      <div className="prompt-label">AI Prompt</div>
+                      Create a 5-minute product walkthrough. Start with the problem, demo the main features,
+                      end with a strong CTA. Use upbeat background music.
+                    </div>
+                    <div className="timeline-tracks">
+                      <div className="track-row">
+                        <div className="track-label">Video 1</div>
+                        <div className="track-line">
+                          <div className="track-clip video" style={{ left: '2%', width: '30%' }}>Intro Scene</div>
+                          <div className="track-clip video" style={{ left: '34%', width: '38%' }}>Feature Demo</div>
+                          <div className="track-clip video" style={{ left: '74%', width: '24%' }}>CTA Outro</div>
+                          <div className="timeline-cursor" style={{ left: `${cursorPos}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="track-row">
+                        <div className="track-label">Audio</div>
+                        <div className="track-line">
+                          <div className="track-clip audio" style={{ left: '2%', width: '96%' }}>Background Music — Upbeat Corporate</div>
+                        </div>
+                      </div>
+                      <div className="track-row">
+                        <div className="track-label">Voice</div>
+                        <div className="track-line">
+                          <div className="track-clip audio" style={{ left: '2%', width: '28%' }}>Narration 1</div>
+                          <div className="track-clip audio" style={{ left: '32%', width: '40%' }}>Narration 2</div>
+                          <div className="track-clip audio" style={{ left: '74%', width: '22%' }}>Narration 3</div>
+                        </div>
+                      </div>
+                      <div className="track-row">
+                        <div className="track-label">Captions</div>
+                        <div className="track-line">
+                          <div className="track-clip text" style={{ left: '2%', width: '96%' }}>Auto-generated — Hindi/English</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
