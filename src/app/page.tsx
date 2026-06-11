@@ -617,7 +617,7 @@ export default function LandingPage() {
             <div className="footer-links">
               <a href="https://www.linkedin.com/in/nikshith-yadagiri-884985375/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
               <a href="https://discord.gg/baBZSv5s" target="_blank" rel="noopener noreferrer">Discord</a>
-              <a href="#">Contact</a>
+              <a href="mailto:info.vichith@gmail.com">Contact</a>
             </div>
             <div className="footer-copy">© 2026 Vichith. All rights reserved.</div>
           </div>
