@@ -4,25 +4,20 @@ import React, { useState, useEffect } from 'react';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [feedbackMsg, setFeedbackMsg] = useState('No spam. No waitlist games. We\'ll reach out directly.');
-
-  // NAV scrolled state
-  const [scrolled, setScrolled] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [newsletterMsg, setNewsletterMsg] = useState("We'll send updates on new releases.");
 
   // Timeline playhead position state
   const [cursorPos, setCursorPos] = useState(47);
 
-  // Scroll active nav listener
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 60);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Survey Modal State
+  const [showSurvey, setShowSurvey] = useState(false);
+  const [surveyRole, setSurveyRole] = useState('');
+  const [surveySource, setSurveySource] = useState('');
+  const [surveySubmitting, setSurveySubmitting] = useState(false);
+  const [surveySuccess, setSurveySuccess] = useState(false);
 
-  // IntersectionObserver reveals and initial animations
+  // IntersectionObserver reveals
   useEffect(() => {
     const revealEls = document.querySelectorAll('.reveal');
     const observer = new IntersectionObserver((entries) => {
@@ -58,16 +53,67 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Waitlist email form submit action
-  const handleBetaSubmit = async (e?: React.FormEvent) => {
+  // Download trigger
+  const handleDownload = () => {
+    // Trigger download
+    const link = document.createElement('a');
+    link.href = 'https://github.com/saarthi-ai-77/vichith-web/releases/download/v0.5.0/Vichith_Setup_0.5.0.exe';
+    link.download = 'Vichith_Setup_0.5.0.exe';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Track analytics click
+    if (typeof window !== 'undefined' && (window as any).va) {
+      (window as any).va('event', { name: 'download_click' });
+    }
+
+    // Open Survey Modal
+    setShowSurvey(true);
+  };
+
+  const handleSurveySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!surveyRole || !surveySource) return;
+    setSurveySubmitting(true);
+
+    try {
+      const res = await fetch('/api/survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: surveyRole, source: surveySource }),
+      });
+      if (res.ok) {
+        setSurveySuccess(true);
+        setTimeout(() => {
+          setShowSurvey(false);
+          setSurveySuccess(false);
+          setSurveyRole('');
+          setSurveySource('');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error(err);
+      // Fallback
+      setSurveySuccess(true);
+      setTimeout(() => {
+        setShowSurvey(false);
+        setSurveySuccess(false);
+      }, 2000);
+    } finally {
+      setSurveySubmitting(false);
+    }
+  };
+
+  // Follow updates newsletter submission
+  const handleNewsletterSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!email || !email.includes('@')) {
-      setStatus('error');
-      setFeedbackMsg('Please enter a valid email address.');
+      setNewsletterStatus('error');
+      setNewsletterMsg('Please enter a valid email address.');
       return;
     }
-    setStatus('loading');
-    setFeedbackMsg('Requesting access...');
+    setNewsletterStatus('loading');
 
     try {
       const res = await fetch('/api/waitlist', {
@@ -78,107 +124,179 @@ export default function LandingPage() {
       const data = await res.json();
 
       if (res.ok || data.success) {
-        setStatus('success');
-        setFeedbackMsg(`You're on the list, ${email.split('@')[0]}. We'll be in touch.`);
+        setNewsletterStatus('success');
+        setNewsletterMsg(`Subscribed successfully!`);
         setEmail('');
       } else {
-        setStatus('error');
-        setFeedbackMsg(data.error || 'Unable to join waitlist.');
+        setNewsletterStatus('error');
+        setNewsletterMsg(data.error || 'Subscription failed.');
       }
     } catch (err) {
-      setStatus('error');
-      setFeedbackMsg('Network error. Please try again.');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleBetaSubmit();
+      setNewsletterStatus('error');
+      setNewsletterMsg('Network error. Please try again.');
     }
   };
 
   return (
     <>
-      {/* NAV */}
-      <nav id="nav" className={scrolled ? 'scrolled' : ''}>
-        <a href="#" className="nav-logo">
-          <img src="/favicon_io/android-chrome-512x512.png" alt="Vichith Logo" style={{ height: '28px', width: 'auto' }} />
-          <span>vi<span>chith</span></span>
-        </a>
-        <div className="nav-links">
-          <a href="#howitworks">How it works</a>
-          <a href="#features">Features</a>
-          <a href="#studio">Studio</a>
-          <a href="#vision">Vision</a>
-          <a href="#beta" className="nav-cta">Join Beta</a>
-        </div>
-      </nav>
-
       {/* HERO */}
       <section id="hero">
         <div className="hero-bg-glow"></div>
         <div className="hero-bg-glow2"></div>
-        <div className="hero-badge reveal"><span className="dot"></span>Now in Private Beta</div>
+        <div className="hero-badge reveal">
+          <span className="dot"></span>Beta 0.5.0 Available
+        </div>
         <h1 className="reveal reveal-delay-1">
-          The workflow layer for<br /><span className="line-accent">modern video editing.</span>
+          Vichith Beta
         </h1>
+        <p className="hero-tagline-sub reveal reveal-delay-1">
+          A new editor for modern video workflows.
+        </p>
         <p className="hero-sub reveal reveal-delay-2">
-          Describe your video. Generate a timeline. Edit with full control.
-          Vichith replaces the chaos of five tools with one intelligent workspace.
+          Built with creators. Improved with creators.<br />
+          We're opening the first public beta and inviting creators, editors, filmmakers, and storytellers to help shape what comes next.
         </p>
         <div className="hero-actions reveal reveal-delay-3">
-          <a href="#beta" className="btn-primary">Join the Beta</a>
-          <a href="#howitworks" className="btn-ghost">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <polygon points="10,8 16,12 10,16" />
+          <button onClick={handleDownload} className="btn-primary">
+            Download Beta
+          </button>
+          <a href="https://discord.gg/N5J24RBsXn" target="_blank" rel="noopener noreferrer" className="btn-ghost">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" style={{ marginRight: '6px' }}>
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.094 13.094 0 0 1-1.873-.894.077.077 0 0 1-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 0 1 .077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 0 1 .078.009c.12.099.246.195.373.289a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z" />
             </svg>
-            See how it works
+            Join Discord
           </a>
+        </div>
+        <div className="hero-metadata reveal reveal-delay-3">
+          <span>Beta Release</span>
+          <span className="divider">·</span>
+          <span>Version 0.5.0</span>
+          <span className="divider">·</span>
+          <span>Windows Available</span>
         </div>
       </section>
 
-      {/* TICKER */}
-      <div className="ticker-container">
-        <div className="ticker-track">
-          <span className="ticker-item"><span>→</span>Prompt to Timeline</span>
-          <span className="ticker-item"><span>→</span>Voice-to-Video</span>
-          <span className="ticker-item"><span>→</span>AI Auto-Edit</span>
-          <span className="ticker-item"><span>→</span>Multi-Language Captions</span>
-          <span className="ticker-item"><span>→</span>Timeline Intelligence</span>
-          <span className="ticker-item"><span>→</span>One Platform</span>
-          <span className="ticker-item"><span>→</span>No Context Switching</span>
-          <span className="ticker-item"><span>→</span>Prompt to Timeline</span>
-          <span className="ticker-item"><span>→</span>Voice-to-Video</span>
-          <span className="ticker-item"><span>→</span>AI Auto-Edit</span>
-          <span className="ticker-item"><span>→</span>Multi-Language Captions</span>
-          <span className="ticker-item"><span>→</span>Timeline Intelligence</span>
-          <span className="ticker-item"><span>→</span>One Platform</span>
-          <span className="ticker-item"><span>→</span>No Context Switching</span>
-        </div>
-      </div>
+      {/* DOWNLOAD SECTION */}
+      <section id="download">
+        <div className="container-sm">
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <div className="section-kicker">Get Vichith</div>
+            <h2>Download Public Beta</h2>
+          </div>
 
-      {/* STATS */}
-      <section style={{ padding: '5rem 0' }}>
-        <div className="container">
-          <div className="stat-row reveal">
-            <div className="stat-cell">
-              <div className="stat-num">5<span>→</span>1</div>
-              <div className="stat-label">Tools replaced by one workspace</div>
+          <div className="download-card reveal">
+            <div className="download-grid">
+              <div className="download-details">
+                <div className="download-row">
+                  <span className="label">Current Version:</span>
+                  <span className="val">Beta 0.5.0</span>
+                </div>
+                <div className="download-row">
+                  <span className="label">Release Date:</span>
+                  <span className="val">June 20, 2026</span>
+                </div>
+                <div className="download-row">
+                  <span className="label">File Size:</span>
+                  <span className="val">~92 MB</span>
+                </div>
+                <div className="download-row">
+                  <span className="label">Platform:</span>
+                  <span className="val">Windows 10 / 11 (64-bit)</span>
+                </div>
+              </div>
+              <div className="download-action-cell">
+                <button onClick={handleDownload} className="btn-primary" style={{ width: '100%' }}>
+                  Download for Windows
+                </button>
+                <div className="download-stats">
+                  <span className="stat-dot"></span>Over 1,240 builders active this week
+                </div>
+              </div>
             </div>
-            <div className="stat-cell">
-              <div className="stat-num"><span>~</span>80<span>%</span></div>
-              <div className="stat-label">Reduction in editing time</div>
-            </div>
-            <div className="stat-cell">
-              <div className="stat-num">4<span>+</span></div>
-              <div className="stat-label">Indian languages supported at launch</div>
+
+            {/* Notice Card */}
+            <div className="notice-card">
+              <div className="notice-icon">🛈</div>
+              <div className="notice-body">
+                <p>
+                  <strong>Vichith is distributed directly by the Vichith team.</strong>
+                </p>
+                <p>
+                  Because this beta build is not yet code-signed, Windows may display security warnings during installation. This is expected behavior for unsigned software.
+                </p>
+                <a href="/download-guide" className="notice-link">
+                  View Installation Guide &rarr;
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* PROBLEM */}
+      {/* SURVEY MODAL POPUP */}
+      {showSurvey && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <button onClick={() => setShowSurvey(false)} className="modal-close-btn">&times;</button>
+            {surveySuccess ? (
+              <div className="modal-success">
+                <div className="success-icon">✓</div>
+                <h3>Thank you!</h3>
+                <p>Your responses help us improve Vichith and fuel our developer updates.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSurveySubmit}>
+                <h3>Thank you for downloading Vichith!</h3>
+                <p className="modal-sub">Help us tailor your beta experience by answering two quick questions.</p>
+
+                <div className="modal-group">
+                  <label>What best describes you?</label>
+                  <select
+                    value={surveyRole}
+                    onChange={(e) => setSurveyRole(e.target.value)}
+                    required
+                    className="modal-select"
+                  >
+                    <option value="">Select a description...</option>
+                    <option value="Creator">Creator</option>
+                    <option value="Editor">Editor</option>
+                    <option value="YouTuber">YouTuber</option>
+                    <option value="Filmmaker">Filmmaker</option>
+                    <option value="Student">Student</option>
+                    <option value="Agency">Agency</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="modal-group">
+                  <label>How did you discover Vichith?</label>
+                  <select
+                    value={surveySource}
+                    onChange={(e) => setSurveySource(e.target.value)}
+                    required
+                    className="modal-select"
+                  >
+                    <option value="">Select a source...</option>
+                    <option value="Product Hunt">Product Hunt</option>
+                    <option value="X">X (formerly Twitter)</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Discord">Discord</option>
+                    <option value="Friend">Friend / Word of Mouth</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1.25rem' }} disabled={surveySubmitting}>
+                  {surveySubmitting ? 'Saving...' : 'Submit & Finish'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PROBLEM / SOLUTION */}
       <section id="problem">
         <div className="container">
           <div className="problem-grid">
@@ -278,126 +396,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="features">
-        <div className="container">
-          <div className="features-header reveal">
-            <div className="section-kicker">Features</div>
-            <h2>Intelligence at every layer of your workflow.</h2>
-          </div>
-          <div className="features-grid reveal reveal-delay-1">
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M9 17H5a2 2 0 0 0-2 2v2" />
-                  <path d="M11 11h8a2 2 0 0 1 2 2v3" />
-                  <rect x="1" y="3" width="14" height="8" rx="1" />
-                  <rect x="13" y="13" width="8" height="8" rx="1" />
-                </svg>
-              </div>
-              <div className="feature-title">Timeline Intelligence</div>
-              <div className="feature-desc">AI reads your intent and arranges scenes into a professional timeline with proper pacing, cuts, and transitions.</div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                  <line x1="12" y1="19" x2="12" y2="23" />
-                  <line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              </div>
-              <div className="feature-title">Voice-to-Video</div>
-              <div className="feature-desc">Narrate your video concept out loud. Vichith transcribes, structures, and turns your spoken ideas into editable timelines.</div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m4.93 4.93 14.14 14.14" />
-                </svg>
-              </div>
-              <div className="feature-title">AI Auto-Edit</div>
-              <div className="feature-desc">Describe an edit in plain language. "Make the intro tighter" or "add B-roll between scene 2 and 3." Vichith executes.</div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24">
-                  <rect x="2" y="7" width="20" height="15" rx="2" />
-                  <polyline points="17 2 12 7 7 2" />
-                </svg>
-              </div>
-              <div className="feature-title">Multi-Language Captions</div>
-              <div className="feature-desc">Auto-generated captions with full support for Hindi, Telugu, Tamil, and Kannada — with proper script rendering.</div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </div>
-              <div className="feature-title">Creator Control</div>
-              <div className="feature-desc">AI assists, you decide. Every AI action is a suggestion. You approve, reject, or modify anything the model produces.</div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* STUDIO */}
+      {/* UI MOCKUP */}
       <section id="studio">
         <div className="container">
-          <div className="studio-inner">
-            <div>
-              <div className="section-kicker reveal">Vichith Studio — Coming Soon</div>
-              <h2 className="reveal reveal-delay-1">Every AI model.<br />One workspace.</h2>
-              <p className="lead reveal reveal-delay-2" style={{ marginTop: '1.25rem' }}>
-                The future of Vichith is a unified creative environment where you generate video, images, and audio — all inside the same timeline, all connected.
-              </p>
-              <div className="studio-models reveal reveal-delay-3">
-                <div className="model-card">
-                  <div className="model-card-type">Video</div>
-                  <div className="model-card-name">Video Generation</div>
-                  <div className="model-card-desc">Generate clips directly from text prompts inside your timeline.</div>
-                </div>
-                <div className="model-card">
-                  <div className="model-card-type">Image</div>
-                  <div className="model-card-name">Image Generation</div>
-                  <div className="model-card-desc">Create thumbnails, B-roll stills, and motion graphics in-context.</div>
-                </div>
-                <div className="model-card">
-                  <div className="model-card-type">Audio</div>
-                  <div className="model-card-name">Audio & Music</div>
-                  <div className="model-card-desc">Generate background scores and voiceovers tuned to your edit.</div>
-                </div>
-                <div className="model-card">
-                  <div className="model-card-type">Language</div>
-                  <div className="model-card-name">Script Intelligence</div>
-                  <div className="model-card-desc">Rewrite, translate, and restructure scripts in any regional language.</div>
-                </div>
-              </div>
-            </div>
-            <div className="studio-orbit reveal reveal-delay-2">
-              <div className="orbit-ring orbit-ring-1">
-                <div className="orbit-dot" style={{ top: '-16px', left: 'calc(50% - 16px)' }}>Vid</div>
-              </div>
-              <div className="orbit-ring orbit-ring-2">
-                <div className="orbit-dot" style={{ top: '-16px', left: 'calc(50% - 16px)' }}>Img</div>
-                <div className="orbit-dot" style={{ bottom: '-16px', left: 'calc(50% - 16px)' }}>Aud</div>
-              </div>
-              <div className="orbit-ring orbit-ring-3">
-                <div className="orbit-dot" style={{ top: '-16px', left: 'calc(50% - 16px)' }}>TTS</div>
-                <div className="orbit-dot" style={{ bottom: '-16px', left: 'calc(50% - 16px)' }}>LLM</div>
-                <div className="orbit-dot" style={{ left: '-16px', top: 'calc(50% - 16px)' }}>STT</div>
-              </div>
-              <div className="orbit-center">
-                <div className="orbit-center-text">VICHITH</div>
-              </div>
-            </div>
+          <div className="reveal" style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto 4rem' }}>
+            <div className="section-kicker">The Editor</div>
+            <h2>Vichith Desktop Studio</h2>
           </div>
-
-          {/* UI MOCKUP */}
-          <div className="hero-visual reveal reveal-delay-4">
+          <div className="hero-visual reveal reveal-delay-2">
             <div className="hero-screen">
               <div className="screen-bar">
                 <div className="screen-dot"></div>
@@ -488,123 +494,148 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* VISION */}
-      <section id="vision">
-        <div className="vision-glow"></div>
-        <div className="container-sm">
-          <div className="section-kicker reveal" style={{ textAlign: 'center' }}>Our vision</div>
-          <div className="vision-quote reveal reveal-delay-1">
-            The future isn't AI <em>generating</em> videos.<br />The future is AI <em>understanding</em> workflows.
-          </div>
-          <p className="vision-body reveal reveal-delay-2">
-            Every creator today loses hours to toolchain friction — not creative work. Vichith is building the missing layer: an intelligent operating system where your intent becomes content, without the chaos in between.
+      {/* BUILDING IN PUBLIC SECTION */}
+      <section id="building-in-public">
+        <div className="container-sm" style={{ textAlign: 'center' }}>
+          <div className="section-kicker reveal">Transparency</div>
+          <h2 className="reveal reveal-delay-1">Building in Public</h2>
+          <p className="vision-body reveal reveal-delay-2" style={{ marginTop: '1.5rem', fontSize: '1.1rem', color: 'var(--text-2)' }}>
+            We're launching early because we believe great creative tools are built alongside real creators.
+            Some features are incomplete. Some workflows will evolve. Some bugs still exist.
           </p>
-          <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center' }} className="reveal reveal-delay-3">
-            <a href="#beta" className="btn-primary">Be part of the story</a>
-          </div>
+          <p className="vision-body reveal reveal-delay-3" style={{ marginTop: '1rem', fontSize: '1.1rem', color: 'var(--text-2)' }}>
+            Your feedback directly influences what Vichith becomes. Thank you for helping us build it.
+          </p>
         </div>
       </section>
 
-      {/* SOCIAL PROOF */}
-      <section id="proof">
+      {/* ROADMAP SECTION */}
+      <section id="roadmap">
         <div className="container">
-          <div className="reveal" style={{ textAlign: 'center', maxWidth: '560px', margin: '0 auto' }}>
-            <div className="section-kicker">Early Access</div>
-            <h2>Built for creators,<br />by builders who get it.</h2>
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: '4rem' }}>
+            <div className="section-kicker">The Plan</div>
+            <h2>Product Roadmap</h2>
           </div>
-          <div className="proof-grid">
-            <div className="proof-card reveal">
-              <div className="proof-stars">
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
+
+          <div className="roadmap-grid reveal reveal-delay-2">
+            <div className="roadmap-col">
+              <div className="roadmap-header-col">
+                <span className="badge-col now">Now</span>
+                <h3>Active Development</h3>
               </div>
-              <div className="proof-text">
-                "I've been waiting for something like this. Jumping between CapCut, ElevenLabs, and Canva for every video is exhausting. Vichith feels like the thing that should have existed two years ago."
-              </div>
-              <div className="proof-author">
-                <div className="proof-avatar">RK</div>
-                <div>
-                  <div className="proof-name">Ravi Kumar</div>
-                  <div className="proof-role">Telugu YouTuber · 240K subscribers</div>
-                </div>
-              </div>
+              <ul className="roadmap-list">
+                <li><span>➔</span> Timeline seeking performance fixes</li>
+                <li><span>➔</span> Improved regional language alignment for Telugu</li>
+                <li><span>➔</span> Audio waveform generation caching</li>
+              </ul>
             </div>
-            <div className="proof-card reveal reveal-delay-1">
-              <div className="proof-stars">
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
+
+            <div className="roadmap-col">
+              <div className="roadmap-header-col">
+                <span className="badge-col next">Next</span>
+                <h3>Coming Soon</h3>
               </div>
-              <div className="proof-text">
-                "The prompt-to-timeline feature alone saves me 3–4 hours per video. The AI understands context in a way I haven't seen in any other tool. The Hindi caption support is exactly what the creator space needed."
-              </div>
-              <div className="proof-author">
-                <div className="proof-avatar">PS</div>
-                <div>
-                  <div className="proof-name">Priya Sharma</div>
-                  <div className="proof-role">Solo Creator · Tech & Finance · Hindi</div>
-                </div>
-              </div>
+              <ul className="roadmap-list">
+                <li><span>➔</span> Multi-track video compounding</li>
+                <li><span>➔</span> Direct-to-platform export tools</li>
+                <li><span>➔</span> VST plugin support for custom audio filters</li>
+              </ul>
             </div>
-            <div className="proof-card reveal reveal-delay-2">
-              <div className="proof-stars">
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
-                <div className="star"></div>
+
+            <div className="roadmap-col">
+              <div className="roadmap-header-col">
+                <span className="badge-col future">Future</span>
+                <h3>Long-term Vision</h3>
               </div>
-              <div className="proof-text">
-                "What Linear did for project management, Vichith is doing for video. It respects my intelligence as a creator and gives me AI that assists rather than decides. Local-first is a massive differentiator."
-              </div>
-              <div className="proof-author">
-                <div className="proof-avatar">AJ</div>
-                <div>
-                  <div className="proof-name">Arjun J.</div>
-                  <div className="proof-role">Indie Filmmaker · Beta Tester</div>
-                </div>
-              </div>
+              <ul className="roadmap-list">
+                <li><span>➔</span> Cloud-native project synchronization</li>
+                <li><span>➔</span> Real-time collaborative edit sessions</li>
+                <li><span>➔</span> Local model hardware-acceleration pipeline</li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* BETA CTA */}
-      <section id="beta">
+      {/* COMMUNITY SECTION */}
+      <section id="community">
         <div className="beta-glow"></div>
         <div className="container-sm" style={{ textAlign: 'center' }}>
-          <div className="section-kicker reveal">Private Beta</div>
-          <h2 className="beta-title reveal reveal-delay-1">
-            Start creating<br />without the <span className="accent">chaos.</span>
-          </h2>
+          <div className="section-kicker reveal">Community-Driven</div>
+          <h2 className="reveal reveal-delay-1">Help Build Vichith</h2>
           <p className="beta-sub reveal reveal-delay-2">
-            Join early access and help shape the future of video creation for Indian creators and beyond.
+            Vichith is still in its early stages. There is a lot more to build, improve, and reimagine. Join the community to share feedback, report issues, suggest features, discuss workflows, get beta updates, and help shape the future of Vichith.
           </p>
-          <div className="beta-input-row reveal reveal-delay-3">
+          <div className="hero-actions reveal reveal-delay-3" style={{ marginTop: '2rem' }}>
+            <a href="https://discord.gg/N5J24RBsXn" target="_blank" rel="noopener noreferrer" className="btn-primary">
+              Join Discord
+            </a>
+            <a href="#newsletter-footer" className="btn-ghost">
+              Follow Updates
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* SOCIAL HUB */}
+      <section id="social-hub">
+        <div className="container" style={{ textAlign: 'center' }}>
+          <div className="reveal" style={{ marginBottom: '3rem' }}>
+            <div className="section-kicker">Get Connected</div>
+            <h2>Follow the Journey</h2>
+          </div>
+          
+          <div className="social-links-grid reveal reveal-delay-2">
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="social-card">
+              <div className="social-title">X (Twitter)</div>
+              <div className="social-subtitle">@vichith_edit</div>
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="social-card">
+              <div className="social-title">LinkedIn</div>
+              <div className="social-subtitle">Vichith AI</div>
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-card">
+              <div className="social-title">Instagram</div>
+              <div className="social-subtitle">@vichith.ai</div>
+            </a>
+            <a href="https://discord.gg/N5J24RBsXn" target="_blank" rel="noopener noreferrer" className="social-card">
+              <div className="social-title">Discord</div>
+              <div className="social-subtitle">Vichith Creator Hub</div>
+            </a>
+            <a href="https://github.com/saarthi-ai-77/vichith-web" target="_blank" rel="noopener noreferrer" className="social-card">
+              <div className="social-title">GitHub</div>
+              <div className="social-subtitle">saarthi-ai-77/vichith-web</div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* NEWSLETTER FOOTER REGISTRATION */}
+      <section id="newsletter-footer" style={{ borderTop: '1px solid var(--border)', background: 'var(--surface2)' }}>
+        <div className="container-sm" style={{ textAlign: 'center' }}>
+          <h3>Get Beta Updates</h3>
+          <p style={{ color: 'var(--text-2)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            Be the first to hear when new features and security-signed releases are available.
+          </p>
+          <div className="beta-input-row">
             <input
               className="beta-input"
               type="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={status === 'loading' || status === 'success'}
+              disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
             />
             <button
               className="btn-primary"
-              onClick={() => handleBetaSubmit()}
-              disabled={status === 'loading' || status === 'success'}
+              onClick={() => handleNewsletterSubmit()}
+              disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
             >
-              {status === 'loading' ? 'Requesting...' : 'Request Access'}
+              {newsletterStatus === 'loading' ? 'Saving...' : 'Follow Updates'}
             </button>
           </div>
-          <div className="beta-note reveal reveal-delay-4" style={{ color: status === 'error' ? '#ff6b6b' : status === 'success' ? 'var(--cyan)' : 'var(--text-3)' }}>
-            {feedbackMsg}
+          <div className="beta-note" style={{ color: newsletterStatus === 'error' ? '#ff6b6b' : newsletterStatus === 'success' ? 'var(--cyan)' : 'var(--text-3)', marginTop: '0.75rem' }}>
+            {newsletterMsg}
           </div>
         </div>
       </section>
@@ -612,13 +643,39 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer>
         <div className="container">
-          <div className="footer-inner">
-            <a href="#" className="footer-logo">vi<span>chith</span></a>
-            <div className="footer-links">
-              <a href="https://www.linkedin.com/in/nikshith-yadagiri-884985375/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-              <a href="https://discord.gg/baBZSv5s" target="_blank" rel="noopener noreferrer">Discord</a>
-              <a href="mailto:info.vichith@gmail.com">Contact</a>
+          <div className="footer-cols">
+            <div className="footer-brand-col">
+              <a href="#" className="footer-logo">vi<span>chith</span></a>
+              <p className="footer-desc">An editor for modern video workflows. Built for and alongside creators.</p>
+              <div className="footer-status-badge">
+                <span className="dot"></span>Public Beta Active
+              </div>
             </div>
+            
+            <div className="footer-links-col">
+              <h4>Download</h4>
+              <a href="/#download">Download Beta</a>
+              <a href="/download-guide">Installation Guide</a>
+              <span className="footer-version">v0.5.0 (Windows)</span>
+            </div>
+
+            <div className="footer-links-col">
+              <h4>Beta Hub</h4>
+              <a href="/report">Report Issue</a>
+              <a href="/known-issues">Known Issues</a>
+              <a href="/changelog">Changelog</a>
+              <a href="/#roadmap">Roadmap</a>
+            </div>
+
+            <div className="footer-links-col">
+              <h4>Community</h4>
+              <a href="https://discord.gg/N5J24RBsXn" target="_blank" rel="noopener noreferrer">Discord</a>
+              <a href="https://x.com" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
+              <a href="mailto:info.vichith@gmail.com">Contact Support</a>
+            </div>
+          </div>
+          
+          <div className="footer-bottom">
             <div className="footer-copy">© 2026 Vichith. All rights reserved.</div>
           </div>
         </div>

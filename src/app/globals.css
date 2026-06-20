@@ -1491,3 +1491,1063 @@ footer {
         font-size: 2.5rem
     }
 }
+
+/* ── GLOBAL BETA BANNER ── */
+.beta-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border-hi);
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    text-align: center;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    color: var(--text-2);
+}
+
+.beta-banner-strong {
+    color: var(--text);
+    font-weight: 600;
+    margin-right: 0.25rem;
+}
+
+.beta-banner-links {
+    display: inline-flex;
+    gap: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+.beta-banner-links a {
+    color: var(--cyan);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.beta-banner-links a:hover {
+    opacity: 0.8;
+}
+
+/* Shift nav down if banner is present */
+.beta-hub nav {
+    top: 36px;
+}
+
+.beta-hub #hero {
+    padding-top: 10rem;
+}
+
+/* ── HERO METADATA & SUBTAGLINE ── */
+.hero-tagline-sub {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 3vw, 1.8rem);
+    color: var(--cyan);
+    margin-top: 0.5rem;
+    font-weight: 700;
+}
+
+.hero-metadata {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-3);
+    font-size: 0.8125rem;
+    margin-top: 1.5rem;
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.hero-metadata .divider {
+    color: var(--border-hi);
+}
+
+/* ── DOWNLOAD SECTION ── */
+.download-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 40px 80px -15px rgba(0,0,0,0.8);
+    position: relative;
+    overflow: hidden;
+}
+
+.download-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2.5rem;
+    align-items: center;
+}
+
+.download-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.download-row {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.download-row:last-child {
+    border-bottom: none;
+}
+
+.download-row .label {
+    color: var(--text-3);
+    font-size: 0.875rem;
+}
+
+.download-row .val {
+    color: var(--text);
+    font-weight: 500;
+    font-size: 0.9375rem;
+}
+
+.download-action-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+}
+
+.download-stats {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+}
+
+.download-stats .stat-dot {
+    width: 6px;
+    height: 6px;
+    background: #28ca41;
+    border-radius: 50%;
+}
+
+/* ── NOTICE CARD ── */
+.notice-card {
+    background: #0d0e1290;
+    border: 1px solid var(--border-hi);
+    border-left: 3px solid #ff9800;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.notice-icon {
+    font-size: 1.25rem;
+    color: #ff9800;
+    line-height: 1;
+}
+
+.notice-body {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.notice-link {
+    color: var(--cyan);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.notice-link:hover {
+    text-decoration: underline;
+}
+
+/* ── SURVEY MODAL ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.modal-card {
+    background: var(--surface2);
+    border: 1px solid var(--border-hi);
+    border-radius: 16px;
+    padding: 2.5rem;
+    max-width: 460px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 40px 80px -10px rgba(0,0,0,0.9);
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.modal-close-btn:hover {
+    color: var(--text);
+}
+
+.modal-sub {
+    color: var(--text-2);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.modal-group {
+    margin-bottom: 1.25rem;
+}
+
+.modal-group label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--text-2);
+    margin-bottom: 0.5rem;
+}
+
+.modal-select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    outline: none;
+    font-family: var(--font-body);
+}
+
+.modal-select:focus {
+    border-color: var(--cyan);
+}
+
+.modal-success {
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.success-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--cyan-glow);
+    color: var(--cyan);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+}
+
+/* ── ROADMAP SECTION ── */
+.roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.roadmap-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.roadmap-header-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.badge-col {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.25rem 0.625rem;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+.badge-col.now {
+    background: rgba(0, 212, 200, 0.1);
+    color: var(--cyan);
+    border: 1px solid var(--cyan-dim);
+}
+
+.badge-col.next {
+    background: rgba(26, 111, 255, 0.1);
+    color: var(--blue);
+    border: 1px solid rgba(26, 111, 255, 0.3);
+}
+
+.badge-col.future {
+    background: var(--surface2);
+    color: var(--text-2);
+    border: 1px solid var(--border-hi);
+}
+
+.roadmap-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.roadmap-list li {
+    font-size: 0.9rem;
+    color: var(--text-2);
+    line-height: 1.5;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.roadmap-list li span {
+    color: var(--cyan);
+    font-size: 0.8rem;
+}
+
+/* ── SOCIAL HUB ── */
+.social-links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.social-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.social-card:hover {
+    border-color: var(--cyan);
+    transform: translateY(-2px);
+}
+
+.social-title {
+    font-family: var(--font-display);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.social-subtitle {
+    color: var(--text-3);
+    font-size: 0.8125rem;
+}
+
+/* ── FOOTER MULTI-COLUMN ── */
+.footer-cols {
+    display: grid;
+    grid-template-columns: 2fr repeat(3, 1fr);
+    gap: 3rem;
+    margin-bottom: 3rem;
+}
+
+.footer-brand-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.footer-desc {
+    color: var(--text-2);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.footer-status-badge {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface2);
+    border: 1px solid var(--border-hi);
+    border-radius: 100px;
+    padding: 0.25rem 0.875rem;
+    font-size: 0.75rem;
+    color: var(--text-2);
+}
+
+.footer-status-badge .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--cyan);
+    border-radius: 50%;
+}
+
+.footer-links-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.footer-links-col h4 {
+    font-family: var(--font-display);
+    color: var(--text);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.footer-links-col a {
+    color: var(--text-3);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+}
+
+.footer-links-col a:hover {
+    color: var(--cyan);
+}
+
+.footer-version {
+    color: var(--text-3);
+    font-size: 0.75rem;
+    margin-top: auto;
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── NEW PAGES: COMMON CONTAINERS ── */
+.report-container, .guide-container, .issues-container, .changelog-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 10rem 1.5rem 6rem;
+    position: relative;
+}
+
+.report-bg-glow, .guide-bg-glow, .issues-bg-glow, .changelog-bg-glow {
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse at center, #00d4c808 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.report-header, .guide-header, .issues-header, .changelog-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.report-kicker, .guide-kicker, .issues-kicker, .changelog-kicker {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--cyan);
+}
+
+.report-header h1, .guide-header h1, .issues-header h1, .changelog-header h1 {
+    margin-top: 0.5rem;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.report-header p, .guide-header p, .issues-header p, .changelog-header p {
+    color: var(--text-2);
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* ── REPORT FORM STYLES ── */
+.report-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 3rem;
+    box-shadow: 0 40px 80px -15px rgba(0,0,0,0.8);
+}
+
+.report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    font-weight: 500;
+}
+
+.form-control {
+    background: var(--surface2);
+    border: 1px solid var(--border-hi);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px var(--cyan-glow);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.severity-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.severity-card {
+    background: var(--surface2);
+    border: 1px solid var(--border-hi);
+    border-radius: 8px;
+    padding: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.severity-card:hover {
+    border-color: var(--cyan-dim);
+}
+
+.severity-card.active {
+    border-color: var(--cyan);
+    background: var(--cyan-glow);
+}
+
+.severity-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-3);
+    transition: background-color 0.2s;
+}
+
+.severity-card.active .severity-dot {
+    background: var(--cyan);
+}
+
+.severity-label {
+    font-size: 0.875rem;
+    color: var(--text-2);
+}
+
+.severity-card.active .severity-label {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.file-upload-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.file-uploader {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.file-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+}
+
+.file-upload-btn {
+    background: var(--surface2);
+    border: 1px dashed var(--border-hi);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-upload-btn:hover {
+    border-color: var(--cyan);
+    color: var(--text);
+}
+
+.error-banner {
+    background: rgba(255, 95, 87, 0.1);
+    border: 1px solid rgba(255, 95, 87, 0.3);
+    color: #ff5f57;
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 0.875rem;
+}
+
+.report-success {
+    text-align: center;
+    padding: 3rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.report-link {
+    color: var(--cyan);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.report-link:hover {
+    text-decoration: underline;
+}
+
+/* ── DOWNLOAD GUIDE PAGE STYLES ── */
+.guide-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+}
+
+.steps-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.guide-step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 1.5rem;
+}
+
+.step-num-badge {
+    width: 48px;
+    height: 48px;
+    background: var(--surface2);
+    border: 1px solid var(--border-hi);
+    color: var(--cyan);
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-body h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.step-body p {
+    color: var(--text-2);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+/* Mock Windows SmartScreen Dialogue box */
+.mock-smartscreen {
+    background: #0f1c3f;
+    border: 1px solid #1a3c7a;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    max-width: 500px;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    text-align: left;
+}
+
+.mock-ss-title {
+    font-size: 0.75rem;
+    color: #90a4ae;
+    margin-bottom: 0.5rem;
+}
+
+.mock-ss-header {
+    font-size: 1.5rem;
+    font-weight: 300;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.mock-ss-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: #e0e0e0;
+    margin-bottom: 1.5rem;
+}
+
+.mock-ss-actions {
+    margin-bottom: 2rem;
+}
+
+.mock-ss-link {
+    font-size: 0.875rem;
+    color: #40c4ff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.mock-ss-buttons {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.mock-ss-btn {
+    background: #00838f;
+    color: #fff;
+    padding: 0.375rem 1.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.mock-ss-metadata {
+    background: rgba(0,0,0,0.2);
+    padding: 0.75rem;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    font-size: 0.8125rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #cfd8dc;
+}
+
+.mock-ss-buttons-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.mock-ss-btn.accent {
+    background: #00838f;
+}
+
+/* FAQ STYLES */
+.guide-faq-section {
+    border-top: 1px solid var(--border);
+    padding-top: 4rem;
+    margin-top: 2rem;
+}
+
+.guide-faq-section h2 {
+    font-family: var(--font-display);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.faq-item {
+    margin-bottom: 2rem;
+}
+
+.faq-item h4 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+
+.faq-item p {
+    color: var(--text-2);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+/* ── KNOWN ISSUES PAGE STYLES ── */
+.issues-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.issue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.issue-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.issue-category {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cyan);
+}
+
+.issue-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text);
+    background: var(--surface2);
+    padding: 0.25rem 0.625rem;
+    border-radius: 100px;
+    border-left: 3px solid transparent;
+}
+
+.issue-status .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.issue-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.issue-desc {
+    color: var(--text-2);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.issue-workaround {
+    background: var(--surface2);
+    border: 1px solid var(--border-hi);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-2);
+    margin-bottom: 1rem;
+}
+
+.issue-workaround strong {
+    color: var(--text);
+}
+
+.issue-fix-window {
+    font-size: 0.8125rem;
+    color: var(--text-3);
+}
+
+.issue-fix-window strong {
+    color: var(--text-2);
+}
+
+/* ── CHANGELOG PAGE STYLES ── */
+.changelog-timeline {
+    position: relative;
+    padding-left: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+}
+
+.changelog-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 7px;
+    width: 1px;
+    background: var(--border-hi);
+}
+
+.changelog-node {
+    position: relative;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 2rem;
+}
+
+.changelog-node::before {
+    content: '';
+    position: absolute;
+    left: -29px;
+    top: 6px;
+    width: 15px;
+    height: 15px;
+    background: var(--black);
+    border: 3px solid var(--cyan);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.changelog-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.changelog-badge {
+    align-self: flex-start;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--cyan);
+}
+
+.changelog-date {
+    font-size: 0.8125rem;
+    color: var(--text-3);
+    font-family: var(--font-display);
+}
+
+.changelog-tagline {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.changelog-highlights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.changelog-item h4 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+}
+
+.changelog-item p {
+    color: var(--text-2);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* ── RESPONSIVE ADAPTATIONS FOR BETA LAUNCH HUB ── */
+@media(max-width: 900px) {
+    .download-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .roadmap-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .footer-cols {
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+    
+    .changelog-node {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .severity-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .file-upload-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+@media(max-width: 600px) {
+    .beta-banner {
+        font-size: 0.75rem;
+        gap: 0.25rem;
+    }
+    .beta-banner-links {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.25rem;
+    }
+    
+    .beta-hub nav {
+        top: 56px;
+    }
+    
+    .report-card, .guide-step-card, .issue-card {
+        padding: 1.5rem;
+    }
+    
+    .guide-step-card {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
