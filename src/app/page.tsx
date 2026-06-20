@@ -513,45 +513,64 @@ export default function LandingPage() {
       <section id="roadmap">
         <div className="container">
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <div className="section-kicker">The Plan</div>
-            <h2>Product Roadmap</h2>
+            <div className="section-kicker">THE ROADMAP</div>
+            <h2>Building Vichith, One Workflow at a Time</h2>
+            <p className="roadmap-sub reveal reveal-delay-1" style={{ color: 'var(--text-2)', marginTop: '1rem', fontSize: '1.1rem', maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto', lineHeight: '1.6' }}>
+              The beta is only the beginning. Here's what we're actively improving, what we're building next, and where we're headed long term.
+            </p>
           </div>
 
           <div className="roadmap-grid reveal reveal-delay-2">
             <div className="roadmap-col">
               <div className="roadmap-header-col">
                 <span className="badge-col now">Now</span>
-                <h3>Active Development</h3>
+                <h3>Available in Beta</h3>
               </div>
               <ul className="roadmap-list">
-                <li><span>➔</span> Timeline seeking performance fixes</li>
-                <li><span>➔</span> Improved regional language alignment for Telugu</li>
-                <li><span>➔</span> Audio waveform generation caching</li>
+                <li><span>➔</span> Timeline Editing</li>
+                <li><span>➔</span> Keyframes & Animation</li>
+                <li><span>➔</span> Playback & Export Workflows</li>
+                <li><span>➔</span> Active Stability & Performance Improvements</li>
               </ul>
+              <div className="roadmap-footer-text" style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-3)' }}>
+                Available today in the public beta.
+              </div>
             </div>
 
             <div className="roadmap-col">
               <div className="roadmap-header-col">
                 <span className="badge-col next">Next</span>
-                <h3>Coming Soon</h3>
+                <h3>Coming Next</h3>
               </div>
               <ul className="roadmap-list">
-                <li><span>➔</span> Multi-track video compounding</li>
-                <li><span>➔</span> Direct-to-platform export tools</li>
-                <li><span>➔</span> VST plugin support for custom audio filters</li>
+                <li><span>➔</span> Audio Editing Enhancements</li>
+                <li><span>➔</span> Multi-Track Workflow Improvements</li>
+                <li><span>➔</span> Faster Export Performance</li>
+                <li><span>➔</span> Expanded Effects Library</li>
+                <li><span>➔</span> Better Creator Quality-of-Life Tools</li>
+                <li><span>➔</span> Improved Editing Experience</li>
               </ul>
+              <div className="roadmap-footer-text" style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-3)' }}>
+                Features currently being developed.
+              </div>
             </div>
 
             <div className="roadmap-col">
               <div className="roadmap-header-col">
                 <span className="badge-col future">Future</span>
-                <h3>Long-term Vision</h3>
+                <h3>The Vision</h3>
               </div>
               <ul className="roadmap-list">
-                <li><span>➔</span> Cloud-native project synchronization</li>
-                <li><span>➔</span> Real-time collaborative edit sessions</li>
-                <li><span>➔</span> Local model hardware-acceleration pipeline</li>
+                <li><span>➔</span> AI-Assisted Editing Workflows</li>
+                <li><span>➔</span> Voice-Powered Creative Commands</li>
+                <li><span>➔</span> Collaborative Editing</li>
+                <li><span>➔</span> Intelligent Project Organization</li>
+                <li><span>➔</span> Workflow Automation</li>
+                <li><span>➔</span> A More Connected Creative Workspace</li>
               </ul>
+              <div className="roadmap-footer-text" style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-3)' }}>
+                The long-term direction of Vichith.
+              </div>
             </div>
           </div>
         </div>
