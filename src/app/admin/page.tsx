@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface Report {
   id: any;
@@ -18,6 +18,7 @@ interface Report {
 
 export default function AdminDashboard() {
   const [passcode, setPasscode] = useState('');
+  const [activePasscode, setActivePasscode] = useState(''); // Stores verified passcode for future API calls
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [reports, setReports] = useState<Report[]>([]);
@@ -26,30 +27,67 @@ export default function AdminDashboard() {
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterSeverity, setFilterSeverity] = useState('All');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === 'vichith2026') {
-      setIsAuthenticated(true);
-      setErrorMsg('');
-      fetchReports();
-    } else {
-      setErrorMsg('Incorrect passcode. Please try again.');
-    }
-  };
-
-  const fetchReports = async () => {
+    if (!passcode) return;
+    setErrorMsg('');
     setLoading(true);
+
     try {
-      const res = await fetch('/api/admin/reports');
+      // Call reports API with input passcode in custom header
+      const res = await fetch('/api/admin/reports', {
+        method: 'GET',
+        headers: {
+          'x-admin-passcode': passcode
+        }
+      });
+
       const data = await res.json();
+
       if (res.ok && data.reports) {
+        setIsAuthenticated(true);
+        setActivePasscode(passcode);
         setReports(data.reports);
         if (data.reports.length > 0) {
           setSelectedReport(data.reports[0]);
         }
+      } else {
+        setErrorMsg(data.error || 'Incorrect passcode. Please try again.');
       }
     } catch (err) {
-      console.error(err);
+      setErrorMsg('A network error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    if (!activePasscode) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/reports', {
+        method: 'GET',
+        headers: {
+          'x-admin-passcode': activePasscode
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.reports) {
+        setReports(data.reports);
+        // Retain selection if still in list, otherwise select first
+        if (data.reports.length > 0) {
+          const stillExists = data.reports.find((r: Report) => r.id === selectedReport?.id);
+          if (!stillExists) {
+            setSelectedReport(data.reports[0]);
+          }
+        } else {
+          setSelectedReport(null);
+        }
+      } else {
+        setErrorMsg(data.error || 'Failed to sync reports.');
+      }
+    } catch (err) {
+      setErrorMsg('Failed to refresh data.');
     } finally {
       setLoading(false);
     }
@@ -78,12 +116,13 @@ export default function AdminDashboard() {
                 onChange={(e) => setPasscode(e.target.value)}
                 className="form-control"
                 style={{ textAlign: 'center', fontSize: '1.1rem', letterSpacing: '0.1em' }}
+                disabled={loading}
                 required
                 autoFocus
               />
             </div>
-            <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-              Unlock Dashboard
+            <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
+              {loading ? 'Authenticating...' : 'Unlock Dashboard'}
             </button>
           </form>
         </div>
@@ -96,8 +135,8 @@ export default function AdminDashboard() {
       <div className="admin-sidebar">
         <div className="admin-sidebar-header">
           <h3>Reports ({filteredReports.length})</h3>
-          <button onClick={fetchReports} className="refresh-btn" title="Refresh Reports">
-            ↺
+          <button onClick={fetchReports} className="refresh-btn" title="Refresh Reports" disabled={loading}>
+            {loading ? '...' : '↺'}
           </button>
         </div>
         
@@ -127,9 +166,7 @@ export default function AdminDashboard() {
 
         {/* Reports List */}
         <div className="admin-reports-list">
-          {loading ? (
-            <div className="loading-state">Loading reports...</div>
-          ) : filteredReports.length === 0 ? (
+          {filteredReports.length === 0 ? (
             <div className="empty-state">No matching reports found.</div>
           ) : (
             filteredReports.map((report, idx) => (
@@ -209,9 +246,9 @@ export default function AdminDashboard() {
               {selectedReport.attachment_urls && selectedReport.attachment_urls.length > 0 ? (
                 <div className="detail-attachments-grid">
                   {selectedReport.attachment_urls.map((url, idx) => {
-                    const isImage = url.match(/\.(jpeg|jpg|gif|png)/i) || url.includes('screenshot');
-                    const isVideo = url.match(/\.(mp4|webm|mov)/i) || url.includes('recording');
-                    const isLog = url.match(/\.(log|txt)/i) || url.includes('crashLog');
+                    const isImage = url.match(/\.(jpeg|jpg|gif|png)/i) || url.includes('screenshot') || url.includes('image');
+                    const isVideo = url.match(/\.(mp4|webm|mov)/i) || url.includes('recording') || url.includes('video');
+                    const isLog = url.match(/\.(log|txt)/i) || url.includes('crashLog') || url.includes('log');
 
                     return (
                       <div key={idx} className="attachment-preview-card">
