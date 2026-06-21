@@ -3241,3 +3241,10 @@ footer {
         gap: 1.25rem;
     }
 }
+
+/* ── FOUNDER CARD HOVER STYLE ── */
+.founder-card:hover {
+    border-color: var(--cyan) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 30px 60px rgba(0, 212, 200, 0.15) !important;
+}

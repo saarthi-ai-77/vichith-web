@@ -626,6 +626,61 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FOUNDER SECTION */}
+      <section id="founder" style={{ borderTop: '1px solid var(--border)', background: 'var(--surface2)', padding: '5rem 0' }}>
+        <div className="container" style={{ textAlign: 'center' }}>
+          <div className="reveal" style={{ marginBottom: '2.5rem' }}>
+            <div className="section-kicker">The Builder</div>
+            <h2>Behind Vichith</h2>
+          </div>
+          
+          <div className="reveal reveal-delay-2" style={{ display: 'flex', justifyContent: 'center' }}>
+            <a 
+              href="https://www.linkedin.com/in/nikshith-yadagiri-884985375/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="founder-card"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '1.25rem',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '50px',
+                padding: '0.75rem 2rem 0.75rem 0.75rem',
+                textDecoration: 'none',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+              }}
+            >
+              <div 
+                className="founder-avatar"
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, var(--cyan) 0%, var(--teal) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.5rem',
+                  fontWeight: 'bold',
+                  color: 'var(--black)',
+                  fontFamily: 'var(--font-display)'
+                }}
+              >
+                N
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Nikshith</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Founder & Builder</div>
+              </div>
+              <div style={{ color: 'var(--text-3)', marginLeft: '1rem', fontSize: '1.25rem' }}>↗</div>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* NEWSLETTER FOOTER REGISTRATION */}
       <section id="newsletter-footer" style={{ borderTop: '1px solid var(--border)', background: 'var(--surface2)' }}>
         <div className="container-sm" style={{ textAlign: 'center' }}>
@@ -687,6 +742,7 @@ export default function LandingPage() {
               <h4>Community</h4>
               <a href="https://discord.gg/MSeSsbgD" target="_blank" rel="noopener noreferrer">Discord</a>
               <a href="https://x.com/vichith_ai" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
+              <a href="https://www.linkedin.com/company/117674481" target="_blank" rel="noopener noreferrer">LinkedIn</a>
               <a href="mailto:info.vichith@gmail.com">Contact Support</a>
             </div>
           </div>
