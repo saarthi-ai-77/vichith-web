@@ -13,11 +13,10 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
   return (
     <nav id="nav" className={`${scrolled ? 'scrolled' : ''} ${isOpen ? 'mobile-open' : ''}`}>
       <a href="/" className="nav-logo">
-        <img src="/favicon_io/android-chrome-512x512.png" alt="Vichith Logo" style={{ height: '28px', width: 'auto' }} />
+        <img src="/favicon_io/android-chrome-512x512.png" alt="Vichith Logo" className="nav-logo-img" />
         <span>vi<span>chith</span></span>
       </a>
 
