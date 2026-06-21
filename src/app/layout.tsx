@@ -30,7 +30,7 @@ export default function RootLayout({
           <span>Built with creators. Improved with creators.</span>
           <div className="beta-banner-links">
             <a href="/#download">Download Beta</a>
-            <a href="https://discord.gg/N5J24RBsXn" target="_blank" rel="noopener noreferrer">Join Discord</a>
+            <a href="https://discord.gg/MSeSsbgD" target="_blank" rel="noopener noreferrer">Join Discord</a>
             <a href="/report">Report Issue</a>
           </div>
         </div>

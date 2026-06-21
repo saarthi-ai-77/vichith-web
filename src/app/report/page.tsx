@@ -46,20 +46,23 @@ export default function ReportPage() {
     setSubmitting(true);
 
     try {
-      // Simulate file upload metadata or read files as base64 if small
-      const payload = {
-        ...formData,
-        attachment_urls: [
-          screenshot ? `file:${screenshot.name} (${screenshot.size} bytes)` : '',
-          recording ? `file:${recording.name} (${recording.size} bytes)` : '',
-          crashLog ? `file:${crashLog.name} (${crashLog.size} bytes)` : '',
-        ].filter(Boolean)
-      };
+      const fd = new FormData();
+      fd.append('category', formData.category);
+      fd.append('action_attempted', formData.action_attempted);
+      fd.append('what_happened', formData.what_happened);
+      fd.append('expected_behavior', formData.expected_behavior);
+      fd.append('severity', formData.severity);
+      fd.append('app_version', formData.app_version);
+      fd.append('operating_system', formData.operating_system);
+      fd.append('email', formData.email);
+
+      if (screenshot) fd.append('screenshot', screenshot);
+      if (recording) fd.append('recording', recording);
+      if (crashLog) fd.append('crashLog', crashLog);
 
       const res = await fetch('/api/report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: fd
       });
 
       const data = await res.json();
