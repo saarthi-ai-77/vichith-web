@@ -45,27 +45,33 @@ export async function GET(req: Request) {
 
     // 4. Fetch downloads count and surveys count defensively
     let totalDownloads = 0;
+    let downloadsError = null;
     try {
       const { count, error } = await supabase
         .from('downloads')
         .select('*', { count: 'exact', head: true });
-      if (!error && count !== null) {
+      if (error) {
+        downloadsError = error.message;
+      } else if (count !== null) {
         totalDownloads = count;
       }
-    } catch (e) {
-      console.error('Failed to fetch downloads count:', e);
+    } catch (e: any) {
+      downloadsError = e.message || String(e);
     }
 
     let totalSurveys = 0;
+    let surveysError = null;
     try {
       const { count, error } = await supabase
         .from('surveys')
         .select('*', { count: 'exact', head: true });
-      if (!error && count !== null) {
+      if (error) {
+        surveysError = error.message;
+      } else if (count !== null) {
         totalSurveys = count;
       }
-    } catch (e) {
-      console.error('Failed to fetch surveys count:', e);
+    } catch (e: any) {
+      surveysError = e.message || String(e);
     }
 
     return NextResponse.json({
@@ -75,6 +81,8 @@ export async function GET(req: Request) {
         totalDownloads,
         totalSurveys,
         totalReports: reports?.length || 0,
+        downloadsError,
+        surveysError
       }
     });
   } catch (err: any) {

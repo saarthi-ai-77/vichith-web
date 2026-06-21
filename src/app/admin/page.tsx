@@ -26,16 +26,19 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterSeverity, setFilterSeverity] = useState('All');
-  
   interface AnalyticsData {
     totalDownloads: number;
     totalSurveys: number;
     totalReports: number;
+    downloadsError?: string | null;
+    surveysError?: string | null;
   }
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalDownloads: 0,
     totalSurveys: 0,
     totalReports: 0,
+    downloadsError: null,
+    surveysError: null,
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -323,7 +326,13 @@ export default function AdminDashboard() {
                   <h3>{analytics.totalDownloads}</h3>
                   <span className="card-label">App Downloads</span>
                 </div>
-                <p className="card-desc">Total executable installer downloads tracked across landing page triggers.</p>
+                {analytics.downloadsError ? (
+                  <p className="card-desc" style={{ color: '#ff5f57', fontSize: '0.75rem', marginTop: '0.5rem', background: 'rgba(255, 95, 87, 0.1)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255, 95, 87, 0.2)', wordBreak: 'break-word' }}>
+                    ⚠️ DB Error: {analytics.downloadsError}
+                  </p>
+                ) : (
+                  <p className="card-desc">Total executable installer downloads tracked across landing page triggers.</p>
+                )}
               </div>
 
               <div className="analytics-card">
@@ -332,7 +341,13 @@ export default function AdminDashboard() {
                   <h3>{analytics.totalSurveys}</h3>
                   <span className="card-label">Surveys Completed</span>
                 </div>
-                <p className="card-desc">Onboarding demographics submitted by creators post-download.</p>
+                {analytics.surveysError ? (
+                  <p className="card-desc" style={{ color: '#ff5f57', fontSize: '0.75rem', marginTop: '0.5rem', background: 'rgba(255, 95, 87, 0.1)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255, 95, 87, 0.2)', wordBreak: 'break-word' }}>
+                    ⚠️ DB Error: {analytics.surveysError}
+                  </p>
+                ) : (
+                  <p className="card-desc">Onboarding demographics submitted by creators post-download.</p>
+                )}
               </div>
 
               <div className="analytics-card">
