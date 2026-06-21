@@ -58,6 +58,9 @@ export default function LandingPage() {
     // Open release download page
     window.open('https://github.com/saarthi-ai-77/vichith-updater/releases/tag/v0.5.0', '_blank');
 
+    // Log download in database
+    fetch('/api/download', { method: 'POST' }).catch((err) => console.error('Failed to log download:', err));
+
     // Track analytics click
     if (typeof window !== 'undefined' && (window as any).va) {
       (window as any).va('event', { name: 'download_click' });

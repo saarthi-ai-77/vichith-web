@@ -26,6 +26,17 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterSeverity, setFilterSeverity] = useState('All');
+  
+  interface AnalyticsData {
+    totalDownloads: number;
+    totalSurveys: number;
+    totalReports: number;
+  }
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
+    totalDownloads: 0,
+    totalSurveys: 0,
+    totalReports: 0,
+  });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +59,10 @@ export default function AdminDashboard() {
         setIsAuthenticated(true);
         setActivePasscode(passcode);
         setReports(data.reports);
-        if (data.reports.length > 0) {
-          setSelectedReport(data.reports[0]);
+        if (data.analytics) {
+          setAnalytics(data.analytics);
         }
+        setSelectedReport(null); // Land on dashboard overview by default
       } else {
         setErrorMsg(data.error || 'Incorrect passcode. Please try again.');
       }
@@ -74,11 +86,14 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok && data.reports) {
         setReports(data.reports);
-        // Retain selection if still in list, otherwise select first
-        if (data.reports.length > 0) {
+        if (data.analytics) {
+          setAnalytics(data.analytics);
+        }
+        // Retain selection if still in list, otherwise return to dashboard overview
+        if (selectedReport !== null && data.reports.length > 0) {
           const stillExists = data.reports.find((r: Report) => r.id === selectedReport?.id);
           if (!stillExists) {
-            setSelectedReport(data.reports[0]);
+            setSelectedReport(null);
           }
         } else {
           setSelectedReport(null);
@@ -166,6 +181,14 @@ export default function AdminDashboard() {
 
         {/* Reports List */}
         <div className="admin-reports-list">
+          <div
+            className={`admin-report-item overview-item ${selectedReport === null ? 'active' : ''}`}
+            onClick={() => setSelectedReport(null)}
+          >
+            📊 Analytics Overview
+          </div>
+          <div className="list-divider"></div>
+
           {filteredReports.length === 0 ? (
             <div className="empty-state">No matching reports found.</div>
           ) : (
@@ -286,9 +309,50 @@ export default function AdminDashboard() {
             </div>
           </div>
         ) : (
-          <div className="admin-empty-main">
-            <h3>No Report Selected</h3>
-            <p>Select a report from the sidebar to inspect logs and attachments.</p>
+          <div className="admin-analytics-dashboard">
+            <div className="dashboard-header">
+              <span className="dashboard-kicker">Platform Status</span>
+              <h2>Vichith Beta Control Center</h2>
+              <p className="dashboard-sub">Live monitoring of user adoption, download activity, and feedback logs.</p>
+            </div>
+
+            <div className="analytics-grid">
+              <div className="analytics-card">
+                <div className="card-icon">📥</div>
+                <div className="card-data">
+                  <h3>{analytics.totalDownloads}</h3>
+                  <span className="card-label">App Downloads</span>
+                </div>
+                <p className="card-desc">Total executable installer downloads tracked across landing page triggers.</p>
+              </div>
+
+              <div className="analytics-card">
+                <div className="card-icon">📋</div>
+                <div className="card-data">
+                  <h3>{analytics.totalSurveys}</h3>
+                  <span className="card-label">Surveys Completed</span>
+                </div>
+                <p className="card-desc">Onboarding demographics submitted by creators post-download.</p>
+              </div>
+
+              <div className="analytics-card">
+                <div className="card-icon">🐛</div>
+                <div className="card-data">
+                  <h3>{analytics.totalReports}</h3>
+                  <span className="card-label">Bug Reports</span>
+                </div>
+                <p className="card-desc">Active crash reports, feature requests, and workflow suggestions.</p>
+              </div>
+            </div>
+
+            <div className="dashboard-guide-box">
+              <h4>Quick Actions</h4>
+              <ul>
+                <li>Select any bug report from the left sidebar to inspect logs and view screenshots/recordings.</li>
+                <li>Filter entries by severity level or category types.</li>
+                <li>Refresh data in real time by clicking the sync icon (↺) at the top of the list.</li>
+              </ul>
+            </div>
           </div>
         )}
       </div>

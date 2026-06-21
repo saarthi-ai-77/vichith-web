@@ -30,20 +30,53 @@ export async function GET(req: Request) {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 3. Fetch live records from database
-    const { data, error } = await supabase
+    const { data: reports, error: reportsError } = await supabase
       .from('reports')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Supabase DB error:', error);
+    if (reportsError) {
+      console.error('Supabase DB error:', reportsError);
       return NextResponse.json(
-        { error: `Database error: ${error.message}` },
+        { error: `Database error: ${reportsError.message}` },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, reports: data || [] });
+    // 4. Fetch downloads count and surveys count defensively
+    let totalDownloads = 0;
+    try {
+      const { count, error } = await supabase
+        .from('downloads')
+        .select('*', { count: 'exact', head: true });
+      if (!error && count !== null) {
+        totalDownloads = count;
+      }
+    } catch (e) {
+      console.error('Failed to fetch downloads count:', e);
+    }
+
+    let totalSurveys = 0;
+    try {
+      const { count, error } = await supabase
+        .from('surveys')
+        .select('*', { count: 'exact', head: true });
+      if (!error && count !== null) {
+        totalSurveys = count;
+      }
+    } catch (e) {
+      console.error('Failed to fetch surveys count:', e);
+    }
+
+    return NextResponse.json({
+      success: true,
+      reports: reports || [],
+      analytics: {
+        totalDownloads,
+        totalSurveys,
+        totalReports: reports?.length || 0,
+      }
+    });
   } catch (err: any) {
     console.error('Admin API error:', err);
     return NextResponse.json(
