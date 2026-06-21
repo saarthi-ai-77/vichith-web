@@ -131,7 +131,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="admin-dashboard-container">
+    <div className={`admin-dashboard-container ${selectedReport ? 'has-selection' : ''}`}>
       <div className="admin-sidebar">
         <div className="admin-sidebar-header">
           <h3>Reports ({filteredReports.length})</h3>
@@ -194,6 +194,9 @@ export default function AdminDashboard() {
           <div className="report-detail-view">
             <div className="detail-header">
               <div>
+                <button onClick={() => setSelectedReport(null)} className="mobile-back-btn">
+                  ← Back to Reports
+                </button>
                 <span className="detail-category">{selectedReport.category}</span>
                 <h2>{selectedReport.what_happened.split('.')[0]}...</h2>
               </div>
