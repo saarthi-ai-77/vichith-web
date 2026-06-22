@@ -12,6 +12,7 @@ export default function LandingPage() {
 
   // Survey Modal State
   const [showSurvey, setShowSurvey] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
   const [surveyRole, setSurveyRole] = useState('');
   const [surveySource, setSurveySource] = useState('');
   const [surveySubmitting, setSurveySubmitting] = useState(false);
@@ -53,8 +54,15 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Download trigger
+  // Download warning trigger
   const handleDownload = () => {
+    setShowWarning(true);
+  };
+
+  // Actual download execution after passing warning
+  const executeDownload = () => {
+    setShowWarning(false);
+
     // Open release download page
     window.open('https://github.com/saarthi-ai-77/vichith-updater/releases/tag/v0.5.0', '_blank');
 
@@ -233,6 +241,47 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* BETA WARNING MODAL POPUP */}
+      {showWarning && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '480px' }}>
+            <button onClick={() => setShowWarning(false)} className="modal-close-btn">&times;</button>
+            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚠️</div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>Beta Version Notice</h3>
+            </div>
+            
+            <p style={{ color: 'var(--text-2)', fontSize: '0.925rem', lineHeight: '1.6', marginBottom: '1.25rem', textAlign: 'center' }}>
+              Vichith is currently in active development. There are still many features to build and bugs to resolve.
+            </p>
+            
+            <p style={{ color: 'var(--text-2)', fontSize: '0.925rem', lineHeight: '1.6', marginBottom: '1.5rem', textAlign: 'center', fontWeight: 'bold' }}>
+              Please do NOT use Vichith for your primary editing projects. We encourage you to explore, test the editor, and report any issues or suggestions you encounter.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button 
+                onClick={executeDownload} 
+                className="btn-primary" 
+                style={{ width: '100%', padding: '0.875rem' }}
+              >
+                Proceed to Download
+              </button>
+              
+              <a 
+                href="https://discord.gg/MSeSsbgD" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="btn-ghost" 
+                style={{ width: '100%', padding: '0.875rem', textAlign: 'center', display: 'block', textDecoration: 'none' }}
+              >
+                Join Discord Community
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SURVEY MODAL POPUP */}
       {showSurvey && (
