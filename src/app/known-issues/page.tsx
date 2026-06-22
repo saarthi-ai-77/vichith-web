@@ -4,49 +4,49 @@ import React from 'react';
 
 const ISSUES_LIST = [
   {
-    category: 'Playback',
-    title: '4K H.265 playback stuttering',
+    category: 'KEYFRAMES',
+    title: 'Keyframe edge cases after the keyframing overhaul',
     status: 'In Progress',
     statusColor: '#ff9800',
-    description: 'High bitrate HEVC/H.265 media clips might skip frames on older integrated GPUs during scrub operations.',
-    workaround: 'Go to Settings > Playback and toggle "Generate 1080p Proxies" to edit smoothly.',
-    fixWindow: 'v0.5.2 patch release'
+    description: "Keyframing was recently reworked to fix value corruption, duplicate keyframes, and half-undo states. Core position/scale/rotation/opacity keyframing is now reliable, but a few edge cases remain while we harden it: audio volume/pan keyframes currently interpolate linearly (keyframe easing curves aren't applied to audio yet), and gizmo-driven keyframe edits on heavily-animated clips can occasionally need a second adjustment.",
+    workaround: "For audio fades prefer the dedicated Fade In/Out controls over volume keyframes; re-open the keyframe value if an edit doesn't land first try.",
+    fixWindow: 'Rolling fixes across upcoming patches.'
   },
   {
-    category: 'Exports',
-    title: 'MP4 render crash with multiple effects stacks',
-    status: 'Under Investigation',
-    statusColor: '#e91e63',
-    description: 'Exporting projects containing more than 4 simultaneous shader overlays on a single clip can occasionally cause NVENC hardware encoder to timeout.',
-    workaround: 'Try disabling hardware-accelerated exports in the Export settings, which falls back to CPU encoding.',
-    fixWindow: 'v0.6.0 milestone'
+    category: 'TRANSFORM',
+    title: 'Selection box larger than letterboxed overlay images',
+    status: 'Known Limitation',
+    statusColor: '#a855f7',
+    description: 'Non-16:9 images added as overlays now correctly keep their aspect ratio (letterboxed), but the selection/transform box can still span the full frame instead of hugging the visible image, making the handles sit outside the picture.',
+    workaround: "Scale/position using the Transform panel values; the box is cosmetic and doesn't affect the rendered output.",
+    fixWindow: 'In progress.'
   },
   {
-    category: 'Audio',
-    title: 'Audio drift on clips longer than 20 minutes',
-    status: 'Fixed in next patch',
-    statusColor: '#4caf50',
-    description: 'Audio sync shifts by 150-300ms on long continuous recordings due to sample rate conversions from 44.1kHz to 48kHz.',
-    workaround: 'Pre-split longer clips on the timeline into sub-clips of under 10 minutes to reset sync clocks.',
-    fixWindow: 'v0.5.1 hotfix (Releasing tomorrow)'
-  },
-  {
-    category: 'Performance',
-    title: 'High memory usage on timeline undo history',
+    category: 'RENDERING',
+    title: 'Text can look soft at some zoom levels',
     status: 'In Progress',
     statusColor: '#ff9800',
-    description: 'Undo buffers are keeping heavy image cached textures in RAM instead of purging them, leading to increased memory footprints after hours of editing.',
-    workaround: 'Save and restart the editor to flush RAM cache.',
-    fixWindow: 'v0.5.5 stability updates'
+    description: "Text overlays can appear slightly soft or aliased at certain preview zoom levels compared to dedicated text tools. The rendered/exported output is correct; this is a preview-sharpness pass we're still tuning.",
+    workaround: 'Increase font size slightly, or judge final sharpness from an exported clip.',
+    fixWindow: 'Higher-quality text render pass, in progress.'
   },
   {
-    category: 'UI',
-    title: 'Dual monitors drag drop misalignment',
+    category: 'PLAYBACK',
+    title: 'Stutter on integrated / low-end GPUs',
+    status: 'Known Limitation',
+    statusColor: '#a855f7',
+    description: 'On integrated or older GPUs, timeline playback can stutter or briefly drop frames under load. Playback now auto-recovers and will not freeze (it falls back to a reliable hardware decode path and restarts any stalled decoder), but smoothness is lower than on discrete GPUs.',
+    workaround: 'Lower the preview resolution/zoom; close other GPU-heavy apps. Export quality is unaffected.',
+    fixWindow: 'Ongoing low-end performance work.'
+  },
+  {
+    category: 'WORKSPACES',
+    title: 'Studio, VIMO, Chitra AI and several tools are under development',
     status: 'Planned',
     statusColor: '#2196f3',
-    description: 'Dragging layout panels to a second display with a different DPI scaling value causes dock targets to offset.',
-    workaround: 'Set both monitors to matching DPI scale percentages (e.g. 100% or 125%) in Windows Display settings.',
-    fixWindow: 'v0.7.0 layout engine rework'
+    description: "The following are visible but not yet active: Studio and VIMO workspaces, the Chitra AI copilot, Speed-curve graphs, Auto-captions, Filters, Adjust, Chroma key, and Background removal. They're intentionally labeled \"under development\" during beta.",
+    workaround: 'None needed — these will light up in upcoming releases.',
+    fixWindow: 'Phased rollout post-beta.'
   }
 ];
 
