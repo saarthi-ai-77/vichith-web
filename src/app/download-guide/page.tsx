@@ -24,7 +24,7 @@ export default function DownloadGuidePage() {
               <h3>Download Vichith</h3>
               <p>Click the download button on the home page or download directly from the link below. The setup installer is distributed as a executable file (`Vichith_0.5.0_x64-setup.exe`).</p>
               <div style={{ marginTop: '1rem' }}>
-                <a href="https://github.com/saarthi-ai-77/vichith-updater/releases/tag/v0.5.0/Vichith_0.5.0_x64-setup.exe" className="btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
+                <a href="https://github.com/saarthi-ai-77/vichith-updater/releases/download/v0.5.0/Vichith_0.5.0_x64-setup.exe" className="btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
                   Download Installer (.exe)
                 </a>
               </div>
