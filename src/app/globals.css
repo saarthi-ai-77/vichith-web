@@ -1682,9 +1682,10 @@ footer {
     backdrop-filter: blur(10px);
     z-index: 1100;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
+    overflow-y: auto;
 }
 
 .modal-card {
@@ -1696,6 +1697,20 @@ footer {
     width: 100%;
     position: relative;
     box-shadow: 0 40px 80px -10px rgba(0,0,0,0.9);
+    margin: auto;
+}
+
+.beta-modal-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .beta-modal-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
 }
 
 .modal-close-btn {

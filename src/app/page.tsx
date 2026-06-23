@@ -245,39 +245,86 @@ export default function LandingPage() {
       {/* BETA WARNING MODAL POPUP */}
       {showWarning && (
         <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '480px' }}>
+          <div className="modal-card" style={{ maxWidth: '900px' }}>
             <button onClick={() => setShowWarning(false)} className="modal-close-btn">&times;</button>
-            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚠️</div>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>Beta Version Notice</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', margin: 0 }}>
+                🚀 Help Build Vichith
+              </h3>
             </div>
             
-            <p style={{ color: 'var(--text-2)', fontSize: '0.925rem', lineHeight: '1.6', marginBottom: '1.25rem', textAlign: 'center' }}>
-              Vichith is currently in active development. There are still many features to build and bugs to resolve.
-            </p>
-            
-            <p style={{ color: 'var(--text-2)', fontSize: '0.925rem', lineHeight: '1.6', marginBottom: '1.5rem', textAlign: 'center', fontWeight: 'bold' }}>
-              Please do NOT use Vichith for your primary editing projects. We encourage you to explore, test the editor, and report any issues or suggestions you encounter.
-            </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <button 
-                onClick={executeDownload} 
-                className="btn-primary" 
-                style={{ width: '100%', padding: '0.875rem' }}
-              >
-                Proceed to Download
-              </button>
-              
-              <a 
-                href="https://discord.gg/MSeSsbgD" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="btn-ghost" 
-                style={{ width: '100%', padding: '0.875rem', textAlign: 'center', display: 'block', textDecoration: 'none' }}
-              >
-                Join Discord Community
-              </a>
+            <div className="beta-modal-grid">
+              {/* Left Column - Intro and Benefits */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <p style={{ color: 'var(--text-2)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, textAlign: 'left' }}>
+                  Vichith is currently being built by a small team led by founder Nikshith.
+                </p>
+                
+                <p style={{ color: 'var(--text-2)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, textAlign: 'left' }}>
+                  This isn't a polished commercial product yet. It's an ambitious project in active development, and we're opening the beta because we believe the best products are built together with their users.
+                </p>
+
+                <p style={{ color: 'var(--text-2)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, textAlign: 'left' }}>
+                  If you've ever wished video editing was faster, simpler, and less fragmented, we'd love your help.
+                </p>
+
+                <div style={{ background: 'rgba(0, 212, 200, 0.03)', border: '1px solid rgba(0, 212, 200, 0.15)', borderRadius: '10px', padding: '1.25rem', marginTop: '0.25rem', textAlign: 'left' }}>
+                  <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--cyan)', marginBottom: '0.75rem', fontFamily: 'var(--font-display)', margin: 0 }}>As an early Vichith Beta Tester, you'll receive:</h4>
+                  <ul style={{ color: 'var(--text-2)', fontSize: '0.85rem', lineHeight: '1.6', margin: '0.75rem 0 0 0', paddingLeft: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', listStyleType: 'disc' }}>
+                    <li>Early access to upcoming features and experimental builds</li>
+                    <li>Direct influence on product decisions and roadmap priorities</li>
+                    <li>Priority support and direct communication with the founder</li>
+                    <li>Access to private beta discussions and community channels</li>
+                    <li>Early adopter recognition within the Vichith community</li>
+                    <li>Exclusive discounts and bonus AI credits when premium AI features launch</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Right Column - Warnings and Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ background: 'rgba(255, 95, 87, 0.05)', border: '1px solid rgba(255, 95, 87, 0.25)', borderRadius: '10px', padding: '1rem', textAlign: 'left' }}>
+                    <p style={{ color: '#ff5f57', fontSize: '0.9rem', lineHeight: '1.6', fontWeight: 'bold', margin: 0 }}>
+                      Please do not use Vichith for critical production work yet.
+                    </p>
+                  </div>
+
+                  <p style={{ color: 'var(--text-2)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, textAlign: 'left' }}>
+                    Instead, explore the editor, push it to its limits, report bugs, share ideas, and help shape the future of Vichith.
+                  </p>
+
+                  <p style={{ color: 'var(--text-2)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, textAlign: 'left' }}>
+                    Every bug report, feature suggestion, and piece of feedback helps us build a better editor for creators.
+                  </p>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '1.5rem' }}>
+                  <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-3)', marginBottom: '1.25rem', fontStyle: 'italic' }}>
+                    Built in public. Built with creators. Built with your feedback.
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <button 
+                      onClick={executeDownload} 
+                      className="btn-primary" 
+                      style={{ width: '100%', padding: '0.875rem' }}
+                    >
+                      Download Beta
+                    </button>
+                    
+                    <a 
+                      href="https://discord.gg/MSeSsbgD" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn-ghost" 
+                      style={{ width: '100%', padding: '0.875rem', textAlign: 'center', display: 'block', textDecoration: 'none' }}
+                    >
+                      Join Discord & Contribute
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
