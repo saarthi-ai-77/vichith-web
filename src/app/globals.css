@@ -3965,3 +3965,23 @@ footer {
     }
 }
 
+/* ── LAUNCH EMBEDS PAGE STYLES ── */
+@media (max-width: 768px) {
+    .embeds-split-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+}
+.embed-nav-card:hover {
+    border-color: var(--border-hi) !important;
+    background: var(--surface2) !important;
+}
+
+.ph-badge {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ph-badge:hover {
+    transform: scale(1.02);
+}
+
