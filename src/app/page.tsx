@@ -63,8 +63,8 @@ export default function LandingPage() {
   const executeDownload = () => {
     setShowWarning(false);
 
-    // Open release download page
-    window.open('https://github.com/saarthi-ai-77/vichith-updater/releases/tag/v0.5.0', '_blank');
+    // Trigger direct download of the installer executable
+    window.location.href = 'https://github.com/saarthi-ai-77/vichith-web/releases/download/v0.5.0/Vichith_Setup_0.5.0.exe';
 
     // Log download in database
     fetch('/api/download', { method: 'POST' }).catch((err) => console.error('Failed to log download:', err));
