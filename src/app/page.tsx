@@ -64,7 +64,7 @@ export default function LandingPage() {
     setShowWarning(false);
 
     // Trigger direct download of the installer executable
-    window.location.href = 'https://github.com/saarthi-ai-77/vichith-updater/releases/download/v0.5.0/Vichith_0.5.0_x64-setup.exe';
+    window.location.href = 'https://github.com/saarthi-ai-77/vichith-updater/releases/download/v0.5.1/Vichith_0.5.1_x64-setup.exe';
 
     // Log download in database
     fetch('/api/download', { method: 'POST' }).catch((err) => console.error('Failed to log download:', err));
@@ -835,7 +835,7 @@ export default function LandingPage() {
               <h4>Download</h4>
               <a href="/#download">Download Beta</a>
               <a href="/download-guide">Installation Guide</a>
-              <span className="footer-version">v0.5.0 (Windows)</span>
+              <span className="footer-version">v0.5.1 (Windows)</span>
             </div>
 
             <div className="footer-links-col">
