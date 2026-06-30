@@ -12,6 +12,31 @@ export default function ChangelogPage() {
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 800, marginTop: '0.5rem', letterSpacing: '-0.02em' }}>Product Changelog</h1>
         <p style={{ color: 'var(--text-2)', fontSize: '1rem', marginTop: '0.5rem' }}>All notable changes to Vichith are documented here. This project is in beta.</p>
       </div>
+      <div className="changelog-entry" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '3rem', marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>[0.5.2]</h2>
+          <span style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>2026-06-30</span>
+        </div>
+
+        <p style={{ fontSize: '1.05rem', color: 'var(--text-2)', lineHeight: '1.6', marginBottom: '2rem' }}>
+          A critical stability hotfix addressing startup issues on clean installations, alongside refinements to the AI background removal workflow.
+        </p>
+
+        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--cyan)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🐛 Fixed</h3>
+        <ul style={{ paddingLeft: '1.25rem', color: 'var(--text-2)', lineHeight: '1.7', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <li><strong>Startup Crash on Clean Installations</strong> — Resolved a critical pathing/dependency issue that caused the application to crash on launch on fresh devices where Vichith had not been previously installed.</li>
+          <li><strong>AI Background Removal Logic & Types</strong> — Fixed frontend TypeScript compiler issues in the Inspector and Timeline context menus. Resolves property mapping, type safety in media item lookup, and ensures correct microsecond unit conversions during clip insertion.</li>
+          <li><strong>Audio-Detaching on Background Removal</strong> — Restructured the background removal sequence so that clips containing audio tracks will correctly split and detach their audio onto a new timeline track.</li>
+          <li><strong>Video Playback & Letterboxing</strong> — Fixed an issue where the base video layer was being letterboxed during playback and aggressive scrubbing. The renderer now properly enforces a <code>Fill</code> fitting mode for the base layer, and FFmpeg seek arguments were optimized for smoother scrubbing.</li>
+          <li><strong>Timeline UI Stability</strong> — Fixed a visual bug where toggling the Chitra mascot could cause timeline tracks to disappear or overlap with toolbar undo/redo buttons.</li>
+        </ul>
+
+        <div style={{ marginTop: '2rem' }}>
+          <a href="https://vichith.in" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--cyan)', textDecoration: 'none', fontWeight: 600 }}>
+            [0.5.2] Release Details
+          </a>
+        </div>
+      </div>
 
       <div className="changelog-entry" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '3rem', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>

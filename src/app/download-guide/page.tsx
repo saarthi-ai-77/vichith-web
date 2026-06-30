@@ -22,9 +22,9 @@ export default function DownloadGuidePage() {
             <div className="step-num-badge">1</div>
             <div className="step-body">
               <h3>Download Vichith</h3>
-              <p>Click the download button on the home page or download directly from the link below. The setup installer is distributed as a executable file (`Vichith_0.5.1_x64-setup.exe`).</p>
+              <p>Click the download button on the home page or download directly from the link below. The setup installer is distributed as a executable file (`Vichith_0.5.2_x64-setup.exe`).</p>
               <div style={{ marginTop: '1rem' }}>
-                <a href="https://github.com/saarthi-ai-77/vichith-updater/releases/download/v0.5.1/Vichith_0.5.1_x64-setup.exe" className="btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
+                <a href="https://github.com/saarthi-ai-77/vichith-updater/releases/download/v0.5.2/Vichith_0.5.2_x64-setup.exe" className="btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
                   Download Installer (.exe)
                 </a>
               </div>
@@ -35,7 +35,7 @@ export default function DownloadGuidePage() {
             <div className="step-num-badge">2</div>
             <div className="step-body">
               <h3>Open the Installer</h3>
-              <p>Locate the downloaded `Vichith_0.5.1_x64-setup.exe` file on your PC (usually in your Downloads folder) and double-click to run it.</p>
+              <p>Locate the downloaded `Vichith_0.5.2_x64-setup.exe` file on your PC (usually in your Downloads folder) and double-click to run it.</p>
             </div>
           </div>
 
@@ -81,7 +81,7 @@ export default function DownloadGuidePage() {
                 <div className="mock-ss-title">Windows Defender SmartScreen</div>
                 <div className="mock-ss-header">Windows protected your PC</div>
                 <div className="mock-ss-metadata">
-                  <div><strong>App:</strong> Vichith_0.5.1_x64-setup.exe</div>
+                  <div><strong>App:</strong> Vichith_0.5.2_x64-setup.exe</div>
                   <div><strong>Publisher:</strong> Unknown Publisher</div>
                 </div>
                 <div className="mock-ss-buttons-row">

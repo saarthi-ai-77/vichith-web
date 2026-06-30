@@ -64,7 +64,7 @@ export default function LandingPage() {
     setShowWarning(false);
 
     // Trigger direct download of the installer executable
-    window.location.href = 'https://github.com/saarthi-ai-77/vichith-updater/releases/download/v0.5.1/Vichith_0.5.1_x64-setup.exe';
+    window.location.href = 'https://github.com/saarthi-ai-77/vichith-updater/releases/download/v0.5.2/Vichith_0.5.2_x64-setup.exe';
 
     // Log download in database
     fetch('/api/download', { method: 'POST' }).catch((err) => console.error('Failed to log download:', err));
@@ -150,7 +150,7 @@ export default function LandingPage() {
         <div className="hero-bg-glow"></div>
         <div className="hero-bg-glow2"></div>
         <div className="hero-badge reveal">
-          <span className="dot"></span>Beta 0.5.0 Available
+          <span className="dot"></span>Beta 0.5.2 Available
         </div>
         <h1 className="reveal reveal-delay-1">
           Vichith Beta
@@ -188,7 +188,7 @@ export default function LandingPage() {
         <div className="hero-metadata reveal reveal-delay-3">
           <span>Beta Release</span>
           <span className="divider">·</span>
-          <span>Version 0.5.0</span>
+          <span>Version 0.5.2</span>
           <span className="divider">·</span>
           <span>Windows Available</span>
         </div>
@@ -210,11 +210,11 @@ export default function LandingPage() {
               <div className="download-details">
                 <div className="download-row">
                   <span className="label">Current Version:</span>
-                  <span className="val">Beta 0.5.0</span>
+                  <span className="val">Beta 0.5.2</span>
                 </div>
                 <div className="download-row">
                   <span className="label">Release Date:</span>
-                  <span className="val">June 20, 2026</span>
+                  <span className="val">June 30, 2026</span>
                 </div>
                 <div className="download-row">
                   <span className="label">File Size:</span>
@@ -835,7 +835,7 @@ export default function LandingPage() {
               <h4>Download</h4>
               <a href="/#download">Download Beta</a>
               <a href="/download-guide">Installation Guide</a>
-              <span className="footer-version">v0.5.1 (Windows)</span>
+              <span className="footer-version">v0.5.2 (Windows)</span>
             </div>
 
             <div className="footer-links-col">

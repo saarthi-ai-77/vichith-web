@@ -9,7 +9,7 @@ export default function ReportPage() {
     what_happened: '',
     expected_behavior: '',
     severity: 'Minor',
-    app_version: '0.5.0',
+    app_version: '0.5.2',
     operating_system: 'Windows',
     email: '',
   });
@@ -75,7 +75,7 @@ export default function ReportPage() {
           what_happened: '',
           expected_behavior: '',
           severity: 'Minor',
-          app_version: '0.5.0',
+          app_version: '0.5.2',
           operating_system: 'Windows',
           email: '',
         });
