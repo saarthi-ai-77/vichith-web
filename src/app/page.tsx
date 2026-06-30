@@ -218,7 +218,7 @@ export default function LandingPage() {
                 </div>
                 <div className="download-row">
                   <span className="label">File Size:</span>
-                  <span className="val">~101 MB</span>
+                  <span className="val">~113 MB</span>
                 </div>
                 <div className="download-row">
                   <span className="label">Platform:</span>
