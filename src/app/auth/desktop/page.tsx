@@ -95,14 +95,18 @@ function DesktopAuthContent() {
 
   return (
     <div className="vch-auth-card">
-      {/* Header */}
+      {/* Header & Trademark Logo */}
       <div className="vch-auth-header">
-        <div className="vch-logo-badge">
-          <svg className="vch-logo-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        <div className="vch-brand-header">
+          {/* Stacked 3-layer diamond SVG logo (Trademark Vichith icon) */}
+          <svg className="vch-brand-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#00d4c8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="#00d4c8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="#00d4c8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
+          <span className="vch-brand-title">vi<span>chith</span></span>
         </div>
-        <h1 className="vch-auth-title">Authenticate Vichith Desktop</h1>
+        <h1 className="vch-auth-main-heading">Authenticate Vichith Desktop</h1>
         <p className="vch-auth-subtitle">Sign in to synchronize your identity & cloud entitlements</p>
       </div>
 
@@ -119,7 +123,7 @@ function DesktopAuthContent() {
       {isRedirectValid && !isPkceValid && (
         <div className="vch-alert vch-alert-warning">
           <span className="vch-alert-title">⚠️ Missing PKCE Parameters</span>
-          <span>Required params: <code className="vch-code-inline">state</code>, <code className="vch-code-inline">code_challenge</code>, and <code className="vch-code-inline">code_challenge_method=S256</code>.</span>
+          <span>Required query params: <code className="vch-code-inline">state</code>, <code className="vch-code-inline">code_challenge</code>, and <code className="vch-code-inline">code_challenge_method=S256</code>.</span>
         </div>
       )}
 
@@ -239,8 +243,7 @@ function DesktopAuthContent() {
 export default function DesktopAuthPage() {
   return (
     <main className="vch-auth-wrapper">
-      <div className="vch-auth-glow-top" />
-      <div className="vch-auth-glow-bottom" />
+      <div className="vch-auth-glow-cyan" />
 
       <Suspense fallback={<div className="vch-spinner" />}>
         <DesktopAuthContent />
