@@ -163,9 +163,10 @@ export async function createUser(
   const name = displayName || cleanEmail.split('@')[0];
   const createdAt = new Date().toISOString();
 
-  const newUser: UserRecord = {
+  const newUser: UserRecord & { username?: string } = {
     id: userId,
     email: cleanEmail,
+    username: cleanEmail,
     email_verified: true,
     display_name: name,
     password_hash: passwordHash,
@@ -176,11 +177,12 @@ export async function createUser(
     const supabase = getSupabaseClient();
     let { data, error } = await supabase.from('users').insert([newUser]).select().single();
     
-    // Fallback if schema cache is missing email_verified column on pre-existing users table
-    if (error && error.message.includes('email_verified')) {
+    // Fallback if schema cache is missing email_verified or requires username variation
+    if (error && (error.message.includes('email_verified') || error.message.includes('username'))) {
       const fallbackUser = {
         id: userId,
         email: cleanEmail,
+        username: cleanEmail,
         display_name: name,
         password_hash: passwordHash,
       };

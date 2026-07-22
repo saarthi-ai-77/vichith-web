@@ -14,6 +14,12 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS display_name TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password_hash TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username') THEN
+    ALTER TABLE public.users ALTER COLUMN username DROP NOT NULL;
+  END IF;
+END $$;
 
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
