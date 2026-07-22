@@ -9,6 +9,12 @@ CREATE TABLE IF NOT EXISTS public.users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Ensure missing columns exist if users table was created previously
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT true;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS display_name TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE PRIMARY KEY,

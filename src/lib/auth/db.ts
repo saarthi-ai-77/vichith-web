@@ -174,7 +174,21 @@ export async function createUser(
 
   if (isSupabaseAvailable()) {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from('users').insert([newUser]).select().single();
+    let { data, error } = await supabase.from('users').insert([newUser]).select().single();
+    
+    // Fallback if schema cache is missing email_verified column on pre-existing users table
+    if (error && error.message.includes('email_verified')) {
+      const fallbackUser = {
+        id: userId,
+        email: cleanEmail,
+        display_name: name,
+        password_hash: passwordHash,
+      };
+      const retryResult = await supabase.from('users').insert([fallbackUser]).select().single();
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
     if (error) {
       console.error('Supabase createUser error:', error);
       throw new Error(`Failed to create user: ${error.message}`);

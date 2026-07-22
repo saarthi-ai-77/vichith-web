@@ -7,12 +7,20 @@ import './desktop-auth.css';
 function DesktopAuthContent() {
   const searchParams = useSearchParams();
 
-  const state = searchParams.get('state');
-  const codeChallenge = searchParams.get('code_challenge');
-  const codeChallengeMethod = searchParams.get('code_challenge_method');
-  const redirectUri = searchParams.get('redirect_uri');
+  const rawState = searchParams.get('state');
+  const rawCodeChallenge = searchParams.get('code_challenge');
+  const rawCodeChallengeMethod = searchParams.get('code_challenge_method');
+  const rawRedirectUri = searchParams.get('redirect_uri');
 
   const ALLOWED_REDIRECT = 'http://127.0.0.1:43823/callback';
+
+  // Demo / Test Mode state when page is visited directly in web browser without parameters
+  const [demoMode, setDemoMode] = useState(false);
+
+  const state = demoMode ? 'demo_state_123' : rawState;
+  const codeChallenge = demoMode ? 'E9Mel-0ywa-zpW2ldR3B9hjSm42w5B2L65qx4bFCy70' : rawCodeChallenge;
+  const codeChallengeMethod = demoMode ? 'S256' : rawCodeChallengeMethod;
+  const redirectUri = demoMode ? ALLOWED_REDIRECT : rawRedirectUri;
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -22,6 +30,7 @@ function DesktopAuthContent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Parameter validation
+  const isDirectVisit = !rawRedirectUri && !rawCodeChallenge && !rawState;
   const isRedirectValid = redirectUri === ALLOWED_REDIRECT;
   const isPkceValid = codeChallengeMethod === 'S256' && Boolean(codeChallenge) && Boolean(state);
 
@@ -98,7 +107,6 @@ function DesktopAuthContent() {
       {/* Header & Trademark Logo */}
       <div className="vch-auth-header">
         <div className="vch-brand-header">
-          {/* Stacked 3-layer diamond SVG logo (Trademark Vichith icon) */}
           <svg className="vch-brand-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#00d4c8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M2 12L12 17L22 12" stroke="#00d4c8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -110,8 +118,27 @@ function DesktopAuthContent() {
         <p className="vch-auth-subtitle">Sign in to synchronize your identity & cloud entitlements</p>
       </div>
 
+      {/* Direct Web Visit Informational Banner */}
+      {isDirectVisit && !demoMode && (
+        <div className="vch-alert vch-alert-info">
+          <span className="vch-alert-title">🖥️ Desktop App Connection</span>
+          <span>
+            This page is launched automatically by the <strong>Vichith Desktop App</strong> when you click &quot;Sign In&quot;.
+          </span>
+          <div style={{ marginTop: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={() => setDemoMode(true)}
+              className="vch-btn-demo"
+            >
+              Simulate Desktop Launch Parameters
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Parameter Validation Warnings */}
-      {!isRedirectValid && (
+      {!isDirectVisit && !isRedirectValid && (
         <div className="vch-alert vch-alert-error">
           <span className="vch-alert-title">⚠️ Invalid Redirect URI</span>
           <span>
@@ -120,7 +147,7 @@ function DesktopAuthContent() {
         </div>
       )}
 
-      {isRedirectValid && !isPkceValid && (
+      {!isDirectVisit && isRedirectValid && !isPkceValid && (
         <div className="vch-alert vch-alert-warning">
           <span className="vch-alert-title">⚠️ Missing PKCE Parameters</span>
           <span>Required query params: <code className="vch-code-inline">state</code>, <code className="vch-code-inline">code_challenge</code>, and <code className="vch-code-inline">code_challenge_method=S256</code>.</span>
