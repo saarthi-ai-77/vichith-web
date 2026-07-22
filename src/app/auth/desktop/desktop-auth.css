@@ -1,0 +1,383 @@
+/* Scoped Desktop Auth UI Styles */
+.vch-auth-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #08090d;
+  background-image: 
+    radial-gradient(at 50% 20%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+    radial-gradient(at 20% 70%, rgba(99, 102, 241, 0.1) 0px, transparent 50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #f3f4f6;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Background animated glow orbs */
+.vch-auth-glow-top {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, rgba(79, 70, 229, 0.05) 50%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.vch-auth-glow-bottom {
+  position: absolute;
+  bottom: 5%;
+  right: 10%;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+/* Auth Glass Card */
+.vch-auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(18, 20, 29, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 2.25rem 2rem;
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 10;
+  animation: vchCardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes vchCardAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header & Logo */
+.vch-auth-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.vch-logo-badge {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1.25rem auto;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.vch-logo-badge:hover {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+.vch-logo-icon {
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.vch-auth-title {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.25 !important;
+  margin: 0 0 0.5rem 0 !important;
+  max-width: 100% !important;
+  background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vch-auth-subtitle {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Callout Alerts */
+.vch-alert {
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.vch-alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.vch-alert-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.vch-alert-title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.vch-code-inline {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.7rem;
+}
+
+/* Toggle Tabs */
+.vch-tab-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 3px;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.vch-tab-button {
+  flex: 1;
+  padding: 0.5rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vch-tab-button.active {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.vch-tab-button:hover:not(.active) {
+  color: #ffffff;
+}
+
+/* Google Sign-In Button */
+.vch-google-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1.25rem;
+}
+
+.vch-google-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.vch-google-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vch-google-icon {
+  width: 18px !important;
+  height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  flex-shrink: 0;
+}
+
+/* Divider */
+.vch-divider {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.vch-divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.vch-divider-text {
+  padding: 0 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+}
+
+/* Form Controls */
+.vch-form-group {
+  margin-bottom: 1rem;
+}
+
+.vch-label {
+  display: block;
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: #d1d5db;
+  margin-bottom: 0.375rem;
+  text-align: left;
+}
+
+.vch-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.vch-input::placeholder {
+  color: #6b7280;
+}
+
+.vch-input:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Actions Footer */
+.vch-actions-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.vch-btn-cancel {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #d1d5db;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vch-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.vch-btn-submit {
+  flex: 1.4;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.vch-btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+  transform: translateY(-1px);
+}
+
+.vch-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vch-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: vchSpin 0.7s linear infinite;
+}
+
+@keyframes vchSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Footer note */
+.vch-auth-footer {
+  margin-top: 1.75rem;
+  font-size: 0.725rem;
+  color: #6b7280;
+  text-align: center;
+  z-index: 10;
+  position: relative;
+}
+
+.vch-auth-footer a {
+  color: #9ca3af;
+  text-decoration: underline;
+}
+
+.vch-auth-footer a:hover {
+  color: #e5e7eb;
+}

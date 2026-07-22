@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -13,6 +15,12 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Hide Navbar completely on auth flows
+  if (pathname?.startsWith('/auth')) {
+    return null;
+  }
+
   return (
     <nav id="nav" className={`${scrolled ? 'scrolled' : ''} ${isOpen ? 'mobile-open' : ''}`}>
       <a href="/" className="nav-logo">
