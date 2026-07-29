@@ -1,6 +1,27 @@
 import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'vichith_desktop_jwt_secret_key_2026_super_secure';
+/**
+ * Resolve the signing secret. Fails closed — there is deliberately NO default.
+ *
+ * This previously fell back to a literal committed in this repository. Any
+ * deployment missing both environment variables would sign and accept tokens with
+ * a secret that anyone reading the public repo could copy, letting them forge a
+ * session for any user id. A missing secret must stop the request, not silently
+ * downgrade authentication to something forgeable.
+ *
+ * Resolved lazily rather than at module load so a missing variable surfaces as a
+ * clear 500 on the affected request instead of breaking the whole build.
+ */
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret || !secret.trim()) {
+    throw new Error(
+      'Missing JWT_SECRET (or SUPABASE_SERVICE_ROLE_KEY) — refusing to sign or verify ' +
+        'tokens with an insecure default. Set it in the deployment environment.'
+    );
+  }
+  return secret;
+}
 
 export interface TokenPayload {
   sub: string;
@@ -40,6 +61,7 @@ export function createAccessToken(user: { id: string; email: string; display_nam
   access_token: string;
   expires_at: number; // UNIX SECONDS
 } {
+  const jwtSecret = getJwtSecret();
   const nowInSeconds = Math.floor(Date.now() / 1000);
   const expiresAt = nowInSeconds + 3600; // 1 hour TTL
 
@@ -56,7 +78,7 @@ export function createAccessToken(user: { id: string; email: string; display_nam
   const encodedPayload = base64urlEncode(Buffer.from(JSON.stringify(payload)));
 
   const signature = crypto
-    .createHmac('sha256', JWT_SECRET)
+    .createHmac('sha256', jwtSecret)
     .update(`${encodedHeader}.${encodedPayload}`)
     .digest();
 
@@ -73,6 +95,12 @@ export function createAccessToken(user: { id: string; email: string; display_nam
  * Verifies Access Token JWT and returns payload if valid
  */
 export function verifyAccessToken(token: string): TokenPayload | null {
+  // Resolved OUTSIDE the try below on purpose. A misconfigured server is not the
+  // same thing as a bad token: if this were inside, the catch would swallow it and
+  // every caller would be told their token was invalid, sending us hunting through
+  // the auth flow for a problem that is really a missing environment variable.
+  const jwtSecret = getJwtSecret();
+
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
@@ -80,7 +108,7 @@ export function verifyAccessToken(token: string): TokenPayload | null {
     const [encodedHeader, encodedPayload, signature] = parts;
     const expectedSignature = base64urlEncode(
       crypto
-        .createHmac('sha256', JWT_SECRET)
+        .createHmac('sha256', jwtSecret)
         .update(`${encodedHeader}.${encodedPayload}`)
         .digest()
     );
