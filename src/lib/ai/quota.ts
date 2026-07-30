@@ -23,7 +23,7 @@
  */
 
 import { getSupabaseClient } from '../supabase';
-import { allowanceFor } from './cost';
+import { allowanceFor } from './effort';
 
 export interface PlanLimits {
     /** Requests allowed in any 60-second window. Burst protection.

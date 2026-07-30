@@ -3,7 +3,8 @@ import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
 import { checkQuota } from '@/lib/ai/quota';
-import { unitsFor, buildMeter } from '@/lib/ai/cost';
+import { effortFor, buildMeter, type ExecutionClass, type Magnitude } from '@/lib/ai/effort';
+import { costMicroUsd } from '@/lib/ai/cost';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,11 +101,19 @@ export async function POST(request: NextRequest) {
         // ── 6. Telemetry ─────────────────────────────────────────────────────
         // Recorded for successes AND failures: a failure rate that never reaches
         // analytics is the metric we would most want and least have.
-        // Cost units come from the provider's OWN metering, so a request served
-        // without reaching a provider costs zero — grammar-first resolutions are
-        // genuinely free to the user, not merely cheap.
-        const units = result.ok ? unitsFor(result.usage) : 0;
-        void recordUsage(identity.userId, capability, result, requestId, identity.issuer, units);
+        // EFFORT — what the user is charged. Provider-independent, and multiplied by
+        // the class the work ACTUALLY ran in: native and local are free, cloud is not.
+        // Anything reaching this route is cloud by definition; native and local
+        // resolve on the desktop and never arrive here at all, so they cost zero by
+        // construction rather than by a lookup returning zero.
+        const executionClass: ExecutionClass = 'cloud';
+        const magnitude: Magnitude = readMagnitude(body?.payload);
+        const units = result.ok ? effortFor(capability, magnitude, executionClass) : 0;
+
+        // COST — what WE spent. Recorded alongside, never joined to the above.
+        const microUsd = result.ok ? costMicroUsd(result.provider, result.usage) : 0;
+
+        void recordUsage(identity.userId, capability, result, requestId, identity.issuer, units, microUsd);
 
         if (!result.ok) {
             const status = result.code === 'QUOTA_EXCEEDED' ? 429 : result.retryable ? 503 : 400;
@@ -136,6 +145,25 @@ export async function POST(request: NextRequest) {
     }
 }
 
+/**
+ * Read the request's magnitude in the terms the effort model uses.
+ *
+ * Deliberately reads what the CALLER declared rather than inspecting payload sizes:
+ * these values are what the UI quoted a price from, so charging against anything
+ * else would mean the quote and the charge could disagree.
+ */
+function readMagnitude(payload: unknown): Magnitude {
+    const p = (payload ?? {}) as Record<string, unknown>;
+    const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
+    return {
+        clips: num(p.clipCount),
+        images: num(p.imageCount),
+        audioMinutes: num(p.durationSecs) ? num(p.durationSecs)! / 60 : undefined,
+        videoSeconds: num(p.videoSeconds),
+        characters: typeof p.text === 'string' ? p.text.length : undefined,
+    };
+}
+
 function json(status: number, body: Record<string, unknown>) {
     return NextResponse.json(body, { status });
 }
@@ -152,7 +180,10 @@ async function recordUsage(
     issuer: string,
     /** Cost units charged. Stored in `credits_cost` so the monthly total is a
      *  SUM over a real column rather than a scan of JSON meta. */
-    units: number
+    units: number,
+    /** Real provider spend in micro-USD. INTERNAL — margin analysis only, and never
+     *  an input to any quota or allowance. */
+    microUsd: number
 ): Promise<void> {
     try {
         await saveUsageEvents(userId, [
@@ -167,6 +198,8 @@ async function recordUsage(
                 meta: {
                     capability,
                     issuer,
+                    executionClass: 'cloud',
+                    costMicroUsd: microUsd,
                     ok: result.ok,
                     ...(result.ok
                         ? { latencyMs: result.latencyMs, usage: result.usage }
