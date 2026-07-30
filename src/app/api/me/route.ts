@@ -1,30 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/tokens';
+import { authenticate } from '@/lib/auth/identity';
 import { findUserById, getUserProfileAndEntitlements } from '@/lib/auth/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // S-4 Step 1: accepts EITHER a Supabase session or the legacy website JWT, so
+    // the desktop and website can migrate on different days without signing anyone
+    // out. One response for both failure modes — telling a caller WHICH issuer
+    // rejected them would tell an attacker which system to attack.
+    const identity = await authenticate(request);
+    if (!identity) {
       return NextResponse.json(
-        { error: 'unauthorized', message: 'Missing or invalid Authorization header. Expected Bearer token.' },
+        { error: 'unauthorized', message: 'Sign in to continue.' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.substring(7).trim();
-    const payload = verifyAccessToken(token);
-
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'invalid_token', message: 'Access token is invalid or has expired.' },
-        { status: 401 }
-      );
-    }
-
-    const user = await findUserById(payload.sub);
+    const user = await findUserById(identity.userId);
     if (!user) {
       return NextResponse.json(
         { error: 'user_not_found', message: 'User profile not found.' },

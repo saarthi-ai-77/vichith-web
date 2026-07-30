@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/tokens';
+import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
 import { checkQuota } from '@/lib/ai/quota';
@@ -33,13 +33,10 @@ export async function POST(request: NextRequest) {
 
     try {
         // ── 1. Authentication ────────────────────────────────────────────────
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
+        // S-4 Step 1: dual-accept (Supabase or legacy). See lib/auth/identity.ts.
+        const identity = await authenticate(request);
+        if (!identity) {
             return json(401, { error: 'unauthorized', message: 'Sign in to use AI features.', requestId });
-        }
-        const payload = verifyAccessToken(authHeader.substring(7).trim());
-        if (!payload) {
-            return json(401, { error: 'invalid_token', message: 'Your session has expired. Please sign in again.', requestId });
         }
 
         // ── 2. Request shape ─────────────────────────────────────────────────
@@ -53,7 +50,7 @@ export async function POST(request: NextRequest) {
         // ── 3. Entitlements ──────────────────────────────────────────────────
         // Metering is server-side and attributed to the VERIFIED user id, never to
         // anything the client supplied — a modified desktop build cannot spoof it.
-        const { entitlements } = await getUserProfileAndEntitlements(payload.sub);
+        const { entitlements } = await getUserProfileAndEntitlements(identity.userId);
         const plan = entitlements?.plan ?? 'free';
         if (plan === 'anonymous') {
             return json(403, { error: 'plan_required', message: 'Sign in to use AI features.', requestId });
@@ -63,7 +60,7 @@ export async function POST(request: NextRequest) {
         // Entitlements answer "may this plan use AI"; this answers "how much, how
         // fast". Our own provider keys sit behind this endpoint, so without it one
         // account can drain the Sarvam balance or run up the Gemini bill.
-        const quota = await checkQuota(payload.sub, plan);
+        const quota = await checkQuota(identity.userId, plan);
         if (!quota.allowed) {
             const status = quota.reason === 'rate' ? 429 : 403;
             return NextResponse.json(
@@ -102,7 +99,7 @@ export async function POST(request: NextRequest) {
         // ── 6. Telemetry ─────────────────────────────────────────────────────
         // Recorded for successes AND failures: a failure rate that never reaches
         // analytics is the metric we would most want and least have.
-        void recordUsage(payload.sub, capability, result, requestId);
+        void recordUsage(identity.userId, capability, result, requestId, identity.issuer);
 
         if (!result.ok) {
             const status = result.code === 'QUOTA_EXCEEDED' ? 429 : result.retryable ? 503 : 400;
@@ -140,7 +137,11 @@ async function recordUsage(
     userId: string,
     capability: string,
     result: AIResult,
-    requestId: string
+    requestId: string,
+    /** Which identity system verified this caller. Step 6 of the auth migration —
+     *  removing the legacy path — is gated on this reading zero legacy for a
+     *  sustained period, so it must be recorded from the moment dual-accept ships. */
+    issuer: string
 ): Promise<void> {
     try {
         await saveUsageEvents(userId, [
@@ -153,6 +154,7 @@ async function recordUsage(
                 ts: Date.now(),
                 meta: {
                     capability,
+                    issuer,
                     ok: result.ok,
                     ...(result.ok
                         ? { latencyMs: result.latencyMs, usage: result.usage }

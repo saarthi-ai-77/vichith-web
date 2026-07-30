@@ -1,37 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/tokens';
+import { authenticate } from '@/lib/auth/identity';
 import { saveUsageEvents, getUserProfileAndEntitlements } from '@/lib/auth/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'unauthorized', message: 'Missing or invalid Authorization header. Expected Bearer token.' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7).trim();
-    const payload = verifyAccessToken(token);
-
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'invalid_token', message: 'Access token is invalid or has expired.' },
-        { status: 401 }
-      );
+    // S-4 Step 1: dual-accept. See lib/auth/identity.ts.
+    const identity = await authenticate(request);
+    if (!identity) {
+      return NextResponse.json({ error: 'unauthorized', message: 'Sign in to continue.' }, { status: 401 });
     }
 
     const body = await request.json();
     const events = Array.isArray(body?.events) ? body.events : [];
 
     // Save usage events to database
-    const acceptedCount = await saveUsageEvents(payload.sub, events);
+    const acceptedCount = await saveUsageEvents(identity.userId, events);
 
     // Fetch user's current credits balance
-    const { entitlements } = await getUserProfileAndEntitlements(payload.sub);
+    const { entitlements } = await getUserProfileAndEntitlements(identity.userId);
 
     return NextResponse.json({
       accepted: acceptedCount,
