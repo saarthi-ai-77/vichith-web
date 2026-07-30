@@ -3,6 +3,7 @@ import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
 import { checkQuota } from '@/lib/ai/quota';
+import { unitsFor, buildMeter } from '@/lib/ai/cost';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,7 +100,11 @@ export async function POST(request: NextRequest) {
         // ── 6. Telemetry ─────────────────────────────────────────────────────
         // Recorded for successes AND failures: a failure rate that never reaches
         // analytics is the metric we would most want and least have.
-        void recordUsage(identity.userId, capability, result, requestId, identity.issuer);
+        // Cost units come from the provider's OWN metering, so a request served
+        // without reaching a provider costs zero — grammar-first resolutions are
+        // genuinely free to the user, not merely cheap.
+        const units = result.ok ? unitsFor(result.usage) : 0;
+        void recordUsage(identity.userId, capability, result, requestId, identity.issuer, units);
 
         if (!result.ok) {
             const status = result.code === 'QUOTA_EXCEEDED' ? 429 : result.retryable ? 503 : 400;
@@ -116,6 +121,9 @@ export async function POST(request: NextRequest) {
             // -1 means the quota check failed open; the client should not render a
             // number it cannot trust.
             remainingThisMonth: quota.remainingThisMonth,
+            // The meter the Chithra UI draws. Computed server-side so the client
+            // cannot drift from what we actually counted.
+            usage: { unitsCharged: units, meter: buildMeter(quota.usedUnits + units, plan) },
             requestId,
         });
     } catch (err: unknown) {
@@ -141,7 +149,10 @@ async function recordUsage(
     /** Which identity system verified this caller. Step 6 of the auth migration —
      *  removing the legacy path — is gated on this reading zero legacy for a
      *  sustained period, so it must be recorded from the moment dual-accept ships. */
-    issuer: string
+    issuer: string,
+    /** Cost units charged. Stored in `credits_cost` so the monthly total is a
+     *  SUM over a real column rather than a scan of JSON meta. */
+    units: number
 ): Promise<void> {
     try {
         await saveUsageEvents(userId, [
@@ -151,6 +162,7 @@ async function recordUsage(
                 type: 'ai_request',
                 runtime: 'cloud',
                 units: 1,
+                credits_cost: units,
                 ts: Date.now(),
                 meta: {
                     capability,

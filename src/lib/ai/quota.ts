@@ -23,12 +23,13 @@
  */
 
 import { getSupabaseClient } from '../supabase';
+import { allowanceFor } from './cost';
 
 export interface PlanLimits {
-    /** Requests allowed in any 60-second window. Burst protection. */
+    /** Requests allowed in any 60-second window. Burst protection.
+     *  Counted as REQUESTS, not units — burst abuse is about frequency, and a
+     *  cheap request hammered 1000×/second is still an attack. */
     readonly perMinute: number;
-    /** Requests allowed per calendar month. The cost ceiling. */
-    readonly perMonth: number;
 }
 
 /**
@@ -39,9 +40,9 @@ export interface PlanLimits {
  * are generous enough that a real creator never notices them.
  */
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
-    anonymous: { perMinute: 0, perMonth: 0 },
-    free: { perMinute: 5, perMonth: 50 },
-    paid: { perMinute: 20, perMonth: 2000 },
+    anonymous: { perMinute: 0 },
+    free: { perMinute: 5 },
+    paid: { perMinute: 20 },
 };
 
 export function limitsForPlan(plan: string): PlanLimits {
@@ -49,8 +50,8 @@ export function limitsForPlan(plan: string): PlanLimits {
 }
 
 export type QuotaVerdict =
-    | { allowed: true; remainingThisMonth: number }
-    | { allowed: false; reason: 'rate' | 'monthly' | 'plan'; message: string; retryAfterSecs?: number };
+    | { allowed: true; remainingThisMonth: number; usedUnits: number }
+    | { allowed: false; reason: 'rate' | 'monthly' | 'plan'; message: string; retryAfterSecs?: number; usedUnits: number };
 
 /**
  * Check whether this user may make one more AI request.
@@ -64,7 +65,7 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
     const limits = limitsForPlan(plan);
 
     if (limits.perMinute === 0) {
-        return { allowed: false, reason: 'plan', message: 'Sign in to use AI features.' };
+        return { allowed: false, reason: 'plan', message: 'Sign in to use AI features.', usedUnits: 0 };
     }
 
     try {
@@ -88,37 +89,50 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
                 reason: 'rate',
                 message: 'You are sending requests too quickly. Please wait a moment and try again.',
                 retryAfterSecs: 60,
+                usedUnits: 0,
             };
         }
 
-        // ── Monthly ceiling ──
+        // ── Monthly ceiling, in COST UNITS ──
+        // Summed over `credits_cost` rather than counted as rows, because a frame
+        // analysis and a one-line chat are not the same spend. Counting requests
+        // would let 50 video analyses cost the same as 50 chat messages, which is
+        // wrong in both directions: it over-charges light users and under-charges
+        // the expensive ones we actually need to bound.
+        //
         // Calendar month, not a rolling 30 days: it matches how a user reads their
-        // plan ("50 a month"), and it resets predictably.
+        // plan and resets predictably.
         const startOfMonth = new Date();
         startOfMonth.setUTCDate(1);
         startOfMonth.setUTCHours(0, 0, 0, 0);
 
-        const { count: monthly, error: monthlyErr } = await supabase
+        const { data: rows, error: monthlyErr } = await supabase
             .from('usage_events')
-            .select('id', { count: 'exact', head: true })
+            .select('credits_cost')
             .eq('user_id', userId)
             .eq('type', 'ai_request')
             .gte('ts', startOfMonth.getTime());
 
         if (monthlyErr) throw monthlyErr;
 
-        const used = monthly ?? 0;
-        if (used >= limits.perMonth) {
+        const usedUnits = (rows ?? []).reduce(
+            (sum: number, r: { credits_cost: number | null }) => sum + (r.credits_cost ?? 0),
+            0
+        );
+        const allowance = allowanceFor(plan);
+
+        if (usedUnits >= allowance) {
             return {
                 allowed: false,
                 reason: 'monthly',
-                message: `You have used all ${limits.perMonth} AI requests included this month.`,
+                message: `You have used your AI allowance for this month.`,
+                usedUnits,
             };
         }
 
-        return { allowed: true, remainingThisMonth: Math.max(0, limits.perMonth - used - 1) };
+        return { allowed: true, remainingThisMonth: Math.max(0, allowance - usedUnits), usedUnits };
     } catch (err) {
         console.error('[ai] quota check failed, allowing request:', err);
-        return { allowed: true, remainingThisMonth: -1 };
+        return { allowed: true, remainingThisMonth: -1, usedUnits: 0 };
     }
 }
