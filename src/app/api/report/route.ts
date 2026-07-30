@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireText, LIMITS } from '@/lib/validate';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -22,8 +23,25 @@ export async function POST(req: Request) {
     const recording = formData.get('recording') as File | null;
     const crashLog = formData.get('crashLog') as File | null;
 
-    if (!category || !what_happened || !severity) {
-      return NextResponse.json({ error: 'Category, details, and severity are required.' }, { status: 400 });
+    // SECURITY S-5: unauthenticated endpoint. `as string` casts a FormDataEntryValue
+    // without checking anything, so an unbounded field went straight to Postgres.
+    // Each field is now length-bounded; a bug report body gets the long cap, the
+    // rest get short ones.
+    for (const [name, value, cap] of [
+      ['category', category, LIMITS.shortText],
+      ['what_happened', what_happened, LIMITS.longText],
+      ['severity', severity, LIMITS.shortText],
+      ['action_attempted', action_attempted, LIMITS.longText],
+      ['expected_behavior', expected_behavior, LIMITS.longText],
+      ['app_version', app_version, LIMITS.shortText],
+      ['operating_system', operating_system, LIMITS.shortText],
+      ['email', email, LIMITS.email],
+    ] as const) {
+      const required = name === 'category' || name === 'what_happened' || name === 'severity';
+      const checked = requireText(value, name, cap, { optional: !required });
+      if (!checked.ok) {
+        return NextResponse.json({ error: checked.error }, { status: 400 });
+      }
     }
 
     const attachment_urls: string[] = [];
@@ -35,8 +53,18 @@ export async function POST(req: Request) {
       supabase = createClient(supabaseUrl, supabaseKey);
     }
 
+    // SECURITY S-5: cap attachment size. This endpoint is UNAUTHENTICATED and writes
+    // to Supabase Storage, so without a ceiling anyone can fill the bucket — and we
+    // pay for it. Files were only checked for `size > 0`. A screen recording of a bug
+    // fits comfortably in 25 MB; anything larger is not a bug report.
+    const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+
     // Helper function to upload files to Supabase Storage
     const uploadFile = async (file: File, typeLabel: string): Promise<string | null> => {
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        console.warn(`Rejected oversized ${typeLabel}: ${file.size} bytes`);
+        return null;
+      }
       try {
         if (!supabase) return null;
         const buffer = Buffer.from(await file.arrayBuffer());

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireText, bodyTooLarge, LIMITS } from '@/lib/validate';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -6,12 +7,18 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { role, source } = body;
-
-    if (!role || !source) {
-      return NextResponse.json({ error: 'Role and source are required.' }, { status: 400 });
+    // SECURITY S-5: unauthenticated endpoint — bound the body, then every field.
+    if (bodyTooLarge(req, 4_000)) {
+      return NextResponse.json({ error: 'Request body is too large' }, { status: 413 });
     }
+    const body = await req.json().catch(() => null);
+
+    const roleField = requireText(body?.role, 'role', LIMITS.shortText);
+    if (!roleField.ok) return NextResponse.json({ error: roleField.error }, { status: 400 });
+    const sourceField = requireText(body?.source, 'source', LIMITS.shortText);
+    if (!sourceField.ok) return NextResponse.json({ error: sourceField.error }, { status: 400 });
+    const role = roleField.value;
+    const source = sourceField.value;
 
     if (!supabaseUrl || !supabaseKey) {
       console.warn('Supabase credentials missing. Simulating survey submission:', body);

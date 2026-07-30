@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken } from '@/lib/auth/tokens';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
+import { checkQuota } from '@/lib/ai/quota';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,26 @@ export async function POST(request: NextRequest) {
             return json(403, { error: 'plan_required', message: 'Sign in to use AI features.', requestId });
         }
 
+        // ── 3b. Rate limit + monthly ceiling (SECURITY S-3) ──────────────────
+        // Entitlements answer "may this plan use AI"; this answers "how much, how
+        // fast". Our own provider keys sit behind this endpoint, so without it one
+        // account can drain the Sarvam balance or run up the Gemini bill.
+        const quota = await checkQuota(payload.sub, plan);
+        if (!quota.allowed) {
+            const status = quota.reason === 'rate' ? 429 : 403;
+            return NextResponse.json(
+                { error: `quota_${quota.reason}`, message: quota.message, requestId },
+                {
+                    status,
+                    // Standard header so a client can back off correctly instead of
+                    // hammering and making the situation worse.
+                    ...(quota.retryAfterSecs
+                        ? { headers: { 'Retry-After': String(quota.retryAfterSecs) } }
+                        : {}),
+                }
+            );
+        }
+
         // ── 4. Media-upload approval ─────────────────────────────────────────
         // Declared on the ROUTE, so a capability cannot quietly begin uploading
         // media later without this gate noticing (AI_RUNTIME_V1.md §5.3).
@@ -95,6 +116,9 @@ export async function POST(request: NextRequest) {
             // remembering to. The provider ID itself is NOT exposed.
             attribution: result.attribution,
             latencyMs: result.latencyMs,
+            // -1 means the quota check failed open; the client should not render a
+            // number it cannot trust.
+            remainingThisMonth: quota.remainingThisMonth,
             requestId,
         });
     } catch (err: unknown) {
