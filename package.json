@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/check-service-role.mjs && vitest run && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:security": "node scripts/check-service-role.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -26,6 +28,7 @@
     "eslint-config-next": "14.2.3",
     "postcss": "^8.5.21",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

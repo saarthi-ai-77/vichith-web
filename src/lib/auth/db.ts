@@ -50,6 +50,9 @@ export interface AuthCodeRecord {
   expires_at: number; // UNIX SECONDS
   used: boolean;
   created_at?: string;
+  /** S-4 Step 3: the Supabase session minted at sign-in, redeemed at /api/auth/exchange.
+   *  NULL for legacy-issued codes, which is how the exchange tells the two apart. */
+  supabase_session?: unknown | null;
 }
 
 export interface RefreshTokenRecord {
@@ -110,7 +113,12 @@ function saveDevStore(store: DevStore) {
 
 function isSupabaseAvailable(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Must test the SAME key `getSupabaseClient()` requires. It previously accepted
+  // the anon key here and then handed off to a factory that no longer does, so a
+  // service-role-less deployment would answer "yes, Supabase is available" and
+  // then throw on every call instead of using the dev store — a worse failure than
+  // either branch alone.
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return Boolean(url && key && !url.includes('your-project-id'));
 }
 
@@ -209,6 +217,31 @@ export async function createUser(
   return newUser;
 }
 
+/**
+ * Replace a user's stored password hash.
+ *
+ * Used only to upgrade a legacy SHA-256 hash to scrypt after a successful sign-in
+ * (S-7). Best-effort by design: if the write fails, the user is already
+ * authenticated and must not be turned away over a background improvement — they
+ * simply get upgraded on their next login instead.
+ */
+export async function updateUserPasswordHash(userId: string, passwordHash: string): Promise<void> {
+  try {
+    if (isSupabaseAvailable()) {
+      const supabase = getSupabaseClient();
+      await supabase.from('users').update({ password_hash: passwordHash }).eq('id', userId);
+      return;
+    }
+    const store = loadDevStore();
+    if (store.users[userId]) {
+      store.users[userId].password_hash = passwordHash;
+      saveDevStore(store);
+    }
+  } catch (err) {
+    console.error('Password hash upgrade failed (login still succeeded):', err);
+  }
+}
+
 // ----------------------------------------------------
 // Profiles & Entitlements Operations
 // ----------------------------------------------------
@@ -295,7 +328,9 @@ export async function createAuthCode(
   code: string,
   codeChallenge: string,
   userId: string,
-  expiresAtInSeconds: number
+  expiresAtInSeconds: number,
+  /** S-4 Step 3. Optional so every existing caller is unchanged. */
+  supabaseSession?: unknown | null
 ): Promise<AuthCodeRecord> {
   const record: AuthCodeRecord = {
     code,
@@ -303,11 +338,20 @@ export async function createAuthCode(
     user_id: userId,
     expires_at: expiresAtInSeconds,
     used: false,
+    ...(supabaseSession ? { supabase_session: supabaseSession } : {}),
   };
 
   if (isSupabaseAvailable()) {
     const supabase = getSupabaseClient();
-    const { error } = await supabase.from('auth_codes').insert([record]);
+    let { error } = await supabase.from('auth_codes').insert([record]);
+    // 006 adds `supabase_session`. If it has not run yet, retry without it rather
+    // than failing sign-in: the exchange falls back to legacy issuance, which is a
+    // working sign-in instead of a broken one.
+    if (error && supabaseSession && error.message?.includes('supabase_session')) {
+      console.warn('[auth] auth_codes.supabase_session missing — run migration 006');
+      const { supabase_session, ...withoutSession } = record;
+      ({ error } = await supabase.from('auth_codes').insert([withoutSession]));
+    }
     if (error) {
       console.error('Supabase createAuthCode error:', error);
     }
@@ -330,11 +374,35 @@ export async function getAndConsumeAuthCode(code: string): Promise<AuthCodeRecor
       .maybeSingle();
 
     if (error || !record) return null;
-
-    // Immediately mark as used if not already used
     if (record.used) return null;
 
-    await supabase.from('auth_codes').update({ used: true }).eq('code', code);
+    // Consume atomically. Reading `used` and then setting it is a check-then-act
+    // race: two requests redeeming the same code can both see `used = false` and
+    // both be handed a session. Making the update itself conditional on
+    // `used = false` moves the decision into Postgres, and `.select()` reports
+    // whether THIS caller was the one that won.
+    //
+    // The session is cleared in the same statement. A single-use code that leaves a
+    // usable bearer token behind in the row is only single-use in name.
+    const { data: consumed, error: consumeError } = await supabase
+      .from('auth_codes')
+      .update({ used: true, supabase_session: null })
+      .eq('code', code)
+      .eq('used', false)
+      .select('code');
+
+    if (consumeError || !consumed || consumed.length === 0) {
+      // Lost the race, or the column does not exist yet (migration 006 not run).
+      // Retry without clearing the session rather than failing sign-in outright.
+      const { data: retry } = await supabase
+        .from('auth_codes')
+        .update({ used: true })
+        .eq('code', code)
+        .eq('used', false)
+        .select('code');
+      if (!retry || retry.length === 0) return null;
+    }
+
     return record as AuthCodeRecord;
   }
 

@@ -9,6 +9,29 @@ import { costMicroUsd } from '@/lib/ai/cost';
 export const dynamic = 'force-dynamic';
 
 /**
+ * The platform's execution ceiling for this route.
+ *
+ * WITHOUT THIS LINE THE CAPABILITY TIMEOUTS ARE FICTION. `CAPABILITY_ROUTES`
+ * declares up to 300 s for `speech.transcribe` — a legitimate number, since a long
+ * interview takes minutes to transcribe — but a Next.js route on Vercel defaults to
+ * around 10–15 s. The platform would kill the function long before our own timeout
+ * fired, and the caller would get a raw gateway timeout instead of the sanitised
+ * message this route works so hard to produce.
+ *
+ * It is the nastiest shape of bug this codebase keeps producing: the short calls
+ * all succeed, so the runtime self-test passes and everything looks connected,
+ * while the first real caption run on a real interview fails. Declared, wired,
+ * never actually able to finish.
+ *
+ * 300 matches the longest declared capability timeout, so the two agree by
+ * construction. **It requires a Vercel Pro plan** — Hobby caps at 60 s. If the
+ * deployment is on Hobby, this must come down to 60 AND the 300 s entries in
+ * `CAPABILITY_ROUTES` with it, because a timeout the platform will not honour is
+ * worse than a short one: it promises something it cannot deliver.
+ */
+export const maxDuration = 300;
+
+/**
  * POST /api/ai — the single entry point for every AI request from the desktop.
  *
  * The pipeline, in the order `AI_RUNTIME_V1.md` §4 fixes:

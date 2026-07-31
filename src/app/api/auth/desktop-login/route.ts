@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findUserByEmail, createUser, createAuthCode } from '@/lib/auth/db';
+import crypto from 'crypto';
+import { findUserByEmail, createUser, createAuthCode, updateUserPasswordHash } from '@/lib/auth/db';
 import { createAuthCodeString } from '@/lib/auth/tokens';
-import { hashPassword } from '@/lib/supabase';
+import { hashPasswordSecure, verifyPassword } from '@/lib/auth/password';
+import {
+  supabaseIdentityEnabled,
+  supabaseSignIn,
+  supabaseSignUp,
+  type IdentitySession,
+} from '@/lib/auth/supabaseIdentity';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,17 +41,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hashedPassword = hashPassword(password);
+    // ── S-4 Step 3: Supabase as the identity provider ────────────────────────
+    //
+    // Off unless VICHITH_IDENTITY=supabase. When on, the session is minted HERE by
+    // GoTrue and carried on the auth-code row to /api/auth/exchange, because the
+    // password is deliberately gone by then. Nothing about the wire the desktop
+    // speaks changes — only who issued the tokens inside the response.
+    let supabaseSession: IdentitySession | null = null;
+    if (supabaseIdentityEnabled()) {
+      const outcome =
+        action === 'signup'
+          ? await supabaseSignUp(email, password, display_name)
+          : await supabaseSignIn(email, password);
+
+      if (outcome.kind === 'rejected') {
+        return NextResponse.json(
+          { error: outcome.error, message: outcome.message },
+          { status: 400 }
+        );
+      }
+      if (outcome.kind === 'session') {
+        supabaseSession = outcome.session;
+      }
+      // 'fallback' means this person is not a Supabase Auth account — which during
+      // the migration is most of them. Drop through to the legacy check rather than
+      // refusing, so flipping the flag locks nobody out.
+    }
+
     let user = await findUserByEmail(email);
 
+    if (supabaseSession && !user) {
+      // Authenticated by Supabase but with no local row yet: create one so profile,
+      // entitlements and usage keep working unchanged. The password column is a
+      // random value nothing will ever verify against — Supabase owns this
+      // account's credentials now, and storing a usable hash beside it would
+      // recreate the second identity system this migration exists to remove.
+      user = await createUser(
+        email,
+        await hashPasswordSecure(crypto.randomUUID()),
+        display_name
+      );
+    }
+
     if (action === 'signup') {
-      if (user) {
+      // `user` is already set when Supabase just created the account above, so the
+      // duplicate check applies only to the legacy path.
+      if (user && !supabaseSession) {
         return NextResponse.json(
           { error: 'user_exists', message: 'An account with this email already exists.' },
           { status: 400 }
         );
       }
-      user = await createUser(email, hashedPassword, display_name);
+      // Salted and stretched from the very first account created after this ships
+      // (S-7). The migration for EXISTING rows is a separate, still-open decision;
+      // that is no reason to keep minting new weak hashes while it is made.
+      if (!user) {
+        user = await createUser(email, await hashPasswordSecure(password), display_name);
+      }
     } else {
       // Sign in mode
       if (!user) {
@@ -53,11 +106,26 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         );
       }
-      if (user.password_hash && user.password_hash !== hashedPassword) {
+
+      // Already proven by Supabase — re-checking a local hash that no longer
+      // governs this account would reject the very users the migration moved.
+      const { ok, needsUpgrade } = supabaseSession
+        ? { ok: true, needsUpgrade: false }
+        : await verifyPassword(password, user.password_hash);
+      if (!ok) {
         return NextResponse.json(
           { error: 'invalid_credentials', message: 'Invalid email or password.' },
           { status: 401 }
         );
+      }
+
+      // Upgrade in place. The password is already in memory because we just
+      // verified it, so this adds no new handling of plaintext — it is not the
+      // "capture the plaintext to seed another system" approach that
+      // AUTH_UNIFICATION_PLAN.md §4 rejected. Best-effort: a failed write must
+      // never cost an authenticated user their sign-in.
+      if (needsUpgrade) {
+        await updateUserPasswordHash(user.id, await hashPasswordSecure(password));
       }
     }
 
@@ -66,7 +134,7 @@ export async function POST(request: NextRequest) {
     const expiresAt = nowInSeconds + 60; // 60 seconds TTL
     const code = createAuthCodeString();
 
-    await createAuthCode(code, code_challenge, user.id, expiresAt);
+    await createAuthCode(code, code_challenge, user.id, expiresAt, supabaseSession);
 
     // Build the success loopback redirect URL
     const redirectUrl = `${ALLOWED_REDIRECT_URI}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
