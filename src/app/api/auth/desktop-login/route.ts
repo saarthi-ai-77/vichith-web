@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findUserByEmail, createUser, createAuthCode } from '@/lib/auth/db';
+import { findUserByEmail, createUser, createAuthCode, updateUserPasswordHash } from '@/lib/auth/db';
 import { createAuthCodeString } from '@/lib/auth/tokens';
-import { hashPassword } from '@/lib/supabase';
+import { hashPasswordSecure, verifyPassword } from '@/lib/auth/password';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +34,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hashedPassword = hashPassword(password);
     let user = await findUserByEmail(email);
 
     if (action === 'signup') {
@@ -44,7 +43,10 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      user = await createUser(email, hashedPassword, display_name);
+      // Salted and stretched from the very first account created after this ships
+      // (S-7). The migration for EXISTING rows is a separate, still-open decision;
+      // that is no reason to keep minting new weak hashes while it is made.
+      user = await createUser(email, await hashPasswordSecure(password), display_name);
     } else {
       // Sign in mode
       if (!user) {
@@ -53,11 +55,22 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         );
       }
-      if (user.password_hash && user.password_hash !== hashedPassword) {
+
+      const { ok, needsUpgrade } = await verifyPassword(password, user.password_hash);
+      if (!ok) {
         return NextResponse.json(
           { error: 'invalid_credentials', message: 'Invalid email or password.' },
           { status: 401 }
         );
+      }
+
+      // Upgrade in place. The password is already in memory because we just
+      // verified it, so this adds no new handling of plaintext — it is not the
+      // "capture the plaintext to seed another system" approach that
+      // AUTH_UNIFICATION_PLAN.md §4 rejected. Best-effort: a failed write must
+      // never cost an authenticated user their sign-in.
+      if (needsUpgrade) {
+        await updateUserPasswordHash(user.id, await hashPasswordSecure(password));
       }
     }
 

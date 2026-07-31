@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
-import { getSupabaseClient, hashPassword, logActivity, autoSeed } from '@/lib/supabase';
+import { getSupabaseClient, logActivity, autoSeed } from '@/lib/supabase';
+import { hashPasswordSecure, verifyPassword } from '@/lib/auth/password';
 
 // Helper to get user profile and permissions by session token
 async function getUserByToken(token: string) {
@@ -91,18 +92,36 @@ export async function POST(req: Request) {
     }
 
     const supabase = getSupabaseClient();
-    const inputHash = hashPassword(password);
 
-    // 1. Fetch user by username and password hash
+    // 1. Fetch by username, then verify the password in code.
+    //
+    // This used to match `.eq('password_hash', sha256(password))` — a lookup that
+    // only works because an unsalted hash is deterministic. That property is
+    // exactly what makes the hashing weak (S-7), so a salted hash cannot be
+    // compared in SQL at all: every hash of the same password is different by
+    // design. Fetching the row and verifying is the only shape that works, and it
+    // is also the shape that lets a legacy hash be upgraded on the way through.
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, username, display_name, is_active, role_id')
+      .select('id, username, display_name, is_active, role_id, password_hash')
       .eq('username', username.toLowerCase().trim())
-      .eq('password_hash', inputHash)
       .maybeSingle();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Invalid username or password.' }, { status: 401 });
+    }
+
+    const { ok, needsUpgrade } = await verifyPassword(password, user.password_hash);
+    if (!ok) {
+      // Same message and same status as an unknown username, so the response does
+      // not distinguish "no such user" from "wrong password".
+      return NextResponse.json({ error: 'Invalid username or password.' }, { status: 401 });
+    }
+    if (needsUpgrade) {
+      await supabase
+        .from('users')
+        .update({ password_hash: await hashPasswordSecure(password) })
+        .eq('id', user.id);
     }
 
     if (!user.is_active) {

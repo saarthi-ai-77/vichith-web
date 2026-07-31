@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { hashPasswordSecure } from './auth/password';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 
@@ -38,8 +39,16 @@ export function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
-// SHA-256 password hash helper
-export function hashPassword(password: string): string {
+/**
+ * @deprecated Unsalted SHA-256 (S-7). Use `hashPasswordSecure` / `verifyPassword`
+ * from `@/lib/auth/password`.
+ *
+ * Kept for one reason only: `verifyPassword` must still recognise hashes already in
+ * the database, and deleting this would not delete those rows. Nothing calls it to
+ * CREATE a hash any more — the S-9 build guard would be the place to enforce that
+ * if it ever creeps back.
+ */
+export function hashPasswordLegacySha256(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
@@ -128,18 +137,33 @@ export async function autoSeed() {
       .maybeSingle();
 
     if (!existingAdmin) {
-      const hashedAdminPassword = hashPassword('vichith@2026!');
-      await supabase.from('users').insert([
-        {
-          username: 'admin',
-          password_hash: hashedAdminPassword,
-          display_name: 'System Administrator',
-          role_id: adminRole.id,
-          department: 'Management',
-          is_active: true,
-        },
-      ]);
-      console.log('Seeded default admin user');
+      // The password used to be a literal in this file, which means it is in the
+      // git history of a repository, which means it is not a password. Seeding is
+      // now opt-in and requires one to be supplied: a default admin credential that
+      // everyone can read is worse than no admin account, because it looks like
+      // security while being a published back door.
+      const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+      if (!adminPassword) {
+        // Skip the admin only — not the rest of the seed. An early return here
+        // would silently stop seeding roles' downstream task too, turning a
+        // security improvement into an unrelated missing-data bug.
+        console.warn(
+          '[seed] Skipping admin user: set SEED_ADMIN_PASSWORD to create one. ' +
+          'If an admin account already exists with the old default, change its password now.'
+        );
+      } else {
+        await supabase.from('users').insert([
+          {
+            username: 'admin',
+            password_hash: await hashPasswordSecure(adminPassword),
+            display_name: 'System Administrator',
+            role_id: adminRole.id,
+            department: 'Management',
+            is_active: true,
+          },
+        ]);
+        console.log('Seeded admin user from SEED_ADMIN_PASSWORD');
+      }
     }
 
     // Get Admin user id

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSupabaseClient, hashPassword, logActivity } from '@/lib/supabase';
+import { getSupabaseClient, logActivity } from '@/lib/supabase';
+import { hashPasswordSecure } from '@/lib/auth/password';
 
 // Helper to authenticate request and get user permissions
 async function getAuthUser() {
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
       }
 
       if (password && password.trim().length > 0) {
-        updateData.password_hash = hashPassword(password);
+        updateData.password_hash = await hashPasswordSecure(password);
       }
 
       const { data, error } = await supabase
@@ -136,7 +137,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Username is already taken.' }, { status: 409 });
       }
 
-      const passHash = hashPassword(password);
+      const passHash = await hashPasswordSecure(password);
       const { data, error } = await supabase
         .from('users')
         .insert([

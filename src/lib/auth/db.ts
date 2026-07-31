@@ -214,6 +214,31 @@ export async function createUser(
   return newUser;
 }
 
+/**
+ * Replace a user's stored password hash.
+ *
+ * Used only to upgrade a legacy SHA-256 hash to scrypt after a successful sign-in
+ * (S-7). Best-effort by design: if the write fails, the user is already
+ * authenticated and must not be turned away over a background improvement — they
+ * simply get upgraded on their next login instead.
+ */
+export async function updateUserPasswordHash(userId: string, passwordHash: string): Promise<void> {
+  try {
+    if (isSupabaseAvailable()) {
+      const supabase = getSupabaseClient();
+      await supabase.from('users').update({ password_hash: passwordHash }).eq('id', userId);
+      return;
+    }
+    const store = loadDevStore();
+    if (store.users[userId]) {
+      store.users[userId].password_hash = passwordHash;
+      saveDevStore(store);
+    }
+  } catch (err) {
+    console.error('Password hash upgrade failed (login still succeeded):', err);
+  }
+}
+
 // ----------------------------------------------------
 // Profiles & Entitlements Operations
 // ----------------------------------------------------
