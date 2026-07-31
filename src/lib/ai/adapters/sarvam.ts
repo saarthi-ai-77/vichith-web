@@ -63,6 +63,56 @@ const CHAT_MODEL = 'sarvam-105b';
 /** Saaras output modes. Exposed as a capability parameter, never as a model name. */
 export type SpeechMode = 'transcribe' | 'translate' | 'verbatim' | 'transliterate' | 'codemix';
 
+
+/**
+ * Sarvam's accepted `language_code` values. This is a CLOSED set — anything else
+ * is rejected with a 400, which is exactly how captions were failing: the picker
+ * sends "te", Sarvam wants "te-IN", and the mismatch surfaced four layers away as
+ * "something went wrong on our side".
+ *
+ * Auto-detect is the literal string 'unknown', NOT an omitted field.
+ */
+const SARVAM_LANGS = new Set([
+    'unknown', 'hi-IN', 'bn-IN', 'kn-IN', 'ml-IN', 'mr-IN', 'od-IN', 'pa-IN',
+    'ta-IN', 'te-IN', 'en-IN', 'gu-IN', 'as-IN', 'ur-IN', 'ne-IN', 'kok-IN',
+    'ks-IN', 'sd-IN', 'sa-IN', 'sat-IN', 'mni-IN', 'brx-IN', 'mai-IN', 'doi-IN',
+]);
+
+/** Two-letter and common aliases -> Sarvam's code. */
+const LANG_ALIAS: Record<string, string> = {
+    hi: 'hi-IN', bn: 'bn-IN', kn: 'kn-IN', ml: 'ml-IN', mr: 'mr-IN',
+    or: 'od-IN', od: 'od-IN', pa: 'pa-IN', ta: 'ta-IN', te: 'te-IN',
+    en: 'en-IN', gu: 'gu-IN', as: 'as-IN', ur: 'ur-IN', ne: 'ne-IN',
+    kok: 'kok-IN', ks: 'ks-IN', sd: 'sd-IN', sa: 'sa-IN', sat: 'sat-IN',
+    mni: 'mni-IN', brx: 'brx-IN', mai: 'mai-IN', doi: 'doi-IN',
+    hindi: 'hi-IN', bengali: 'bn-IN', kannada: 'kn-IN', malayalam: 'ml-IN',
+    marathi: 'mr-IN', odia: 'od-IN', punjabi: 'pa-IN', tamil: 'ta-IN',
+    telugu: 'te-IN', english: 'en-IN', gujarati: 'gu-IN',
+};
+
+/**
+ * Normalise any language the app might send into something Sarvam accepts.
+ *
+ * Falls back to 'unknown' rather than passing an unrecognised value through:
+ * auto-detect on a language we could not map is a worse transcript, but a
+ * REJECTED REQUEST is no transcript at all.
+ */
+function toSarvamLanguage(raw: unknown): string {
+    if (typeof raw !== 'string') return 'unknown';
+    const v = raw.trim();
+    if (!v || v.toLowerCase() === 'auto') return 'unknown';
+    if (SARVAM_LANGS.has(v)) return v;
+
+    const lower = v.toLowerCase();
+    if (LANG_ALIAS[lower]) return LANG_ALIAS[lower];
+
+    // "te-in" / "te_IN" / "tel" -> try the leading subtag.
+    const base = lower.split(/[-_]/)[0];
+    if (LANG_ALIAS[base]) return LANG_ALIAS[base];
+
+    return 'unknown';
+}
+
 export class SarvamAdapter implements ProviderAdapter {
     readonly id = 'sarvam' as const;
 
@@ -214,7 +264,9 @@ export class SarvamAdapter implements ProviderAdapter {
                         // Per-speaker caption styling falls out of diarization for free,
                         // because CaptionWord already carries per-word style overrides.
                         with_diarization: p.diarize === true,
-                        ...(typeof p.language === 'string' ? { language_code: p.language } : {}),
+                        // ALWAYS sent, always valid. Omitting it is not the same as
+                    // auto-detect to Sarvam, and an unmapped value is a 400.
+                    language_code: toSarvamLanguage(p.language),
                     },
                 };
             }
@@ -231,7 +283,9 @@ export class SarvamAdapter implements ProviderAdapter {
                         // — the model is the one thing here most likely to need
                         // reverting in a hurry.
                         model: process.env.SARVAM_TTS_MODEL || 'bulbul:v4',
-                        ...(typeof p.language === 'string' ? { target_language_code: p.language } : {}),
+                        ...(typeof p.language === 'string'
+                            ? { target_language_code: toSarvamLanguage(p.language) }
+                            : {}),
                         ...(typeof p.speaker === 'string' ? { speaker: p.speaker } : {}),
                         ...(typeof p.pace === 'number' ? { pace: p.pace } : {}),
                     },
