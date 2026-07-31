@@ -85,12 +85,35 @@ export class SarvamAdapter implements ProviderAdapter {
         const started = Date.now();
         let res: Response;
         try {
-            res = await fetch(`${SARVAM_BASE}${call.path}`, {
-                method: 'POST',
-                signal,
-                headers: { 'Content-Type': 'application/json', 'api-subscription-key': apiKey },
-                body: JSON.stringify(call.body),
-            });
+            const isMultipart = (call as { multipartAudio?: boolean }).multipartAudio === true;
+
+            let init: RequestInit;
+            if (isMultipart) {
+                // Content-Type is deliberately NOT set: fetch must generate it so the
+                // multipart boundary matches the body it actually wrote. Setting it
+                // by hand produces a boundary mismatch and a confusing 4xx.
+                const b = call.body as Record<string, unknown>;
+                const audioB64 = typeof b.audio === 'string' ? b.audio : '';
+                const bytes = Buffer.from(audioB64, 'base64');
+
+                const form = new FormData();
+                // Opus in an Ogg container — what the desktop now extracts.
+                form.append('file', new Blob([bytes], { type: 'audio/ogg' }), 'audio.ogg');
+                for (const [k, v] of Object.entries(b)) {
+                    if (k === 'audio' || v === undefined || v === null) continue;
+                    form.append(k, typeof v === 'string' ? v : String(v));
+                }
+                init = { method: 'POST', signal, headers: { 'api-subscription-key': apiKey }, body: form };
+            } else {
+                init = {
+                    method: 'POST',
+                    signal,
+                    headers: { 'Content-Type': 'application/json', 'api-subscription-key': apiKey },
+                    body: JSON.stringify(call.body),
+                };
+            }
+
+            res = await fetch(`${SARVAM_BASE}${call.path}`, init);
         } catch {
             const aborted = signal.aborted;
             return aiError(
@@ -154,7 +177,7 @@ export class SarvamAdapter implements ProviderAdapter {
     }
 
     /** Map a capability + payload onto a Sarvam endpoint and body. */
-    private buildCall(request: AIRequest): { path: string; body: Record<string, unknown> } | { error: string } {
+    private buildCall(request: AIRequest): { path: string; body: Record<string, unknown>; multipartAudio?: boolean } | { error: string } {
         const p = request.payload;
 
         switch (request.capability) {
@@ -169,6 +192,11 @@ export class SarvamAdapter implements ProviderAdapter {
                     // Direct speech→English is a distinct endpoint; using it avoids a
                     // transcribe-then-translate round trip and the drift that introduces.
                     path: translating ? '/speech-to-text-translate' : '/speech-to-text',
+                    // MULTIPART, NOT JSON. Sarvam's speech endpoints take a real file
+                    // upload; sending `{audio: base64}` as JSON returned a 500 that
+                    // surfaced to the user as "something went wrong on our side" —
+                    // true, and useless, because the fault was the request shape.
+                    multipartAudio: true,
                     body: {
                         audio: p.audio,
                         model: 'saaras:v3',
