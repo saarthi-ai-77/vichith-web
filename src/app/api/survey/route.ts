@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireText, bodyTooLarge, LIMITS } from '@/lib/validate';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit, rateLimitedResponse, BUCKETS } from '@/lib/rateLimit';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 // Service role only. The anon key is NOT a fallback for a server route: after
@@ -10,6 +11,14 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(req: Request) {
   try {
+    // SECURITY S-5 (remainder): bound how MANY requests arrive, checked first
+    // because it is the cheapest rejection available. Fails open; see rateLimit.ts.
+    const limit = await checkRateLimit(req, BUCKETS.survey);
+    if (!limit.allowed) {
+      const r = rateLimitedResponse(limit);
+      return NextResponse.json(r.body, r.init);
+    }
+
     // SECURITY S-5: unauthenticated endpoint — bound the body, then every field.
     if (bodyTooLarge(req, 4_000)) {
       return NextResponse.json({ error: 'Request body is too large' }, { status: 413 });

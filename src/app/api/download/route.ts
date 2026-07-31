@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit, rateLimitedResponse, BUCKETS } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,14 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(req: Request) {
   try {
+    // SECURITY S-5 (remainder): unauthenticated endpoint, so bound how MANY
+    // requests arrive as well as how big each one is. Fails open — see rateLimit.ts.
+    const limit = await checkRateLimit(req, BUCKETS.download);
+    if (!limit.allowed) {
+      const r = rateLimitedResponse(limit);
+      return NextResponse.json(r.body, r.init);
+    }
+
     const userAgent = req.headers.get('user-agent') || 'unknown';
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
 

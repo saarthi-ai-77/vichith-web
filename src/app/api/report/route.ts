@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireText, LIMITS } from '@/lib/validate';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit, rateLimitedResponse, BUCKETS } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,14 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(req: Request) {
   try {
+    // SECURITY S-5 (remainder): unauthenticated endpoint, so bound how MANY
+    // requests arrive as well as how big each one is. Fails open — see rateLimit.ts.
+    const limit = await checkRateLimit(req, BUCKETS.report);
+    if (!limit.allowed) {
+      const r = rateLimitedResponse(limit);
+      return NextResponse.json(r.body, r.init);
+    }
+
     const formData = await req.formData();
     const category = formData.get('category') as string;
     const action_attempted = formData.get('action_attempted') as string;

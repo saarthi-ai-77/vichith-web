@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireEmail, bodyTooLarge } from '@/lib/validate';
+import { checkRateLimit, rateLimitedResponse, BUCKETS } from '@/lib/rateLimit';
 
 // Initialize Supabase Client (Environment variables must be set)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -11,6 +12,16 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(req: Request) {
   try {
+    // SECURITY S-5 (remainder): bound how MANY requests arrive, not just how big
+    // each one is. Checked first because it is the cheapest rejection there is —
+    // a header read and one indexed count, before any body is touched.
+    // Fails open; see rateLimit.ts for why that is the right trade here.
+    const limit = await checkRateLimit(req, BUCKETS.waitlist);
+    if (!limit.allowed) {
+      const r = rateLimitedResponse(limit);
+      return NextResponse.json(r.body, r.init);
+    }
+
     // SECURITY S-5: this endpoint is unauthenticated, so bound the body before
     // parsing it. `email.includes('@')` accepted a megabyte-long string with an @
     // in it and wrote it straight to Postgres.
