@@ -42,6 +42,12 @@ const RATES = {
     sarvam: {
         perAudioSecond: 100,
         perKChar: 20_000,
+        // Sarvam-105B chat, from the published INR rates (Rs.4 / Rs.16 per Mtok)
+        // converted at ~Rs.83/USD. Roughly 6x and 13x cheaper than Gemini Flash
+        // on input and output respectively — which is why V1 can afford to have
+        // AI on by default rather than rationed.
+        inputPerMTok: 48_000,
+        outputPerMTok: 193_000,
     },
 } as const;
 
@@ -54,6 +60,14 @@ const RATES = {
  */
 export function costMicroUsd(provider: ProviderId, usage: AIUsage): number {
     let micro = 0;
+
+    // Sarvam serves BOTH token-metered chat and unit-metered speech, so its branch
+    // has to handle tokens as well. Missing this would have silently reported zero
+    // cost for every reasoning request now that planning runs on Sarvam.
+    if (provider === 'sarvam') {
+        if (usage.inputTokens) micro += (usage.inputTokens / 1_000_000) * RATES.sarvam.inputPerMTok;
+        if (usage.outputTokens) micro += (usage.outputTokens / 1_000_000) * RATES.sarvam.outputPerMTok;
+    }
 
     if (provider === 'gemini') {
         if (usage.inputTokens) micro += (usage.inputTokens / 1_000_000) * RATES.gemini.inputPerMTok;
