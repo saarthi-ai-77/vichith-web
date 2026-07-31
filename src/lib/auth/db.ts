@@ -50,6 +50,9 @@ export interface AuthCodeRecord {
   expires_at: number; // UNIX SECONDS
   used: boolean;
   created_at?: string;
+  /** S-4 Step 3: the Supabase session minted at sign-in, redeemed at /api/auth/exchange.
+   *  NULL for legacy-issued codes, which is how the exchange tells the two apart. */
+  supabase_session?: unknown | null;
 }
 
 export interface RefreshTokenRecord {
@@ -325,7 +328,9 @@ export async function createAuthCode(
   code: string,
   codeChallenge: string,
   userId: string,
-  expiresAtInSeconds: number
+  expiresAtInSeconds: number,
+  /** S-4 Step 3. Optional so every existing caller is unchanged. */
+  supabaseSession?: unknown | null
 ): Promise<AuthCodeRecord> {
   const record: AuthCodeRecord = {
     code,
@@ -333,11 +338,20 @@ export async function createAuthCode(
     user_id: userId,
     expires_at: expiresAtInSeconds,
     used: false,
+    ...(supabaseSession ? { supabase_session: supabaseSession } : {}),
   };
 
   if (isSupabaseAvailable()) {
     const supabase = getSupabaseClient();
-    const { error } = await supabase.from('auth_codes').insert([record]);
+    let { error } = await supabase.from('auth_codes').insert([record]);
+    // 006 adds `supabase_session`. If it has not run yet, retry without it rather
+    // than failing sign-in: the exchange falls back to legacy issuance, which is a
+    // working sign-in instead of a broken one.
+    if (error && supabaseSession && error.message?.includes('supabase_session')) {
+      console.warn('[auth] auth_codes.supabase_session missing — run migration 006');
+      const { supabase_session, ...withoutSession } = record;
+      ({ error } = await supabase.from('auth_codes').insert([withoutSession]));
+    }
     if (error) {
       console.error('Supabase createAuthCode error:', error);
     }
@@ -360,11 +374,35 @@ export async function getAndConsumeAuthCode(code: string): Promise<AuthCodeRecor
       .maybeSingle();
 
     if (error || !record) return null;
-
-    // Immediately mark as used if not already used
     if (record.used) return null;
 
-    await supabase.from('auth_codes').update({ used: true }).eq('code', code);
+    // Consume atomically. Reading `used` and then setting it is a check-then-act
+    // race: two requests redeeming the same code can both see `used = false` and
+    // both be handed a session. Making the update itself conditional on
+    // `used = false` moves the decision into Postgres, and `.select()` reports
+    // whether THIS caller was the one that won.
+    //
+    // The session is cleared in the same statement. A single-use code that leaves a
+    // usable bearer token behind in the row is only single-use in name.
+    const { data: consumed, error: consumeError } = await supabase
+      .from('auth_codes')
+      .update({ used: true, supabase_session: null })
+      .eq('code', code)
+      .eq('used', false)
+      .select('code');
+
+    if (consumeError || !consumed || consumed.length === 0) {
+      // Lost the race, or the column does not exist yet (migration 006 not run).
+      // Retry without clearing the session rather than failing sign-in outright.
+      const { data: retry } = await supabase
+        .from('auth_codes')
+        .update({ used: true })
+        .eq('code', code)
+        .eq('used', false)
+        .select('code');
+      if (!retry || retry.length === 0) return null;
+    }
+
     return record as AuthCodeRecord;
   }
 

@@ -43,6 +43,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 3b. S-4 Step 3 — hand back the Supabase session, if one rode the code.
+    //
+    // This is the whole of "Supabase is the identity provider", from the desktop's
+    // point of view: the same endpoint, the same response shape, tokens issued by
+    // GoTrue instead of by us. `issuer` is recorded so Step 6 (removing legacy
+    // verification) can be gated on telemetry rather than on a date.
+    //
+    // Deliberately AFTER the PKCE check. Skipping it for the Supabase path would
+    // hand a session to anyone holding a stolen code, which is exactly what PKCE
+    // exists to prevent — and would be an easy thing to get wrong here, because the
+    // session already exists and the check looks redundant. It is not.
+    const carried = authCodeRecord.supabase_session as
+      | { access_token?: string; refresh_token?: string; expires_at?: number; user?: unknown }
+      | null
+      | undefined;
+
+    if (carried?.access_token && carried?.refresh_token) {
+      return NextResponse.json({
+        access_token: carried.access_token,
+        refresh_token: carried.refresh_token,
+        expires_at: carried.expires_at,
+        user: carried.user,
+        issuer: 'supabase',
+      });
+    }
+
     // 4. Fetch User
     const user = await findUserById(authCodeRecord.user_id);
     if (!user) {
@@ -74,6 +100,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         display_name: user.display_name,
       },
+      // Recorded on BOTH paths, so "how many sign-ins are still legacy?" is a
+      // question the data answers. Step 6 is gated on that reaching zero.
+      issuer: 'legacy',
     });
   } catch (err: any) {
     console.error('Error in /api/auth/exchange:', err);

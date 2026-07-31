@@ -31,6 +31,10 @@ const SRC = join(ROOT, 'src');
 /** Files permitted to mention the anon key, with the reason they are permitted. */
 const ALLOWED = new Map([
     ['src/app/api/config/route.ts', 'serves the anon key to the desktop by design'],
+    // sign-in and sign-up ARE anon-key operations. Using the service role would
+    // bypass the rate limiting and lockout GoTrue applies to auth attempts, which
+    // is the opposite of a security improvement.
+    ['src/lib/auth/supabaseIdentity.ts', 'GoTrue sign-in/sign-up must use the anon key'],
 ]);
 
 const ANON = 'NEXT_PUBLIC_SUPABASE_ANON_KEY';
@@ -39,8 +43,17 @@ function walk(dir) {
     const out = [];
     for (const entry of readdirSync(dir)) {
         const full = join(dir, entry);
-        if (statSync(full).isDirectory()) out.push(...walk(full));
-        else if (/\.(ts|tsx|js|mjs)$/.test(entry)) out.push(full);
+        if (statSync(full).isDirectory()) {
+            if (entry === '__tests__') continue;
+            out.push(...walk(full));
+        }
+        // Tests may set or clear the anon key to exercise the module that legitimately
+        // uses it. They do not ship, so a mention there cannot become the production
+        // fallback this guard exists to prevent. Narrowed rather than allow-listed
+        // per file, so adding a test never requires editing the guard.
+        else if (/\.(ts|tsx|js|mjs)$/.test(entry) && !/\.test\.(ts|tsx|js|mjs)$/.test(entry)) {
+            out.push(full);
+        }
     }
     return out;
 }
@@ -65,4 +78,4 @@ if (violations.length > 0) {
     process.exit(1);
 }
 
-console.log(`S-9 guard: clean (${ALLOWED.size} documented exception).`);
+console.log(`S-9 guard: clean (${ALLOWED.size} documented exceptions).`);
