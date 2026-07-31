@@ -24,9 +24,22 @@ const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 /** Model per capability. Kept here, never in business logic — the desktop must
  *  never learn a model name (`AI_RUNTIME_V1.md`, frozen principle 6). */
+/**
+ * FLASH, NOT PRO, FOR PLANNING.
+ *
+ * Pro is the better reasoner and it is the wrong choice here, because on the free
+ * tier it is effectively unavailable — every plan.edit 429'd while understand.text
+ * (Flash) succeeded, which produced the worst possible symptom: a diagnostic
+ * reporting "everything works" beside a Chithra that never answered. Same account,
+ * same key, same route, different model.
+ *
+ * Editing intents are short, structured and well within Flash's ability. Spending
+ * the harder model on them bought nothing and cost the whole feature. Pro stays
+ * where its reasoning actually earns its limits: video understanding.
+ */
 const MODEL_FOR: Partial<Record<Capability, string>> = {
-    'plan.edit': 'gemini-2.5-pro',
-    'plan.research': 'gemini-2.5-pro',
+    'plan.edit': 'gemini-2.5-flash',
+    'plan.research': 'gemini-2.5-flash',
     'understand.text': 'gemini-2.5-flash',
     'understand.image': 'gemini-2.5-flash',
     'understand.video': 'gemini-2.5-pro',
