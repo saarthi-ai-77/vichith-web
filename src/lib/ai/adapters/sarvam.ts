@@ -205,18 +205,46 @@ export class SarvamAdapter implements ProviderAdapter {
 
             case 'plan.edit':
             case 'plan.research': {
-                const prompt = p.prompt;
-                if (typeof prompt !== 'string' || !prompt.trim()) {
-                    return { error: 'prompt is required' };
+                const prompt = typeof p.prompt === 'string' ? p.prompt : '';
+                const hasMessages = Array.isArray(p.messages) && p.messages.length > 0;
+                if (!prompt.trim() && !hasMessages) {
+                    return { error: 'prompt or messages is required' };
                 }
+                // The planner passes its system prompt as `prompt` alongside
+                // `messages`; treat it as system content when no explicit
+                // systemPrompt was given, rather than losing it.
+                const systemContent =
+                    typeof p.systemPrompt === 'string' && p.systemPrompt.trim()
+                        ? p.systemPrompt
+                        : (hasMessages ? prompt : '');
                 // OpenAI-compatible. A system prompt is passed separately when the
                 // caller supplies one, because merging it into the user turn loses
                 // the priority the model gives system content.
                 const messages: { role: string; content: string }[] = [];
-                if (typeof p.systemPrompt === 'string' && p.systemPrompt.trim()) {
-                    messages.push({ role: 'system', content: p.systemPrompt });
+                if (systemContent.trim()) {
+                    messages.push({ role: 'system', content: systemContent });
                 }
-                messages.push({ role: 'user', content: prompt });
+
+                // A caller-supplied conversation wins over the single prompt.
+                //
+                // This is the bug that made Sarvam look incapable: the planner
+                // sends `prompt: systemPrompt` PLUS a `messages` array, and this
+                // branch read only `prompt` — so the model received the system
+                // prompt as the user's turn and never saw what the user actually
+                // typed. It answered every request with a greeting because a
+                // greeting is the right answer to "here are your instructions".
+                if (Array.isArray(p.messages) && p.messages.length > 0) {
+                    for (const m of p.messages as { role?: unknown; content?: unknown }[]) {
+                        if (typeof m?.content === 'string' && m.content.trim()) {
+                            messages.push({
+                                role: m.role === 'assistant' ? 'assistant' : 'user',
+                                content: m.content,
+                            });
+                        }
+                    }
+                } else {
+                    messages.push({ role: 'user', content: prompt });
+                }
 
                 return {
                     path: '/v1/chat/completions',
