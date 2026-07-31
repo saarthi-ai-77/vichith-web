@@ -37,6 +37,11 @@ import { requireEnv } from '../../env';
 const SARVAM_BASE = 'https://api.sarvam.ai';
 
 const SUPPORTED: Capability[] = [
+    // Reasoning. Sarvam-105B is a 128k-context MoE with native tool calling and
+    // JSON mode, which is the whole requirement for producing an edit plan.
+    'plan.edit',
+    'plan.research',
+    // Speech and language.
     'speech.transcribe',
     'speech.translate',
     'speech.synthesize',
@@ -44,6 +49,16 @@ const SUPPORTED: Capability[] = [
     'document.ocr',
     'understand.text',
 ];
+
+/**
+ * Capabilities served by the OpenAI-compatible chat endpoint rather than a
+ * purpose-built one. They differ in both request shape and response extraction,
+ * which is why this set exists rather than a check scattered at each site.
+ */
+const CHAT_CAPABILITIES = new Set<Capability>(['plan.edit', 'plan.research', 'understand.text']);
+
+/** The reasoning model. One constant, so a migration is one edit. */
+const CHAT_MODEL = 'sarvam-105b';
 
 /** Saaras output modes. Exposed as a capability parameter, never as a model name. */
 export type SpeechMode = 'transcribe' | 'translate' | 'verbatim' | 'transliterate' | 'codemix';
@@ -106,9 +121,25 @@ export class SarvamAdapter implements ProviderAdapter {
             return aiError('RESPONSE_INVALID', 'The speech service returned an unreadable response.', request.requestId, true);
         }
 
+        // A chat response is an envelope; the caller wants the message. Returning
+        // the envelope would push OpenAI's response shape into every call site and
+        // make swapping the reasoning model a change in all of them.
+        let data: unknown = body;
+        if (CHAT_CAPABILITIES.has(request.capability)) {
+            const text = extractChatText(body);
+            if (text == null) {
+                // A 200 with no usable message is a real outcome (filtered, empty
+                // choices). Treat it as invalid rather than returning empty content
+                // that a parser downstream will fail on more confusingly.
+                console.error(`[ai] sarvam returned no usable message for ${request.requestId}`);
+                return aiError('RESPONSE_INVALID', 'The AI could not complete that request.', request.requestId, true);
+            }
+            data = text;
+        }
+
         return {
             ok: true,
-            data: body as T,
+            data: data as T,
             provider: this.id,
             // Rendered verbatim by the UI wherever Sarvam actually ran.
             attribution: 'Powered by Sarvam',
@@ -172,6 +203,40 @@ export class SarvamAdapter implements ProviderAdapter {
                 };
             }
 
+            case 'plan.edit':
+            case 'plan.research': {
+                const prompt = p.prompt;
+                if (typeof prompt !== 'string' || !prompt.trim()) {
+                    return { error: 'prompt is required' };
+                }
+                // OpenAI-compatible. A system prompt is passed separately when the
+                // caller supplies one, because merging it into the user turn loses
+                // the priority the model gives system content.
+                const messages: { role: string; content: string }[] = [];
+                if (typeof p.systemPrompt === 'string' && p.systemPrompt.trim()) {
+                    messages.push({ role: 'system', content: p.systemPrompt });
+                }
+                messages.push({ role: 'user', content: prompt });
+
+                return {
+                    path: '/v1/chat/completions',
+                    body: {
+                        model: CHAT_MODEL,
+                        messages,
+                        // Low but not zero. Edit planning wants near-deterministic
+                        // structure; exactly 0 makes some models loop on a bad token
+                        // rather than pick the next-best one.
+                        temperature: typeof p.temperature === 'number' ? p.temperature : 0.2,
+                        ...(typeof p.maxOutputTokens === 'number' ? { max_tokens: p.maxOutputTokens } : {}),
+                        // JSON mode when the caller wants structure. The planner does;
+                        // conversational replies deliberately do not, because forcing
+                        // JSON is what turned "hi" into an error.
+                        ...(p.jsonMode === true ? { response_format: { type: 'json_object' } } : {}),
+                        ...(Array.isArray(p.tools) && p.tools.length ? { tools: p.tools } : {}),
+                    },
+                };
+            }
+
             case 'text.translate':
             case 'understand.text': {
                 if (typeof p.text !== 'string' || !p.text.trim()) return { error: 'text is required' };
@@ -195,8 +260,31 @@ export class SarvamAdapter implements ProviderAdapter {
                 return { path: '/parse/parsepdf', body: { pdf: p.document } };
             }
 
+            case 'understand.image':
+            case 'understand.video':
+                // Named explicitly rather than falling to the generic message,
+                // because "unsupported capability" reads like a bug when it is in
+                // fact a deliberate V1 boundary. Sarvam Vision reads documents, not
+                // scenes; frame understanding is a V2 capability and the user
+                // deserves to be told which, not left guessing.
+                return {
+                    error:
+                        'Looking at what is IN a shot is not available yet — that arrives in a later ' +
+                        'update. Reading on-screen text works today, and so do faces, objects and scene ' +
+                        'detection, which run on your own machine.',
+                };
+
             default:
                 return { error: `Sarvam does not serve "${request.capability}".` };
         }
     }
+}
+
+/** Pull the assistant message out of an OpenAI-compatible chat response. */
+function extractChatText(body: unknown): string | null {
+    const choices = (body as { choices?: unknown[] } | null)?.choices;
+    if (!Array.isArray(choices) || choices.length === 0) return null;
+    const msg = (choices[0] as { message?: { content?: unknown } })?.message;
+    const content = msg?.content;
+    return typeof content === 'string' && content.length > 0 ? content : null;
 }

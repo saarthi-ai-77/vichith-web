@@ -36,6 +36,11 @@ export type Capability =
     | 'text.translate'       // text → text across languages
     | 'document.ocr';        // document → text
 
+/**
+ * V1 ships one provider. `gemini` is retained in the type so a V2 multimodal
+ * adapter is a routing-table entry rather than a type change rippling through the
+ * pipeline — but nothing routes to it today.
+ */
 export type ProviderId = 'gemini' | 'sarvam';
 
 /** Where a capability may run. Cloud today; the enum exists so the native-first
@@ -69,11 +74,29 @@ export interface CapabilityRoute {
  * pipeline, no change to any route handler.
  */
 export const CAPABILITY_ROUTES: Record<Capability, CapabilityRoute> = {
-    'plan.edit':          { primary: 'gemini', fallback: null,     locality: 'cloud', timeoutMs: 60_000,  sendsMedia: false, attribution: null },
-    'plan.research':      { primary: 'gemini', fallback: null,     locality: 'cloud', timeoutMs: 120_000, sendsMedia: false, attribution: null },
-    'understand.text':    { primary: 'gemini', fallback: 'sarvam', locality: 'cloud', timeoutMs: 60_000,  sendsMedia: false, attribution: null },
-    'understand.image':   { primary: 'gemini', fallback: null,     locality: 'cloud', timeoutMs: 90_000,  sendsMedia: true,  attribution: null },
-    'understand.video':   { primary: 'gemini', fallback: null,     locality: 'cloud', timeoutMs: 180_000, sendsMedia: true,  attribution: null },
+    // V1 IS SARVAM-NATIVE. Reasoning, speech, voice and translation all run on one
+    // provider, under the startup credits, with no second vendor to keep alive.
+    //
+    // `fallback: null` throughout is deliberate and not laziness. A fallback that
+    // silently answers from a different provider is how this codebase spent a day
+    // believing Chithra was on Gemini while it was on OpenRouter. One provider,
+    // honest failure.
+    'plan.edit':          { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 60_000,  sendsMedia: false, attribution: 'Powered by Sarvam' },
+    'plan.research':      { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 120_000, sendsMedia: false, attribution: 'Powered by Sarvam' },
+    'understand.text':    { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 60_000,  sendsMedia: false, attribution: 'Powered by Sarvam' },
+
+    // ── Frame vision: NOT SERVED IN V1 ──────────────────────────────────────
+    //
+    // Sarvam Vision reads documents, not video frames, so no provider here can
+    // answer "what is in this shot". Rather than quietly routing it to a second
+    // vendor, these fail with a message that says so.
+    //
+    // What V1 DOES give you instead, without any cloud vision: scene text via
+    // Sarvam Vision on an extracted frame (document.ocr), plus faces, objects,
+    // shots, motion and frame captions computed on the user's own machine. See
+    // PERCEPTION_REASONING_ARCHITECTURE.md.
+    'understand.image':   { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 90_000,  sendsMedia: true,  attribution: 'Powered by Sarvam' },
+    'understand.video':   { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 180_000, sendsMedia: true,  attribution: 'Powered by Sarvam' },
 
     'speech.transcribe':  { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 300_000, sendsMedia: true,  attribution: 'Powered by Sarvam' },
     'speech.translate':   { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 300_000, sendsMedia: true,  attribution: 'Powered by Sarvam' },
