@@ -4,7 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Service role only. The anon key is NOT a fallback for a server route: after
+// 004_rls_lockdown.sql it can read nothing, and before it, it could read
+// everything. See src/lib/supabase.ts for the full reasoning.
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(req: Request) {
   try {

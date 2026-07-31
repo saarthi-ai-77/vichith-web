@@ -2,11 +2,38 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+/**
+ * The service role key, and ONLY the service role key.
+ *
+ * This used to read `SERVICE_ROLE || ANON`, which looks like a sensible fallback
+ * and is not one. Every route here is server-side and needs privileged access; the
+ * anon role is not a reduced-capability substitute for that, it is a different
+ * thing entirely. The fallback meant a missing environment variable silently
+ * downgraded the whole backend to the public key instead of failing — and it only
+ * appeared to work because RLS was granting anon full access (S-9), which is the
+ * bug it was quietly depending on.
+ *
+ * After 004_rls_lockdown.sql the anon role can read nothing, so the fallback would
+ * turn one missing variable into a site-wide outage with no clue as to why. Failing
+ * closed here names the cause in the first log line instead.
+ *
+ * It is also the deployment gate for that migration: ship this, and if the site
+ * still works, the service role key is set and the SQL is safe to run.
+ */
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export function getSupabaseClient() {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase URL or Key environment variables are missing.');
+  if (!supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set.');
+  }
+  if (!supabaseKey) {
+    // Named precisely: "Supabase key missing" sent the last person looking at the
+    // anon key, which is present and useless here.
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is not set. Server routes require the service role; ' +
+      'the anon key is not a fallback for it.'
+    );
   }
   return createClient(supabaseUrl, supabaseKey);
 }

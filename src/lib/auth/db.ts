@@ -110,7 +110,12 @@ function saveDevStore(store: DevStore) {
 
 function isSupabaseAvailable(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Must test the SAME key `getSupabaseClient()` requires. It previously accepted
+  // the anon key here and then handed off to a factory that no longer does, so a
+  // service-role-less deployment would answer "yes, Supabase is available" and
+  // then throw on every call instead of using the dev store — a worse failure than
+  // either branch alone.
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return Boolean(url && key && !url.includes('your-project-id'));
 }
 
