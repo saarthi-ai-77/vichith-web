@@ -41,8 +41,20 @@ export interface PlanLimits {
  */
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
     anonymous: { perMinute: 0 },
-    free: { perMinute: 5 },
-    paid: { perMinute: 20 },
+    // 5/min could not complete a single legitimate action.
+    //
+    // Sarvam's speech endpoint caps at 30 seconds, so captioning is inherently
+    // chunked: a four-minute track is eleven requests, and a five-per-minute
+    // ceiling rejected it at chunk six — then rejected the NEXT clip too, because
+    // the budget was already spent. The user experienced "too many requests" for
+    // pressing one button once.
+    //
+    // Burst protection is still the point; the number just has to exceed what one
+    // honest action costs. Thirty covers roughly fourteen minutes of audio in a
+    // single job, and the MONTHLY effort ceiling remains the real cost control —
+    // this limit exists to stop hammering, not to meter spend.
+    free: { perMinute: 30 },
+    paid: { perMinute: 120 },
 };
 
 export function limitsForPlan(plan: string): PlanLimits {
