@@ -133,7 +133,14 @@ export class SarvamAdapter implements ProviderAdapter {
                 res.status === 429 ? 'QUOTA_EXCEEDED' : 'PROVIDER_ERROR',
                 res.status === 429
                     ? 'The speech service is busy right now. Please try again shortly.'
-                    : 'Something went wrong on our side. Please try again.',
+                    // The STATUS is included deliberately. "Something went wrong on
+                    // our side" is true of every 4xx and 5xx alike, so it cannot
+                    // distinguish a malformed request from an outage, and every
+                    // report of it has cost a round trip to the server logs to learn
+                    // one number. The provider's own text still never leaves the
+                    // server — a status code identifies the class of fault without
+                    // leaking anything about the request or the account.
+                    : `The speech service rejected that request (HTTP ${res.status}). Please try again.`,
                 request.requestId,
                 res.status === 429 || res.status >= 500
             );
