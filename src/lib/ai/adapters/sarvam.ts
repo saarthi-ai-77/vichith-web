@@ -159,7 +159,12 @@ export class SarvamAdapter implements ProviderAdapter {
                     path: '/text-to-speech',
                     body: {
                         inputs: [p.text],
-                        model: 'bulbul:v3',
+                        // v4 shipped 2026-07-30 with richer emotion, expression and
+                        // vocal range. Overridable by env so a regression can be
+                        // rolled back to v3 with a redeploy rather than a code change
+                        // — the model is the one thing here most likely to need
+                        // reverting in a hurry.
+                        model: process.env.SARVAM_TTS_MODEL || 'bulbul:v4',
                         ...(typeof p.language === 'string' ? { target_language_code: p.language } : {}),
                         ...(typeof p.speaker === 'string' ? { speaker: p.speaker } : {}),
                         ...(typeof p.pace === 'number' ? { pace: p.pace } : {}),
