@@ -206,6 +206,39 @@ export class SarvamAdapter implements ProviderAdapter {
         // make swapping the reasoning model a change in all of them.
         let data: unknown = body;
         if (CHAT_CAPABILITIES.has(request.capability)) {
+            // ── TOOL CALLS ARE RELAYED VERBATIM ─────────────────────────
+            //
+            // Checked BEFORE text, because a message carrying tool_calls has
+            // `content: null` — the old code read only content, found null, and
+            // reported RESPONSE_INVALID. Tool calling could not have worked at
+            // all, and would have failed as "the AI could not complete that
+            // request" rather than as anything pointing at the real cause.
+            //
+            // The runtime does not inspect, rewrite or execute these. It forwards
+            // them. Interpreting a tool call here is the first step towards the
+            // runtime becoming a second editor, which is the one thing this
+            // architecture exists to prevent.
+            const toolCalls = extractToolCalls(body);
+            if (toolCalls) {
+                data = {
+                    content: extractChatText(body),
+                    tool_calls: toolCalls,
+                    finish_reason: 'tool_calls',
+                } as unknown;
+                return {
+                    ok: true,
+                    data: data as T,
+                    provider: this.id,
+                    attribution: 'Powered by Sarvam',
+                    usage: {
+                        inputTokens: (body as any)?.usage?.prompt_tokens,
+                        outputTokens: (body as any)?.usage?.completion_tokens,
+                    },
+                    latencyMs: Date.now() - started,
+                    requestId: request.requestId,
+                };
+            }
+
             const text = extractChatText(body);
             if (text == null) {
                 // A 200 with no usable message is a real outcome (filtered, empty
@@ -404,4 +437,23 @@ function extractChatText(body: unknown): string | null {
     const msg = (choices[0] as { message?: { content?: unknown } })?.message;
     const content = msg?.content;
     return typeof content === 'string' && content.length > 0 ? content : null;
+}
+
+/**
+ * Pull tool calls out of an OpenAI-compatible chat response.
+ *
+ * Returns null when there are none, so the caller can fall through to the text
+ * path — a chat reply and a tool call are different outcomes, not a value and its
+ * absence.
+ *
+ * Shape is NOT normalised beyond checking it is a non-empty array. The desktop
+ * validates every call against the manifest it sent; re-shaping here would mean
+ * the runtime forming an opinion about a contract it does not own.
+ */
+function extractToolCalls(body: unknown): unknown[] | null {
+    const choices = (body as { choices?: unknown[] } | null)?.choices;
+    if (!Array.isArray(choices) || choices.length === 0) return null;
+    const msg = (choices[0] as { message?: { tool_calls?: unknown } })?.message;
+    const calls = msg?.tool_calls;
+    return Array.isArray(calls) && calls.length > 0 ? calls : null;
 }
