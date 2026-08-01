@@ -132,6 +132,19 @@ export class SarvamAdapter implements ProviderAdapter {
         const call = this.buildCall(request);
         if ('error' in call) return aiError('INVALID_PAYLOAD', call.error, request.requestId);
 
+        // One line that settles "did tools reach the provider" without another
+        // round trip. Counts only — a manifest in the logs would be noise, and
+        // the count is the whole question.
+        if (CHAT_CAPABILITIES.has(request.capability)) {
+            const body = call.body as Record<string, unknown>;
+            const toolCount = Array.isArray(body.tools) ? body.tools.length : 0;
+            console.log(
+                `[ai] sarvam ${request.capability} for ${request.requestId}: ` +
+                `${(body.messages as unknown[] | undefined)?.length ?? 0} messages, ` +
+                `${toolCount} tools, tool_choice=${String(body.tool_choice ?? 'unset')}`,
+            );
+        }
+
         const started = Date.now();
         let res: Response;
         try {
@@ -413,7 +426,18 @@ export class SarvamAdapter implements ProviderAdapter {
                         // conversational replies deliberately do not, because forcing
                         // JSON is what turned "hi" into an error.
                         ...(p.jsonMode === true ? { response_format: { type: 'json_object' } } : {}),
-                        ...(Array.isArray(p.tools) && p.tools.length ? { tools: p.tools } : {}),
+                        // `tool_choice: 'auto'` is sent WITH the tools, not
+                        // instead of relying on a default. Several
+                        // OpenAI-compatible endpoints ignore `tools` entirely
+                        // unless a choice is stated, and the symptom is exactly
+                        // what we saw: the model describes the call it would have
+                        // made, in prose, because structured calling was never
+                        // actually offered to it.
+                        //
+                        // Harmless where the default is already auto.
+                        ...(Array.isArray(p.tools) && p.tools.length
+                            ? { tools: p.tools, tool_choice: 'auto' }
+                            : {}),
                     },
                 };
             }
