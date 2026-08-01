@@ -356,13 +356,44 @@ export class SarvamAdapter implements ProviderAdapter {
                 // typed. It answered every request with a greeting because a
                 // greeting is the right answer to "here are your instructions".
                 if (Array.isArray(p.messages) && p.messages.length > 0) {
-                    for (const m of p.messages as { role?: unknown; content?: unknown }[]) {
-                        if (typeof m?.content === 'string' && m.content.trim()) {
-                            messages.push({
-                                role: m.role === 'assistant' ? 'assistant' : 'user',
-                                content: m.content,
-                            });
+                    // ROLES AND TOOL FIELDS ARE PRESERVED VERBATIM.
+                    //
+                    // This used to collapse every role except `assistant` into
+                    // `user` and forward only `content`. In a tool-calling
+                    // conversation that is destructive twice over: an assistant
+                    // turn carrying tool_calls has content: null and was dropped
+                    // entirely, and a `tool` result became a user message with its
+                    // tool_call_id gone — so the model was handed a transcript
+                    // where its own call had vanished and an unattributed answer
+                    // had appeared.
+                    //
+                    // Given that, it stopped emitting structured calls and started
+                    // DESCRIBING them in prose (<tool_call>…</tool_call> as text),
+                    // which is a reasonable response to a conversation that showed
+                    // structured calls being ignored.
+                    for (const raw of p.messages as Record<string, unknown>[]) {
+                        const role = raw?.role;
+                        if (role !== 'system' && role !== 'user' && role !== 'assistant' && role !== 'tool') {
+                            continue;
                         }
+                        const msg: Record<string, unknown> = { role };
+
+                        // content may legitimately be null on a tool_calls turn.
+                        if (typeof raw.content === 'string') msg.content = raw.content;
+                        else if (raw.content === null) msg.content = null;
+
+                        if (Array.isArray(raw.tool_calls) && raw.tool_calls.length) {
+                            msg.tool_calls = raw.tool_calls;
+                        }
+                        if (typeof raw.tool_call_id === 'string') {
+                            msg.tool_call_id = raw.tool_call_id;
+                        }
+
+                        // A turn with neither content nor tool_calls carries
+                        // nothing; forwarding it would only add noise.
+                        if (msg.content == null && !msg.tool_calls) continue;
+
+                        messages.push(msg as { role: string; content: string });
                     }
                 } else {
                     messages.push({ role: 'user', content: prompt });
