@@ -35,6 +35,9 @@ const ALLOWED = new Map([
     // bypass the rate limiting and lockout GoTrue applies to auth attempts, which
     // is the opposite of a security improvement.
     ['src/lib/auth/supabaseIdentity.ts', 'GoTrue sign-in/sign-up must use the anon key'],
+    ['src/lib/supabase/client.ts', '@supabase/ssr browser client must use the anon key'],
+    ['src/lib/supabase/server.ts', '@supabase/ssr server session cookie client must use the anon key'],
+    ['src/middleware.ts', 'Next.js session refresh middleware must use the anon key'],
 ]);
 
 const ANON = 'NEXT_PUBLIC_SUPABASE_ANON_KEY';
