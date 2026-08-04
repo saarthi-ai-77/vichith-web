@@ -61,6 +61,26 @@ export function limitsForPlan(plan: string): PlanLimits {
     return PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
 }
 
+/**
+ * Explicit local-development escape hatch for exercising long agent workflows.
+ *
+ * This is intentionally server-owned and allow-listed by verified user id. A
+ * desktop flag or request header would make the production quota optional for
+ * any modified client. `NODE_ENV !== 'production'` ensures the switch cannot
+ * become a deployed entitlement by accident.
+ */
+export function hasDevelopmentUsageBypass(
+    userId: string,
+    env: NodeJS.ProcessEnv = process.env,
+): boolean {
+    if (env.NODE_ENV === 'production') return false;
+    const allowedUsers = (env.AI_DEV_UNMETERED_USER_IDS ?? '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+    return allowedUsers.includes(userId);
+}
+
 export type QuotaVerdict =
     | { allowed: true; remainingThisMonth: number; usedUnits: number }
     | { allowed: false; reason: 'rate' | 'monthly' | 'plan'; message: string; retryAfterSecs?: number; usedUnits: number };

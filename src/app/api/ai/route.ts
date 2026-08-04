@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
-import { checkQuota } from '@/lib/ai/quota';
+import { checkQuota, hasDevelopmentUsageBypass } from '@/lib/ai/quota';
 import { effortFor, buildMeter, type ExecutionClass, type Magnitude } from '@/lib/ai/effort';
 import { costMicroUsd } from '@/lib/ai/cost';
 
@@ -85,7 +85,13 @@ export async function POST(request: NextRequest) {
         // Entitlements answer "may this plan use AI"; this answers "how much, how
         // fast". Our own provider keys sit behind this endpoint, so without it one
         // account can drain the Sarvam balance or run up the Gemini bill.
-        const quota = await checkQuota(identity.userId, plan);
+        // Local development can explicitly allow-list a tester for repeated
+        // long-running agent exercises. The bypass is evaluated on the server
+        // against the authenticated user id and is disabled in production.
+        const developmentBypass = hasDevelopmentUsageBypass(identity.userId);
+        const quota = developmentBypass
+            ? { allowed: true as const, remainingThisMonth: -1, usedUnits: 0 }
+            : await checkQuota(identity.userId, plan);
         if (!quota.allowed) {
             const status = quota.reason === 'rate' ? 429 : 403;
             return NextResponse.json(

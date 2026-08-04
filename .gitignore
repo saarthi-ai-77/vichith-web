@@ -11,3 +11,4 @@ SUPABASE_SETUP.md
 .dev_db/
 *.log
 tsconfig.tsbuildinfo
+ref/
