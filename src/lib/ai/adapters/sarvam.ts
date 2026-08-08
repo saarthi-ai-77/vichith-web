@@ -27,6 +27,7 @@
 
 import {
     aiError,
+    type AIError,
     type AIRequest,
     type AIResult,
     type Capability,
@@ -280,6 +281,85 @@ export class SarvamAdapter implements ProviderAdapter {
     }
 
     /** Map a capability + payload onto a Sarvam endpoint and body. */
+    /**
+     * The same chat call, streamed.
+     *
+     * WHY THIS IS A SIBLING OF `execute` AND NOT A FLAG INSIDE IT. `execute`
+     * returns `AIResult` — a discriminated union meaning "this finished, here is
+     * the outcome" — and telemetry, metering and error mapping all consume it as
+     * a completed thing. A stream is the opposite shape: it starts before the
+     * outcome exists. Threading one through that union would have reshaped every
+     * consumer of it on a deployed service, so the streaming path is additive and
+     * the non-streaming path is untouched.
+     *
+     * Returns the raw upstream body. The route owns turning it into an event
+     * stream for the desktop, because the route is what knows about billing,
+     * request ids and the response contract; this method's only job is to ask
+     * Sarvam for tokens instead of a document.
+     *
+     * `buildCall` is reused deliberately — the request that streams must be the
+     * SAME request that would have been sent unstreamed, or the two paths drift
+     * and the streamed answer stops matching the one we test.
+     */
+    async streamChat(
+        request: AIRequest,
+        signal: AbortSignal,
+    ): Promise<{ ok: true; body: ReadableStream<Uint8Array> } | { ok: false; error: AIError }> {
+        let apiKey: string;
+        try {
+            apiKey = requireEnv('SARVAM_API_KEY');
+        } catch {
+            console.error('[ai] SARVAM_API_KEY is not configured');
+            return { ok: false, error: aiError('PROVIDER_UNAVAILABLE', 'That capability is temporarily unavailable.', request.requestId, true) };
+        }
+
+        if (!CHAT_CAPABILITIES.has(request.capability)) {
+            return { ok: false, error: aiError('CAPABILITY_UNSUPPORTED', 'That capability cannot be streamed.', request.requestId) };
+        }
+
+        const call = this.buildCall(request);
+        if ('error' in call) return { ok: false, error: aiError('INVALID_PAYLOAD', call.error, request.requestId) };
+
+        let res: Response;
+        try {
+            res = await fetch(`${SARVAM_BASE}${call.path}`, {
+                method: 'POST',
+                signal,
+                headers: { 'Content-Type': 'application/json', 'api-subscription-key': apiKey },
+                body: JSON.stringify({ ...call.body, stream: true }),
+            });
+        } catch {
+            const aborted = signal.aborted;
+            return {
+                ok: false,
+                error: aiError(
+                    aborted ? 'PROVIDER_TIMEOUT' : 'PROVIDER_ERROR',
+                    aborted ? 'That took longer than expected. Please try again.' : 'Could not reach the AI service. Please try again.',
+                    request.requestId,
+                    true,
+                ),
+            };
+        }
+
+        if (!res.ok || !res.body) {
+            const detail = await res.text().catch(() => '');
+            console.error(`[ai] sarvam stream ${res.status} for ${request.requestId}: ${detail.slice(0, 500)}`);
+            return {
+                ok: false,
+                error: aiError(
+                    res.status === 429 ? 'QUOTA_EXCEEDED' : 'PROVIDER_ERROR',
+                    res.status === 429
+                        ? 'The AI service is busy right now. Please try again shortly.'
+                        : `The AI service returned an error (${res.status}). Please try again.`,
+                    request.requestId,
+                    res.status >= 500 || res.status === 429,
+                ),
+            };
+        }
+
+        return { ok: true, body: res.body };
+    }
+
     private buildCall(request: AIRequest): { path: string; body: Record<string, unknown>; multipartAudio?: boolean } | { error: string } {
         const p = request.payload;
 

@@ -3,6 +3,8 @@ import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
 import { checkQuota, chargeForCall, hasDevelopmentUsageBypass } from '@/lib/ai/quota';
+import { toVichithStream } from '@/lib/ai/stream';
+import { beginStream } from '@/lib/ai/streamRouter';
 import { effortFor, buildMeter, type ExecutionClass, type Magnitude } from '@/lib/ai/effort';
 import { costMicroUsd } from '@/lib/ai/cost';
 
@@ -116,6 +118,74 @@ export async function POST(request: NextRequest) {
                 message: 'This operation needs to send media to the cloud. Approve it for this project to continue.',
                 capability,
                 requestId,
+            });
+        }
+
+        // ── 4b. STREAMING BRANCH ─────────────────────────────────────────────
+        //
+        // Placed AFTER every gate above, deliberately: auth, entitlements, the
+        // burst limit, the monthly ceiling and the media gate all apply to a
+        // streamed call exactly as they do to a normal one. A branch that jumped
+        // the queue would be a way to bypass all five.
+        //
+        // Opt-in and additive. Without `stream: true` nothing below changes, so
+        // the non-streaming path — which every other capability and every older
+        // desktop build uses — cannot regress.
+        if (body?.stream === true) {
+            const jobIdForStream =
+                typeof body?.jobId === 'string' && body.jobId.trim() ? body.jobId.trim() : null;
+
+            const streamed = await beginStream({
+                capability,
+                requestId,
+                payload: (body?.payload ?? {}) as Record<string, unknown>,
+                stream: true,
+            });
+
+            if (!streamed.ok) {
+                const status = streamed.error.code === 'QUOTA_EXCEEDED' ? 429 : streamed.error.retryable ? 503 : 400;
+                return json(status, { error: streamed.error.code, message: streamed.error.message, requestId });
+            }
+
+            const executionClass: ExecutionClass = 'cloud';
+            const magnitude: Magnitude = readMagnitude(body?.payload);
+
+            const events = toVichithStream(streamed.body, streamed.request, async ({ completed, usage }) => {
+                // Settled once, on close, however the stream ended. A cancelled
+                // run still pays for what reached the provider — see stream.ts.
+                const rawUnits = effortFor(capability, magnitude, executionClass);
+                const units = await chargeForCall(identity.userId, jobIdForStream, rawUnits);
+                void recordUsage(
+                    identity.userId,
+                    capability,
+                    // Shaped like a completed result so telemetry stays one format
+                    // whether the answer arrived as a document or as tokens.
+                    // `usage` is whatever the provider reported on the final
+                    // frame; typed loosely here because a stream may end before
+                    // one arrives, and telemetry must record the run either way.
+                    { ok: true, requestId, data: null, provider: 'sarvam', attribution: 'Sarvam AI', latencyMs: 0, usage: usage as never },
+                    requestId,
+                    identity.issuer,
+                    units,
+                    0,
+                    jobIdForStream,
+                );
+                if (!completed) {
+                    console.warn(`[ai] stream for ${requestId} closed without finishing; charged ${units} units`);
+                }
+            });
+
+            return new Response(events, {
+                headers: {
+                    'Content-Type': 'text/event-stream; charset=utf-8',
+                    'Cache-Control': 'no-cache, no-transform',
+                    Connection: 'keep-alive',
+                    // Vercel/nginx will happily buffer an event stream into one
+                    // lump, which produces a "stream" that arrives all at once and
+                    // looks exactly like the bug this replaces.
+                    'X-Accel-Buffering': 'no',
+                    'x-request-id': requestId,
+                },
             });
         }
 
