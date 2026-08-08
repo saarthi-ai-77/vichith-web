@@ -225,10 +225,21 @@ export function toVichithStream(
                     // with `{}`.
                     //
                     // That substitution looked safe and was actively misleading: a
-                    // truncated `submit_editorial_brief` arrived as an empty object
-                    // and failed with `Missing required argument "understanding"`,
-                    // which sends whoever reads it hunting for a schema bug that
-                    // does not exist. The call never really happened, so say so.
+                    // malformed brief arrived as an empty object and failed with
+                    // `Missing required argument "understanding"`, which sends
+                    // whoever reads it hunting for a schema bug that does not exist.
+                    // The call never really happened, so say so.
+                    //
+                    // WHAT ACTUALLY ARRIVES HERE. Not truncation, and not the
+                    // cumulative frames the repair above handles — the model's own
+                    // invalid JSON. One production run sent
+                    //   {"understanding": User wants … a text clip with "Nikshith" …
+                    // where the value was never opened with a quote and carried the
+                    // user's quoted text inside it. No repair is possible from this
+                    // side: once it arrives, where the value began is unknowable. The
+                    // fix belongs upstream, in a schema small enough for the model to
+                    // emit — hence the two-call brief on the desktop. This branch is
+                    // the honest report of what got here, not a recovery path.
                     if (args === '{}' && call.arguments.trim().length > 2) {
                         corrupted.push(call.name);
                         continue;
