@@ -102,7 +102,18 @@ export function normalizeToolArguments(raw: string): string {
         }
     }
 
-    console.warn('[ai] tool arguments could not be repaired; sending {} instead:', text.slice(0, 200));
+    // THE WHOLE STRING, NEVER A SLICE.
+    //
+    // This line used to log `text.slice(0, 200)`, and that slice cost three wrong
+    // diagnoses in a row: every payload appeared to stop mid-word around character
+    // 195, so truncation was "confirmed" from evidence that was really the log
+    // cutting itself off. Where a malformed argument actually ends is the single
+    // most useful fact about it. An occasional long log line is cheaper than
+    // another week spent debugging the logger.
+    console.warn(
+        `[ai] tool arguments could not be repaired (${text.length} chars); sending {} instead:`,
+        text,
+    );
     return '{}';
 }
 
@@ -258,9 +269,25 @@ export function toVichithStream(
                     // turn is still usable, and a model TOLD its arguments arrived
                     // truncated will send them again. Failing the run would throw
                     // away everything else the turn accomplished.
-                    content +=
-                        `\n\n[runtime] The arguments for ${corrupted.join(', ')} arrived incomplete and were discarded. ` +
-                        `Nothing ran for that call — send it again.`;
+                    //
+                    // `finish_reason: 'length'` is not a guess — it is the provider
+                    // stating that it stopped because the output ceiling was reached.
+                    // When it is present the cause is known exactly, so the model is
+                    // told to shorten rather than to "send it again", which is
+                    // useless advice if the same reply would be cut at the same
+                    // place. The generic wording is kept for every other ending.
+                    const ranOutOfRoom = finishReason === 'length';
+                    console.warn(
+                        `[ai] discarded ${corrupted.length} tool call(s) with unusable arguments:`,
+                        corrupted.join(', '),
+                        `— finish_reason: ${finishReason ?? 'none'}`,
+                    );
+                    content += ranOutOfRoom
+                        ? `\n\n[runtime] Your reply hit the output limit and was cut off part-way through ` +
+                          `${corrupted.join(', ')}, so that call was discarded and nothing ran for it. ` +
+                          `Send it again with SHORTER field values — a sentence each is enough.`
+                        : `\n\n[runtime] The arguments for ${corrupted.join(', ')} arrived incomplete and were discarded. ` +
+                          `Nothing ran for that call — send it again.`;
                 }
 
                 send(controller, { type: 'done', content, finishReason, usage });

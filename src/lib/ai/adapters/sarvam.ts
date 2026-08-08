@@ -501,7 +501,30 @@ export class SarvamAdapter implements ProviderAdapter {
                         // structure; exactly 0 makes some models loop on a bad token
                         // rather than pick the next-best one.
                         temperature: typeof p.temperature === 'number' ? p.temperature : 0.2,
-                        ...(typeof p.maxOutputTokens === 'number' ? { max_tokens: p.maxOutputTokens } : {}),
+                        // NEVER LEFT TO THE PROVIDER'S DEFAULT, AND THIS COST US A WEEK.
+                        //
+                        // Sarvam's `max_tokens` defaults to 2048 and `reasoning_effort`
+                        // to medium, and Sarvam CHANGED both defaults in April 2026 with
+                        // the note "set them explicitly to lock in previous behavior".
+                        // We set neither, so a turn's reasoning, its narration prose and
+                        // its tool-call arguments all shared one 2048-token ceiling that
+                        // moved underneath us.
+                        //
+                        // The symptom was not an error. When the ceiling is reached
+                        // mid-tool-call the response ends with `finish_reason: 'length'`
+                        // and the argument string simply STOPS — cut at whatever token
+                        // the budget ran out on. It reaches the desktop as unparseable
+                        // JSON, the call is discarded, and the run reports work it never
+                        // did. It presented as the model emitting invalid JSON, which is
+                        // why it was chased twice as a schema problem and once as a
+                        // streaming bug before anyone looked at the request.
+                        //
+                        // 8192 is not tuning; it is headroom on a 128K-context model so
+                        // narration and arguments stop competing. `reasoning_effort` is
+                        // pinned at the documented default rather than tuned — the point
+                        // is that OUR value decides, not a provider release note.
+                        max_tokens: typeof p.maxOutputTokens === 'number' ? p.maxOutputTokens : 8192,
+                        reasoning_effort: typeof p.reasoningEffort === 'string' ? p.reasoningEffort : 'medium',
                         // JSON mode when the caller wants structure. The planner does;
                         // conversational replies deliberately do not, because forcing
                         // JSON is what turned "hi" into an error.
