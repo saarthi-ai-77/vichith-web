@@ -61,6 +61,15 @@ const CHAT_CAPABILITIES = new Set<Capability>(['plan.edit', 'plan.research', 'un
 /** The reasoning model. One constant, so a migration is one edit. */
 const CHAT_MODEL = 'sarvam-105b';
 
+/**
+ * The output ceiling for one turn, and the plan's cap is the real limit.
+ *
+ * Sarvam caps `max_tokens` per subscription tier — starter allows 4096 for
+ * sarvam-105b and rejects anything higher with a 400. An env var because
+ * upgrading the plan should be a deploy setting rather than a code change.
+ */
+const MAX_OUTPUT_TOKENS = Number(process.env.SARVAM_MAX_TOKENS) || 4096;
+
 /** Saaras output modes. Exposed as a capability parameter, never as a model name. */
 export type SpeechMode = 'transcribe' | 'translate' | 'verbatim' | 'transliterate' | 'codemix';
 
@@ -344,13 +353,27 @@ export class SarvamAdapter implements ProviderAdapter {
         if (!res.ok || !res.body) {
             const detail = await res.text().catch(() => '');
             console.error(`[ai] sarvam stream ${res.status} for ${request.requestId}: ${detail.slice(0, 500)}`);
+
+            // A 4xx that is not 429 means WE sent a bad request — a parameter the
+            // plan does not allow, a malformed body. Retrying reproduces it exactly.
+            //
+            // This branch used to say "Please try again" to every status, and it
+            // said it for real: `max_tokens (8192) exceeds the maximum allowed for
+            // your subscription tier` reached the user as "The AI service returned
+            // an error (400). Please try again." — advice that could never work,
+            // for a fault on our side, with the one sentence that explained it
+            // visible only in the server log. The `retryable` flag was already
+            // correct; only the sentence lied.
+            const ourFault = res.status >= 400 && res.status < 500 && res.status !== 429;
             return {
                 ok: false,
                 error: aiError(
                     res.status === 429 ? 'QUOTA_EXCEEDED' : 'PROVIDER_ERROR',
                     res.status === 429
                         ? 'The AI service is busy right now. Please try again shortly.'
-                        : `The AI service returned an error (${res.status}). Please try again.`,
+                        : ourFault
+                            ? `The AI service rejected this request (${res.status}). This is a configuration problem on our side, not something retrying will fix — it has been logged.`
+                            : `The AI service returned an error (${res.status}). Please try again.`,
                     request.requestId,
                     res.status >= 500 || res.status === 429,
                 ),
@@ -519,11 +542,24 @@ export class SarvamAdapter implements ProviderAdapter {
                         // why it was chased twice as a schema problem and once as a
                         // streaming bug before anyone looked at the request.
                         //
-                        // 8192 is not tuning; it is headroom on a 128K-context model so
-                        // narration and arguments stop competing. `reasoning_effort` is
-                        // pinned at the documented default rather than tuned — the point
-                        // is that OUR value decides, not a provider release note.
-                        max_tokens: typeof p.maxOutputTokens === 'number' ? p.maxOutputTokens : 8192,
+                        // 4096 IS THE CEILING, NOT A PREFERENCE. Sarvam caps
+                        // `max_tokens` per subscription tier, and the starter tier's cap
+                        // for sarvam-105b is 4096 — 8192 was rejected outright:
+                        //
+                        //   max_tokens (8192) exceeds the maximum allowed for
+                        //   sarvam-105b for your subscription tier (starter): 4096
+                        //
+                        // So this is the most room the plan allows, and it is still twice
+                        // the default that was truncating tool calls. It is an env var
+                        // because upgrading the plan should be a deploy setting, not a
+                        // code change — and because the cap is a billing fact that can
+                        // move without any release note. `reasoning_effort` is pinned at
+                        // the documented default rather than tuned: the point is that OUR
+                        // value decides, not a provider default. If tool arguments still
+                        // get cut at 4096, that is the next lever — reasoning tokens are
+                        // spent from this same budget, and Chithra already does its real
+                        // reasoning out loud through the cognitive tools.
+                        max_tokens: typeof p.maxOutputTokens === 'number' ? p.maxOutputTokens : MAX_OUTPUT_TOKENS,
                         reasoning_effort: typeof p.reasoningEffort === 'string' ? p.reasoningEffort : 'medium',
                         // JSON mode when the caller wants structure. The planner does;
                         // conversational replies deliberately do not, because forcing

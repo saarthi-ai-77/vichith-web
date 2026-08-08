@@ -33,10 +33,11 @@ const bodyFor = (payload: Record<string, unknown>): Record<string, unknown> => {
 describe('the Sarvam chat request never relies on a provider default', () => {
     it('sends an explicit max_tokens with room for narration AND tool arguments', () => {
         const body = bodyFor({ prompt: 'Add a white background and a text clip' });
-        expect(body.max_tokens).toBe(8192);
-        // The provider default is what cut tool calls in half. Anything at or
-        // below it means the ceiling is back.
+        // The provider default (2048) is what cut tool calls in half; the starter
+        // tier's cap for sarvam-105b is 4096 and it rejects anything higher with a
+        // 400. Both bounds are real, and the value has to sit between them.
         expect(body.max_tokens as number).toBeGreaterThan(2048);
+        expect(body.max_tokens as number).toBeLessThanOrEqual(4096);
     });
 
     it('sends an explicit reasoning_effort so a release note cannot change it', () => {
@@ -60,6 +61,6 @@ describe('the Sarvam chat request never relies on a provider default', () => {
             tools: [{ type: 'function', function: { name: 'add_text_clip', parameters: {} } }],
         });
         expect(body.tool_choice).toBe('auto');
-        expect(body.max_tokens).toBe(8192);
+        expect(body.max_tokens as number).toBeLessThanOrEqual(4096);
     });
 });
