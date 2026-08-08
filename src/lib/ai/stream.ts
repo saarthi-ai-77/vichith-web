@@ -213,20 +213,43 @@ export function toVichithStream(
                     }
                 }
 
+                const corrupted: string[] = [];
                 for (const call of Array.from(toolCalls.values())) {
                     if (!call.name) continue;
+                    // An empty argument list is `{}`, never an empty string — the
+                    // desktop parses this, and `JSON.parse('')` throws. Repaired
+                    // when the provider sent cumulative frames rather than deltas.
+                    const args = normalizeToolArguments(call.arguments);
+
+                    // A call whose arguments could NOT be recovered is not emitted
+                    // with `{}`.
+                    //
+                    // That substitution looked safe and was actively misleading: a
+                    // truncated `submit_editorial_brief` arrived as an empty object
+                    // and failed with `Missing required argument "understanding"`,
+                    // which sends whoever reads it hunting for a schema bug that
+                    // does not exist. The call never really happened, so say so.
+                    if (args === '{}' && call.arguments.trim().length > 2) {
+                        corrupted.push(call.name);
+                        continue;
+                    }
+
                     send(controller, {
                         type: 'tool_call',
                         id: call.id || `call_${call.name}`,
                         name: call.name,
-                        // An empty argument list is `{}`, never an empty string —
-                        // the desktop parses this, and `JSON.parse('')` throws.
-                        // Repaired if the provider sent cumulative frames rather
-                        // than deltas — see `normalizeToolArguments`. Never raw,
-                        // because this string goes into the transcript and every
-                        // later turn re-sends it.
-                        arguments: normalizeToolArguments(call.arguments),
+                        arguments: args,
                     });
+                }
+
+                if (corrupted.length) {
+                    // Appended to the content rather than raised as an error: the
+                    // turn is still usable, and a model TOLD its arguments arrived
+                    // truncated will send them again. Failing the run would throw
+                    // away everything else the turn accomplished.
+                    content +=
+                        `\n\n[runtime] The arguments for ${corrupted.join(', ')} arrived incomplete and were discarded. ` +
+                        `Nothing ran for that call — send it again.`;
                 }
 
                 send(controller, { type: 'done', content, finishReason, usage });
