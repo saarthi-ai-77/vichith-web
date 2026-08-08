@@ -46,6 +46,66 @@ export type StreamEvent =
     /** Something failed. The desktop shows this instead of a silent stall. */
     | { type: 'error'; code: string; message: string };
 
+/**
+ * Make an accumulated argument string something the provider will accept back.
+ *
+ * THE BUG THIS EXISTS FOR. Tool-call arguments were concatenated across frames on
+ * the assumption that every provider sends DELTAS. Some send the arguments
+ * cumulatively — the whole object again in each frame — so concatenation produced
+ * `{"a":1}{"a":1}{"a":1}`. That is not valid JSON, and the damage did not show up
+ * on the turn that produced it: it went into the transcript, and the NEXT request
+ * re-sent it and was rejected with
+ *
+ *   body.messages.4.assistant.tool_calls.0.function.arguments :
+ *   'arguments' must be a valid JSON-encoded string
+ *
+ * So the run died on turn two with a 400 while turn one looked perfect. A
+ * transcript is re-sent on every subsequent turn, which means anything malformed
+ * that reaches it poisons the whole run, not one message.
+ *
+ * The repair, in order: take it as-is if it parses; otherwise take the first
+ * complete JSON value in it, which is exactly the right answer for a cumulative
+ * provider; otherwise give up and send `{}` rather than something the provider
+ * will reject. An empty argument object may make the model retry the call — a
+ * malformed one kills the conversation.
+ */
+export function normalizeToolArguments(raw: string): string {
+    const text = raw.trim();
+    if (!text) return '{}';
+
+    try {
+        JSON.parse(text);
+        return text;
+    } catch { /* fall through to recovery */ }
+
+    // Walk to the end of the first balanced JSON object, ignoring braces that
+    // appear inside string literals (a prompt argument containing "{" is normal).
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (escaped) { escaped = false; continue; }
+        if (ch === '\\') { escaped = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+            depth--;
+            if (depth === 0) {
+                const candidate = text.slice(0, i + 1);
+                try {
+                    JSON.parse(candidate);
+                    return candidate;
+                } catch { break; }
+            }
+        }
+    }
+
+    console.warn('[ai] tool arguments could not be repaired; sending {} instead:', text.slice(0, 200));
+    return '{}';
+}
+
 /** A tool call being assembled across frames, keyed by its index in the delta. */
 interface PartialToolCall {
     id: string;
@@ -161,7 +221,11 @@ export function toVichithStream(
                         name: call.name,
                         // An empty argument list is `{}`, never an empty string —
                         // the desktop parses this, and `JSON.parse('')` throws.
-                        arguments: call.arguments || '{}',
+                        // Repaired if the provider sent cumulative frames rather
+                        // than deltas — see `normalizeToolArguments`. Never raw,
+                        // because this string goes into the transcript and every
+                        // later turn re-sends it.
+                        arguments: normalizeToolArguments(call.arguments),
                     });
                 }
 
