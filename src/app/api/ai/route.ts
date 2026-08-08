@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
-import { checkQuota, hasDevelopmentUsageBypass } from '@/lib/ai/quota';
+import { checkQuota, chargeForCall, hasDevelopmentUsageBypass } from '@/lib/ai/quota';
 import { effortFor, buildMeter, type ExecutionClass, type Magnitude } from '@/lib/ai/effort';
 import { costMicroUsd } from '@/lib/ai/cost';
 
@@ -137,12 +137,22 @@ export async function POST(request: NextRequest) {
         // construction rather than by a lookup returning zero.
         const executionClass: ExecutionClass = 'cloud';
         const magnitude: Magnitude = readMagnitude(body?.payload);
-        const units = result.ok ? effortFor(capability, magnitude, executionClass) : 0;
+        const rawUnits = result.ok ? effortFor(capability, magnitude, executionClass) : 0;
+
+        // ── PER-JOB SETTLEMENT ────────────────────────────────────────────────
+        // A task is charged for the HEAVIEST capability it touched, not for every
+        // round trip the runtime needed. See `chargeForCall` for why this settles
+        // incrementally instead of on a "task finished" signal that may never
+        // arrive. Without a jobId this is a standalone call and pays for itself.
+        const jobId = typeof body?.jobId === 'string' && body.jobId.trim() ? body.jobId.trim() : null;
+        const units = await chargeForCall(identity.userId, jobId, rawUnits);
 
         // COST — what WE spent. Recorded alongside, never joined to the above.
         const microUsd = result.ok ? costMicroUsd(result.provider, result.usage) : 0;
 
-        void recordUsage(identity.userId, capability, result, requestId, identity.issuer, units, microUsd);
+        // `jobId` is written into meta so settlement can find this job's prior
+        // charges, and so a support question about one task is answerable.
+        void recordUsage(identity.userId, capability, result, requestId, identity.issuer, units, microUsd, jobId);
 
         if (!result.ok) {
             const status = result.code === 'QUOTA_EXCEEDED' ? 429 : result.retryable ? 503 : 400;
@@ -161,7 +171,13 @@ export async function POST(request: NextRequest) {
             remainingThisMonth: quota.remainingThisMonth,
             // The meter the Chithra UI draws. Computed server-side so the client
             // cannot drift from what we actually counted.
-            usage: { unitsCharged: units, meter: buildMeter(quota.usedUnits + units, plan) },
+            usage: {
+                unitsCharged: units,
+                // What this call WOULD have cost standalone, so the desktop can
+                // show why a step inside a task was free rather than looking broken.
+                unitsForCapability: rawUnits,
+                meter: buildMeter(quota.usedUnits + units, plan),
+            },
             requestId,
         });
     } catch (err: unknown) {
@@ -212,7 +228,12 @@ async function recordUsage(
     units: number,
     /** Real provider spend in micro-USD. INTERNAL — margin analysis only, and never
      *  an input to any quota or allowance. */
-    microUsd: number
+    microUsd: number,
+    /** The Editing Job this call belongs to, when there is one. Settlement reads
+     *  it back to find what the task has already been charged, so it must be
+     *  written even when `units` is 0 — a free call is still evidence of the job's
+     *  running total. Null for standalone calls (captions, one-shot translation). */
+    jobId: string | null
 ): Promise<void> {
     try {
         await saveUsageEvents(userId, [
@@ -230,6 +251,8 @@ async function recordUsage(
                     executionClass: 'cloud',
                     costMicroUsd: microUsd,
                     ok: result.ok,
+                    // snake_case because settlement filters on `meta->>job_id`.
+                    ...(jobId ? { job_id: jobId } : {}),
                     ...(result.ok
                         ? { latencyMs: result.latencyMs, usage: result.usage }
                         : { errorCode: result.code }),

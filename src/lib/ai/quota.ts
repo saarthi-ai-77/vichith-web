@@ -168,3 +168,73 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
         return { allowed: true, remainingThisMonth: -1, usedUnits: 0 };
     }
 }
+
+/**
+ * How much to actually charge for THIS call, given the job it belongs to.
+ *
+ * THE PROBLEM. `/api/ai` charged effort units on every call. That was right when
+ * one prompt meant one request, and became wrong the moment the desktop started
+ * tool-calling: a single "generate a background, place it, add a title" is a
+ * dozen requests, so one task cost roughly 8% of a free month's allowance and
+ * twelve prompts exhausted it.
+ *
+ * Worse than the number was its direction. Charging per round trip means every
+ * improvement that makes Chithra more thorough — reading state before acting,
+ * verifying afterwards, repairing a failure — makes the user's bill larger. We
+ * would have been charging people for our own architecture.
+ *
+ * THE RULE (founder decision): a task costs the HEAVIEST capability it touched.
+ * Generating video is priced like generating video whether the runtime needed
+ * three calls or thirty; trimming a clip stays cheap no matter how carefully the
+ * agent checked its work.
+ *
+ * WHY IT SETTLES INCREMENTALLY RATHER THAN AT THE END. There is no reliable
+ * "task finished" signal — a run can be interrupted, crash, or lose the network,
+ * and a settlement that only happens on a clean close would silently bill
+ * nothing for all three. So each call charges only the DELTA between its own
+ * effort and the most expensive thing this job has already been charged for. The
+ * running total equals the heaviest capability at every moment, which means an
+ * abandoned job is billed correctly for whatever it did reach, and no close
+ * event is needed at all.
+ *
+ * `jobId` lives in `meta` rather than a dedicated column deliberately: it works
+ * against the deployed schema with no migration, so the code can ship without a
+ * SQL step that has to land first. At real scale this wants a `job_id` column
+ * and an index — the query below is the thing that will tell us when.
+ */
+export async function chargeForCall(
+    userId: string,
+    jobId: string | null,
+    unitsThisCall: number,
+): Promise<number> {
+    // No job means the old behaviour: a standalone call pays for itself. Captions,
+    // a one-shot translation and anything not run under an Editing Job land here.
+    if (!jobId || unitsThisCall <= 0) return unitsThisCall;
+
+    try {
+        const supabase = getSupabaseClient();
+        const { data: rows, error } = await supabase
+            .from('usage_events')
+            .select('credits_cost')
+            .eq('user_id', userId)
+            .eq('type', 'ai_request')
+            .eq('meta->>job_id', jobId);
+
+        if (error) throw error;
+
+        const alreadyCharged = (rows ?? []).reduce(
+            (sum: number, r: { credits_cost: number | null }) => sum + (r.credits_cost ?? 0),
+            0,
+        );
+
+        // Charge the difference, never a refund. If this call is lighter than
+        // something the job already paid for, it is free.
+        return Math.max(0, unitsThisCall - alreadyCharged);
+    } catch (err) {
+        // FAILS TOWARDS THE USER, matching `checkQuota` above: a Supabase blip
+        // must not double-bill a task. Charging nothing for one call is a rounding
+        // error; charging a full task twice is a support ticket.
+        console.error('[ai] job settlement lookup failed, charging nothing for this call:', err);
+        return 0;
+    }
+}
