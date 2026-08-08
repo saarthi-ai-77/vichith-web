@@ -90,3 +90,58 @@ describe('arguments that must NOT be invented', () => {
         }
     });
 });
+
+/**
+ * The exact payload from the production run, recovered whole once the log stopped
+ * truncating itself. 689 characters, `finish_reason: tool_calls`, closing brace
+ * present — complete, not cut off. Every key quoted, not one value quoted.
+ */
+const REAL_UNQUOTED_PAYLOAD =
+    '{"understanding": User wants a 40-second motivational video that tells its story entirely with ' +
+    'animated typography, no stock footage, using solid backgrounds, simple shapes, camera motion, ' +
+    'timing, spacing and transitions. Background music must be generated with Studio., ' +
+    '"objective": Create a 40-second motivational typography video using only text, graphics, ' +
+    'generated music and camera motion., ' +
+    '"domain": Motivational typography video for social media (YouTube Shorts/Instagram Reel)., ' +
+    '"knowledge": Motivational videos need a strong hook, clear hierarchy, pacing that builds energy, ' +
+    'and visual emphasis on key words. Use simple motion to highlight text and keep the focus on the message.}';
+
+describe('prose values the model left unquoted', () => {
+    it('recovers the real payload that killed a run', () => {
+        const res = normalizeToolArguments(REAL_UNQUOTED_PAYLOAD);
+        expect(res.ok).toBe(true);
+        if (!res.ok) return;
+
+        const parsed = JSON.parse(res.args);
+        expect(Object.keys(parsed)).toEqual(['understanding', 'objective', 'domain', 'knowledge']);
+        expect(parsed.understanding).toContain('40-second motivational video');
+        // The value contains commas and a full stop; neither may truncate it.
+        expect(parsed.understanding).toContain('Background music must be generated with Studio.');
+        expect(parsed.domain).toBe('Motivational typography video for social media (YouTube Shorts/Instagram Reel).');
+    });
+
+    it('takes the text verbatim — nothing invented, nothing dropped', () => {
+        // Only the missing delimiters are added; every other character of the
+        // model's output is left where it was.
+        const res = normalizeToolArguments('{"a": hello there, "b": second value}');
+        expect(res).toEqual({ ok: true, args: '{"a": "hello there", "b": "second value"}' });
+    });
+
+    it('leaves values that are already valid JSON alone', () => {
+        const res = normalizeToolArguments('{"a": bare text, "n": 42, "ok": true, "s": "quoted"}');
+        expect(res.ok).toBe(true);
+        if (!res.ok) return;
+        const parsed = JSON.parse(res.args);
+        expect(parsed).toEqual({ a: 'bare text', n: 42, ok: true, s: 'quoted' });
+    });
+
+    it('does not fire on well-formed JSON at all', () => {
+        const good = '{"a":"already fine"}';
+        expect(normalizeToolArguments(good)).toEqual({ ok: true, args: good });
+    });
+
+    it('still refuses a payload it cannot turn into real JSON', () => {
+        // Genuinely truncated: no closing brace, so no boundary to trust.
+        expect(normalizeToolArguments('{"creativeGoal": Add a white background at tim').ok).toBe(false);
+    });
+});

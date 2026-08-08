@@ -69,6 +69,85 @@ export type StreamEvent =
  * will reject. An empty argument object may make the model retry the call — a
  * malformed one kills the conversation.
  */
+/**
+ * Put the quotes back on prose values the model left bare.
+ *
+ * THE PAYLOAD THIS EXISTS FOR, recovered whole from a production run once the log
+ * stopped truncating itself at 200 characters:
+ *
+ *   {"understanding": User wants a 40-second motivational video that tells its
+ *    story entirely with animated typography..., "objective": Create a 40-second
+ *    motivational typography video..., "domain": Motivational typography video
+ *    for social media (YouTube Shorts/Instagram Reel).}
+ *
+ * 689 characters, `finish_reason: tool_calls`, closing brace present — COMPLETE,
+ * not truncated. Every key is quoted. Not one value is. The model wrote prose
+ * where the schema declared an object and dropped out of JSON while doing it.
+ *
+ * WHY THIS IS RECOVERY AND NOT GUESSING. Nothing here is inferred: the keys are
+ * well-formed, so each value's start is known exactly, and its end is the next
+ * `, "key":` at depth zero or the closing brace. The text between is taken
+ * verbatim and quoted. No content is invented, reordered or dropped — the only
+ * change is the delimiters the model omitted. If the result does not parse it is
+ * discarded, so a bad repair can never reach the desktop as a real call.
+ *
+ * Attempted LAST, after an exact parse and after the cumulative-frame repair,
+ * because those are cheaper and cannot be wrong.
+ */
+export function repairUnquotedValues(text: string): string | null {
+    if (!text.startsWith('{') || !text.endsWith('}')) return null;
+
+    // A quoted key, its colon, and whatever the model put after it.
+    const keyAt = /"([^"\\]*)"\s*:\s*/g;
+    // Where one bare value ends: the comma introducing the next quoted key.
+    const nextKey = /,\s*"[^"\\]*"\s*:/g;
+
+    let out = '';
+    let cursor = 0;
+    let repairedAny = false;
+    let match: RegExpExecArray | null;
+
+    while ((match = keyAt.exec(text)) !== null) {
+        // Only top-level keys: a nested object's keys are already inside a value
+        // this loop will have consumed, so seeing one means the scan lost sync.
+        if (match.index < cursor) continue;
+
+        const valueStart = keyAt.lastIndex;
+        const first = text[valueStart];
+        // Anything JSON already recognises is left exactly as it is.
+        if (first === undefined || '"{[-0123456789tfn'.includes(first)) {
+            out += text.slice(cursor, valueStart);
+            cursor = valueStart;
+            continue;
+        }
+
+        nextKey.lastIndex = valueStart;
+        const boundary = nextKey.exec(text);
+        const valueEnd = boundary ? boundary.index : text.length - 1;
+
+        const bare = text.slice(valueStart, valueEnd).trim();
+        if (!bare) return null;
+
+        out += text.slice(cursor, valueStart) + JSON.stringify(bare);
+        cursor = valueEnd;
+        keyAt.lastIndex = valueEnd;
+        repairedAny = true;
+    }
+
+    if (!repairedAny) return null;
+    out += text.slice(cursor);
+
+    // The repair only counts if it produced real JSON. Otherwise the caller
+    // reports the failure honestly instead of forwarding a guess.
+    try {
+        JSON.parse(out);
+        console.warn('[ai] repaired tool arguments whose string values were left unquoted by the model');
+        return out;
+    } catch {
+        return null;
+    }
+}
+
 export type NormalizedArguments =
     /** Usable, either as sent or after repair. `args` is valid JSON. */
     | { readonly ok: true; readonly args: string }
@@ -109,6 +188,9 @@ export function normalizeToolArguments(raw: string): NormalizedArguments {
             }
         }
     }
+
+    const requoted = repairUnquotedValues(text);
+    if (requoted) return { ok: true, args: requoted };
 
     // THE WHOLE STRING, NEVER A SLICE.
     //
