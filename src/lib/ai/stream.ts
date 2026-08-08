@@ -69,13 +69,21 @@ export type StreamEvent =
  * will reject. An empty argument object may make the model retry the call — a
  * malformed one kills the conversation.
  */
-export function normalizeToolArguments(raw: string): string {
+export type NormalizedArguments =
+    /** Usable, either as sent or after repair. `args` is valid JSON. */
+    | { readonly ok: true; readonly args: string }
+    /** Unrecoverable. The caller must NOT invent arguments for it. */
+    | { readonly ok: false; readonly raw: string };
+
+export function normalizeToolArguments(raw: string): NormalizedArguments {
     const text = raw.trim();
-    if (!text) return '{}';
+    // A tool with no parameters is called with nothing, and that is not a
+    // failure. `timeline_get_summary` declares `properties: {}`.
+    if (!text) return { ok: true, args: '{}' };
 
     try {
         JSON.parse(text);
-        return text;
+        return { ok: true, args: text };
     } catch { /* fall through to recovery */ }
 
     // Walk to the end of the first balanced JSON object, ignoring braces that
@@ -96,7 +104,7 @@ export function normalizeToolArguments(raw: string): string {
                 const candidate = text.slice(0, i + 1);
                 try {
                     JSON.parse(candidate);
-                    return candidate;
+                    return { ok: true, args: candidate };
                 } catch { break; }
             }
         }
@@ -111,10 +119,10 @@ export function normalizeToolArguments(raw: string): string {
     // most useful fact about it. An occasional long log line is cheaper than
     // another week spent debugging the logger.
     console.warn(
-        `[ai] tool arguments could not be repaired (${text.length} chars); sending {} instead:`,
+        `[ai] tool arguments could not be repaired (${text.length} chars):`,
         text,
     );
-    return '{}';
+    return { ok: false, raw: text };
 }
 
 /** A tool call being assembled across frames, keyed by its index in the delta. */
@@ -230,7 +238,7 @@ export function toVichithStream(
                     // An empty argument list is `{}`, never an empty string — the
                     // desktop parses this, and `JSON.parse('')` throws. Repaired
                     // when the provider sent cumulative frames rather than deltas.
-                    const args = normalizeToolArguments(call.arguments);
+                    const normalized = normalizeToolArguments(call.arguments);
 
                     // A call whose arguments could NOT be recovered is not emitted
                     // with `{}`.
@@ -251,7 +259,17 @@ export function toVichithStream(
                     // fix belongs upstream, in a schema small enough for the model to
                     // emit — hence the two-call brief on the desktop. This branch is
                     // the honest report of what got here, not a recovery path.
-                    if (args === '{}' && call.arguments.trim().length > 2) {
+                    // THE FUNCTION SAYS WHETHER IT FAILED. It is not inferred from
+                    // the value, and that distinction is not academic — the first
+                    // version of this guard read `args === '{}' && raw.length > 2`,
+                    // which cannot tell "gave up and defaulted to {}" from "REPAIRED
+                    // to {}". A no-argument tool like `timeline_get_summary` sent
+                    // cumulatively arrives as `{}{}`, gets correctly repaired to
+                    // `{}`, and was then thrown away as corrupt — a perfectly good
+                    // call discarded, with `finish_reason: tool_calls` proving the
+                    // model had finished cleanly. Never re-derive an outcome the
+                    // producer already knows.
+                    if (!normalized.ok) {
                         corrupted.push(call.name);
                         continue;
                     }
@@ -260,7 +278,7 @@ export function toVichithStream(
                         type: 'tool_call',
                         id: call.id || `call_${call.name}`,
                         name: call.name,
-                        arguments: args,
+                        arguments: normalized.args,
                     });
                 }
 
