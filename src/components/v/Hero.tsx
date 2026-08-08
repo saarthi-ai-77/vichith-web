@@ -58,16 +58,24 @@ export function Hero() {
             initial={{ opacity: 0, y: 32, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[13vw] leading-[0.92] font-medium tracking-[-0.045em] sm:text-7xl md:text-[5.6rem]"
+            className="text-[11vw] leading-[0.92] font-semibold tracking-[-0.04em] sm:text-6xl md:text-[5.4rem]"
           >
-            The AI-native
-            <br />
-            video editor
-            <br />
-            <span className="accent-text">for modern workflows.</span>
+            <span className="block font-syne font-bold text-white tracking-[-0.045em]">
+              One workflow.
+            </span>
+            <span className="block font-display bg-gradient-to-r from-white via-white/85 to-white/40 bg-clip-text text-transparent tracking-[-0.03em]">
+              Every creative tool.
+            </span>
+            <span className="mt-2 block font-editorial italic font-normal tracking-normal text-dim/95">
+              Powered by{" "}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-4 py-0.5 text-[0.78em] font-mono not-italic font-semibold tracking-wide text-accent shadow-[0_0_25px_rgba(0,229,160,0.25)] backdrop-blur-md align-middle">
+                AI.
+              </span>
+            </span>
           </motion.h1>
 
           <div className="mt-6 flex flex-wrap items-end gap-x-6 gap-y-2">
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

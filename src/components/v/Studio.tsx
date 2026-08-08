@@ -15,7 +15,7 @@ export function Studio() {
       eyebrow="Vichith Desktop Studio"
       title={
         <>
-          A desktop editor
+          A creative workspace
           <br />
           built for flow.
         </>

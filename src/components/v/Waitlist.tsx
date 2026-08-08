@@ -118,7 +118,7 @@ export function Waitlist() {
           </div>
         </div>
         <div className="mx-auto max-w-[1180px] px-6 pb-10 font-mono text-[11px] text-dim">
-          © {new Date().getFullYear()} Vichith AI — The Editorial Brain & AI Video Editor.
+          © {new Date().getFullYear()} Vichith AI — One workflow. Every creative tool. Powered by AI.
         </div>
       </footer>
     </section>

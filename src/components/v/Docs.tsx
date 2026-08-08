@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Section } from "./Section";
 
 const docs: [string, string, string][] = [
-  ["Join Waitlist", "Sign up for early access to the Vichith AI Video Editor workspace.", "#waitlist"],
+  ["Join Waitlist", "Sign up for early access to the Vichith desktop creative workspace.", "#waitlist"],
   ["Chithra AI Brain", "How our Editorial Brain decomposes tasks and edits non-destructively.", "#chithra"],
   ["Discord Community", "Join creators, share feedback, and talk directly with the team.", "https://discord.gg/MSeSsbgD"],
   ["OpenTimelineIO", "Standardized non-destructive sequence format and data schema.", "https://github.com/AcademySoftwareFoundation/OpenTimelineIO"],

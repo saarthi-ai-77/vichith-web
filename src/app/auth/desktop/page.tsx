@@ -277,7 +277,7 @@ export default function DesktopAuthPage() {
       </Suspense>
 
       <div className="vch-auth-footer">
-        Vichith Video Editor Identity Service • <a href="https://vichith.in" target="_blank" rel="noopener noreferrer">vichith.in</a>
+        Vichith Creative Workspace Identity Service • <a href="https://vichith.in" target="_blank" rel="noopener noreferrer">vichith.in</a>
       </div>
     </main>
   );
