@@ -1,0 +1,52 @@
+-- 009_drop_ledger_policies.sql
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Remove two policies that 007 no longer creates.
+--
+-- WHY THIS EXISTS AT ALL. An earlier draft of 007 created
+--
+--     "Users can view their own wallet"        ON wallets
+--     "Users can view their own transactions"  ON credit_transactions
+--
+-- and that draft is the copy that was applied to production, before the
+-- correction landed in the repository. The corrected 007 simply omits them, which
+-- means re-running it cannot remove them — a migration can only drop what it
+-- names. Hence this one.
+--
+-- THE FILES AND THE DATABASE HAD DIVERGED. That is the cost of applying SQL by
+-- hand rather than through the migration runner, and it is worth stating plainly
+-- because the next person to read `pg_policies` would otherwise find two policies
+-- the repository says do not exist.
+--
+-- THERE IS NO SECURITY HOLE HERE. Both policies are `FOR SELECT USING
+-- (auth.uid() = user_id)` — correctly scoped to the caller's own row, not the
+-- `USING (true)` shape 008 removed. And `authenticated` holds no grant on either
+-- table after 004, so neither policy can fire. They are removed because they are
+-- MISLEADING, not because they are dangerous.
+--
+-- A policy that cannot fire tells the next reader that clients read these tables
+-- directly. They do not, and they must not: the ledger is reached through the API
+-- with the service role, which bypasses RLS by design. A second read path to the
+-- same state via supabase-js would be the parallel-ownership pattern this project
+-- keeps paying to remove.
+--
+-- RLS STAYS ENABLED on both tables. RLS on with no policy denies every
+-- non-BYPASSRLS role, which is the intended end state and matches 004 §2 and 008.
+--
+-- SAFE TO RE-RUN. `DROP POLICY IF EXISTS` is idempotent, and safe even on a
+-- database where the corrected 007 was applied and these never existed.
+
+DROP POLICY IF EXISTS "Users can view their own wallet"       ON public.wallets;
+DROP POLICY IF EXISTS "Users can view their own transactions" ON public.credit_transactions;
+
+-- ── Verification ─────────────────────────────────────────────────────────────
+--
+-- Expect ZERO rows for both tables:
+--
+--   SELECT tablename, policyname FROM pg_policies
+--   WHERE schemaname = 'public' AND tablename IN ('wallets','credit_transactions');
+--
+-- And confirm RLS is still ON for both — this migration must not turn it off:
+--
+--   SELECT relname, relrowsecurity FROM pg_class c
+--   JOIN pg_namespace n ON n.oid = c.relnamespace
+--   WHERE n.nspname = 'public' AND relname IN ('wallets','credit_transactions');
