@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticate } from '@/lib/auth/identity';
-import { findUserById, getUserProfileAndEntitlements } from '@/lib/auth/db';
+import { authenticate } from '../../../lib/auth/identity';
+import { findUserById, getUserProfileAndEntitlements } from '../../../lib/auth/db';
+import { getSupabaseClient } from '../../../lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,13 @@ export async function GET(request: NextRequest) {
 
     const { profile, entitlements } = await getUserProfileAndEntitlements(user.id);
 
+    const supabase = getSupabaseClient();
+    const { data: wallet } = await supabase
+      .from('wallets')
+      .select('balance')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -40,6 +48,9 @@ export async function GET(request: NextRequest) {
       },
       entitlements: {
         plan: entitlements?.plan || 'free',
+        // @deprecated Load-bearing for older desktop clients (src-core/vichith-tauri/src/commands/auth.rs). 
+        // Replaced by the `wallet` object on /api/usage. Do not remove until older clients are retired.
+        credits_balance: wallet?.balance ?? 0,
         autonomy_runs_remaining: entitlements?.autonomy_runs_remaining ?? 10,
         renews_at: entitlements?.renews_at || null,
       },
