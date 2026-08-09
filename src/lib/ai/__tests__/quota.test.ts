@@ -68,6 +68,20 @@ describe('Credit Ledger State Machine', () => {
         });
     });
 
+    it('allows TWO reservations against the same jobId (idempotency constraint scoped correctly)', async () => {
+        mockSupabase.rpc.mockResolvedValue({
+            data: { success: true, reservation_id: 'res-n' },
+            error: null
+        });
+
+        const res1 = await reserveCredits('user-1', 'job-1', 10);
+        const res2 = await reserveCredits('user-1', 'job-1', 10);
+        
+        expect(res1.allowed).toBe(true);
+        expect(res2.allowed).toBe(true);
+        expect(mockSupabase.rpc).toHaveBeenCalledTimes(2);
+    });
+
     it('refuses reservation if insufficient balance', async () => {
         mockSupabase.rpc.mockResolvedValueOnce({
             data: { success: false },
