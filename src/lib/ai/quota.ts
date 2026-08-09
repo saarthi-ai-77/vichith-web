@@ -83,7 +83,7 @@ export function hasDevelopmentUsageBypass(
 
 export type QuotaVerdict =
     | { allowed: true; remainingThisMonth: number; usedUnits: number }
-    | { allowed: false; reason: 'rate' | 'monthly' | 'plan'; message: string; retryAfterSecs?: number; usedUnits: number };
+    | { allowed: false; reason: 'rate' | 'monthly' | 'plan' | 'credits'; message: string; retryAfterSecs?: number; usedUnits: number };
 
 /**
  * Check whether this user may make one more AI request.
@@ -168,7 +168,7 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
         if (wallet && (wallet.balance ?? 0) <= 0) {
             return {
                 allowed: false,
-                reason: 'monthly',
+                reason: 'credits',
                 message: `You have exhausted your credits.`,
                 usedUnits,
             };

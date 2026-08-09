@@ -160,4 +160,24 @@ describe('Credit Ledger State Machine', () => {
             usedUnits: 50
         });
     });
+
+    it('enforces wallet balance exhaustion and returns reason: credits', async () => {
+        // burst check ends in .gte()
+        mockSupabase.gte.mockResolvedValueOnce({ count: 0, error: null });
+        
+        // monthly check ends in .gte()
+        mockSupabase.gte.mockResolvedValueOnce({ data: [{ credits_cost: 50 }], error: null });
+        
+        // wallet check ends in .single(), returning empty balance
+        mockSupabase.single.mockResolvedValueOnce({ data: { balance: 0 }, error: null });
+        
+        const result = await checkQuota('user-1', 'free');
+        
+        expect(result).toEqual({
+            allowed: false,
+            reason: 'credits',
+            message: 'You have exhausted your credits.',
+            usedUnits: 50
+        });
+    });
 });

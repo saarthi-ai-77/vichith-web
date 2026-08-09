@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
       },
       entitlements: {
         plan: entitlements?.plan || 'free',
-        credits_balance: entitlements?.credits_balance ?? 0,
         autonomy_runs_remaining: entitlements?.autonomy_runs_remaining ?? 10,
         renews_at: entitlements?.renews_at || null,
       },

@@ -10,15 +10,8 @@ CREATE TABLE IF NOT EXISTS wallets (
 
 -- Protect wallets with RLS
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
-
-DO $$ 
-BEGIN
-    CREATE POLICY "Users can view their own wallet" ON wallets
-        FOR SELECT USING (auth.uid() = user_id);
-EXCEPTION 
-    WHEN duplicate_object THEN null;
-END $$;
--- No insert/update policy - wallets are mutated by server role only
+-- No policies are created for wallets. Access is strictly service-role-only via the API, 
+-- per the founder's decision (Migration 004). The client cannot read this directly.
 
 DO $$
 BEGIN
@@ -40,15 +33,8 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
 
 -- Protect credit_transactions with RLS
 ALTER TABLE credit_transactions ENABLE ROW LEVEL SECURITY;
-
-DO $$
-BEGIN
-    CREATE POLICY "Users can view their own transactions" ON credit_transactions
-        FOR SELECT USING (auth.uid() = user_id);
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
--- No insert/update policy - transactions are mutated by server role only
+-- No policies are created for credit_transactions. Access is strictly service-role-only 
+-- via the API. The client cannot read this directly.
 
 -- RPC for reserving credits safely
 CREATE OR REPLACE FUNCTION reserve_credits(p_user_id UUID, p_amount INTEGER, p_job_id TEXT)

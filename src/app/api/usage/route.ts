@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticate } from '@/lib/auth/identity';
-import { saveUsageEvents, getUserProfileAndEntitlements } from '@/lib/auth/db';
-import { checkQuota } from '@/lib/ai/quota';
-import { buildMeter } from '@/lib/ai/effort';
+import { authenticate } from '../../../lib/auth/identity';
+import { saveUsageEvents, getUserProfileAndEntitlements } from '../../../lib/auth/db';
+import { checkQuota } from '../../../lib/ai/quota';
+import { buildMeter } from '../../../lib/ai/effort';
+import { getSupabaseClient } from '../../../lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,24 @@ export async function GET(request: NextRequest) {
     const plan = entitlements?.plan ?? 'free';
     const quota = await checkQuota(identity.userId, plan);
 
+    const supabase = getSupabaseClient();
+    const { data: wallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', identity.userId)
+        .maybeSingle();
+
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+
+    const { data: transactions } = await supabase
+        .from('credit_transactions')
+        .select('id, amount, reason, reference_id, status, created_at')
+        .eq('user_id', identity.userId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
     return NextResponse.json({
       plan,
       // A user who is OVER the ceiling still gets a meter: that is exactly when
@@ -35,7 +54,11 @@ export async function GET(request: NextRequest) {
       // because the gate would have said no.
       meter: buildMeter(quota.usedUnits, plan),
       remainingThisMonth: quota.allowed ? quota.remainingThisMonth : 0,
-      credits_balance: entitlements?.credits_balance ?? 0,
+      wallet: {
+        exists: !!wallet,
+        balance: wallet?.balance ?? 0,
+      },
+      transactions: transactions ?? [],
     });
   } catch (err: unknown) {
     console.error('Error in GET /api/usage:', err);
@@ -60,12 +83,20 @@ export async function POST(request: NextRequest) {
     // Save usage events to database
     const acceptedCount = await saveUsageEvents(identity.userId, events);
 
-    // Fetch user's current credits balance
-    const { entitlements } = await getUserProfileAndEntitlements(identity.userId);
+    // Fetch user's current wallet balance
+    const supabase = getSupabaseClient();
+    const { data: wallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', identity.userId)
+        .maybeSingle();
 
     return NextResponse.json({
       accepted: acceptedCount,
-      credits_balance: entitlements?.credits_balance ?? 0,
+      wallet: {
+        exists: !!wallet,
+        balance: wallet?.balance ?? 0,
+      }
     });
   } catch (err: any) {
     console.error('Error in /api/usage:', err);
