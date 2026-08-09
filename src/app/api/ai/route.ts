@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
-import { checkQuota, chargeForCall, hasDevelopmentUsageBypass } from '@/lib/ai/quota';
+import { checkQuota, chargeForCall, hasDevelopmentUsageBypass, reserveCredits, settleCredits } from '@/lib/ai/quota';
 import { toVichithStream } from '@/lib/ai/stream';
 import { beginStream } from '@/lib/ai/streamRouter';
 import { effortFor, buildMeter, type ExecutionClass, type Magnitude } from '@/lib/ai/effort';
@@ -121,6 +121,20 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        // ── 4a. Reserve Credits (Ledger) ─────────────────────────────────────
+        const executionClass: ExecutionClass = 'cloud';
+        const magnitude: Magnitude = readMagnitude(body?.payload);
+        const rawUnits = effortFor(capability, magnitude, executionClass);
+        const jobId = typeof body?.jobId === 'string' && body.jobId.trim() ? body.jobId.trim() : null;
+
+        const reservation = developmentBypass
+            ? { allowed: true as const, reservationId: 'dev_bypass' }
+            : await reserveCredits(identity.userId, jobId, rawUnits);
+
+        if (!reservation.allowed) {
+            return json(402, { error: 'insufficient_funds', message: reservation.message, requestId });
+        }
+
         // ── 4b. STREAMING BRANCH ─────────────────────────────────────────────
         //
         // Placed AFTER every gate above, deliberately: auth, entitlements, the
@@ -132,9 +146,6 @@ export async function POST(request: NextRequest) {
         // the non-streaming path — which every other capability and every older
         // desktop build uses — cannot regress.
         if (body?.stream === true) {
-            const jobIdForStream =
-                typeof body?.jobId === 'string' && body.jobId.trim() ? body.jobId.trim() : null;
-
             const streamed = await beginStream({
                 capability,
                 requestId,
@@ -147,14 +158,15 @@ export async function POST(request: NextRequest) {
                 return json(status, { error: streamed.error.code, message: streamed.error.message, requestId });
             }
 
-            const executionClass: ExecutionClass = 'cloud';
-            const magnitude: Magnitude = readMagnitude(body?.payload);
-
             const events = toVichithStream(streamed.body, streamed.request, async ({ completed, usage }) => {
                 // Settled once, on close, however the stream ended. A cancelled
                 // run still pays for what reached the provider — see stream.ts.
-                const rawUnits = effortFor(capability, magnitude, executionClass);
-                const units = await chargeForCall(identity.userId, jobIdForStream, rawUnits);
+                const units = await chargeForCall(identity.userId, jobId, rawUnits);
+                
+                if (reservation.reservationId && reservation.reservationId !== 'dev_bypass' && reservation.reservationId !== 'free_call') {
+                    await settleCredits(reservation.reservationId, completed ? units : 0);
+                }
+                
                 void recordUsage(
                     identity.userId,
                     capability,
@@ -168,7 +180,7 @@ export async function POST(request: NextRequest) {
                     identity.issuer,
                     units,
                     0,
-                    jobIdForStream,
+                    jobId,
                 );
                 if (!completed) {
                     console.warn(`[ai] stream for ${requestId} closed without finishing; charged ${units} units`);
@@ -205,17 +217,18 @@ export async function POST(request: NextRequest) {
         // Anything reaching this route is cloud by definition; native and local
         // resolve on the desktop and never arrive here at all, so they cost zero by
         // construction rather than by a lookup returning zero.
-        const executionClass: ExecutionClass = 'cloud';
-        const magnitude: Magnitude = readMagnitude(body?.payload);
-        const rawUnits = result.ok ? effortFor(capability, magnitude, executionClass) : 0;
-
+        
         // ── PER-JOB SETTLEMENT ────────────────────────────────────────────────
         // A task is charged for the HEAVIEST capability it touched, not for every
         // round trip the runtime needed. See `chargeForCall` for why this settles
         // incrementally instead of on a "task finished" signal that may never
         // arrive. Without a jobId this is a standalone call and pays for itself.
-        const jobId = typeof body?.jobId === 'string' && body.jobId.trim() ? body.jobId.trim() : null;
-        const units = await chargeForCall(identity.userId, jobId, rawUnits);
+        const actualRawUnits = result.ok ? rawUnits : 0;
+        const units = await chargeForCall(identity.userId, jobId, actualRawUnits);
+
+        if (reservation.reservationId && reservation.reservationId !== 'dev_bypass' && reservation.reservationId !== 'free_call') {
+            await settleCredits(reservation.reservationId, result.ok ? units : 0);
+        }
 
         // COST — what WE spent. Recorded alongside, never joined to the above.
         const microUsd = result.ok ? costMicroUsd(result.provider, result.usage) : 0;

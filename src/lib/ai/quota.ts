@@ -126,12 +126,7 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
         }
 
         // ── Monthly ceiling, in COST UNITS ──
-        // Summed over `credits_cost` rather than counted as rows, because a frame
-        // analysis and a one-line chat are not the same spend. Counting requests
-        // would let 50 video analyses cost the same as 50 chat messages, which is
-        // wrong in both directions: it over-charges light users and under-charges
-        // the expensive ones we actually need to bound.
-        //
+        // Summed over `credits_cost` rather than counted as rows.
         // Calendar month, not a rolling 30 days: it matches how a user reads their
         // plan and resets predictably.
         const startOfMonth = new Date();
@@ -162,10 +157,105 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
             };
         }
 
+        // ── Check Wallet Balance ──
+        const { data: wallet, error: walletErr } = await supabase
+            .from('wallets')
+            .select('balance')
+            .eq('user_id', userId)
+            .single();
+
+        if (walletErr && walletErr.code !== 'PGRST116') throw walletErr;
+        if (wallet && (wallet.balance ?? 0) <= 0) {
+            return {
+                allowed: false,
+                reason: 'monthly',
+                message: `You have exhausted your credits.`,
+                usedUnits,
+            };
+        }
+
         return { allowed: true, remainingThisMonth: Math.max(0, allowance - usedUnits), usedUnits };
     } catch (err) {
         console.error('[ai] quota check failed, allowing request:', err);
         return { allowed: true, remainingThisMonth: -1, usedUnits: 0 };
+    }
+}
+
+/**
+ * Idempotently grant 100 signup credits to a user.
+ */
+export async function grantSignupCreditsIdempotent(userId: string): Promise<void> {
+    try {
+        const supabase = getSupabaseClient();
+        
+        const { error: walletErr } = await supabase
+            .from('wallets')
+            .insert({ user_id: userId, balance: 100 });
+            
+        if (walletErr && walletErr.code !== '23505') {
+            console.error('[ai] Failed to create wallet for user', userId, walletErr);
+            return;
+        }
+        
+        if (!walletErr) {
+            await supabase.from('credit_transactions').insert({
+                user_id: userId,
+                amount: 100,
+                reason: 'signup_grant',
+                status: 'completed'
+            });
+        }
+    } catch (err) {
+        console.error('[ai] grantSignupCreditsIdempotent failed:', err);
+    }
+}
+
+export type ReservationResult = 
+    | { allowed: true; reservationId: string }
+    | { allowed: false; reason: 'insufficient_balance' | 'error'; message: string };
+
+/**
+ * Reserve credits BEFORE the provider call.
+ */
+export async function reserveCredits(userId: string, jobId: string | null, unitsToReserve: number): Promise<ReservationResult> {
+    if (unitsToReserve <= 0) return { allowed: true, reservationId: 'free_call' };
+
+    try {
+        const supabase = getSupabaseClient();
+        await grantSignupCreditsIdempotent(userId);
+
+        const { data, error } = await supabase.rpc('reserve_credits', {
+            p_user_id: userId,
+            p_amount: unitsToReserve,
+            p_job_id: jobId
+        });
+
+        if (error) {
+            return { allowed: false, reason: 'error', message: 'Quota check failed due to a database error.' };
+        }
+        
+        if (!data?.success) {
+            const errType = data?.error === 'database_error' ? 'error' : 'insufficient_balance';
+            const msg = data?.message || 'Insufficient balance.';
+            return { allowed: false, reason: errType, message: msg };
+        }
+
+        return { allowed: true, reservationId: data.reservation_id };
+    } catch (err) {
+        console.error('[ai] reserveCredits failed:', err);
+        return { allowed: false, reason: 'error', message: 'Quota check failed.' };
+    }
+}
+
+export async function settleCredits(reservationId: string, actualUnits: number): Promise<void> {
+    try {
+        const supabase = getSupabaseClient();
+        await supabase.rpc('settle_credits', {
+            p_reservation_id: reservationId,
+            p_actual_amount: actualUnits
+        });
+    } catch (err) {
+        console.error('[ai] settleCredits failed:', err);
     }
 }
 
