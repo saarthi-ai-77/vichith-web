@@ -22,22 +22,22 @@ export async function middleware(request: NextRequest) {
             return request.cookies.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
-            request.cookies.set({ name, value, ...options });
+            request.cookies.set({ name, value, ...options, domain: '.vichith.in' });
             response = NextResponse.next({
               request: {
                 headers: request.headers,
               },
             });
-            response.cookies.set({ name, value, ...options });
+            response.cookies.set({ name, value, ...options, domain: '.vichith.in' });
           },
           remove(name: string, options: any) {
-            request.cookies.delete({ name, ...options });
+            request.cookies.delete({ name, ...options, domain: '.vichith.in' });
             response = NextResponse.next({
               request: {
                 headers: request.headers,
               },
             });
-            response.cookies.delete({ name, ...options });
+            response.cookies.delete({ name, ...options, domain: '.vichith.in' });
           },
         },
       }
@@ -51,6 +51,23 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl.clone();
   const { pathname } = url;
+
+  // 2. CORS Logic for API routes
+  if (pathname.startsWith('/api')) {
+    const origin = request.headers.get('origin') || '';
+    // Allow app subdomains for cross-origin requests
+    if (origin && (origin.includes('app.vichith.in') || origin.includes('localhost'))) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-razorpay-signature');
+    }
+
+    // Handle OPTIONS preflight
+    if (request.method === 'OPTIONS') {
+      return response;
+    }
+  }
 
   // Bypass Next.js internal system directories, standard API routes, and files
   if (

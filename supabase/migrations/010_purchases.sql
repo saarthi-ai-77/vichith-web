@@ -5,7 +5,7 @@
 -- can only be used once for a specific reason (like 'purchase' or 'refund_purchase').
 -- We use a partial index so that legitimate repeating events (like multiple 'reservation'
 -- entries for the same multi-turn jobId) are not constrained.
-CREATE UNIQUE INDEX unique_purchase_event ON credit_transactions (reference_id, reason) 
+CREATE UNIQUE INDEX IF NOT EXISTS unique_purchase_event ON credit_transactions (reference_id, reason) 
 WHERE reason IN ('purchase', 'refund_purchase');
 
 -- RPC for granting purchased credits idempotently

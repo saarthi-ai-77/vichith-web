@@ -13,14 +13,14 @@ export function createServerSupabaseClient() {
         },
         set(name: string, value: string, options: any) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookieStore.set({ name, value, ...options, domain: '.vichith.in' });
           } catch (error) {
             // Ignored if called from a Server Component and middleware handles it
           }
         },
         remove(name: string, options: any) {
           try {
-            cookieStore.delete({ name, ...options });
+            cookieStore.delete({ name, ...options, domain: '.vichith.in' });
           } catch (error) {
             // Ignored if called from a Server Component and middleware handles it
           }
