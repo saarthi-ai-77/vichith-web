@@ -17,8 +17,9 @@
  * run in the route before this is reached.
  */
 
-import { CAPABILITY_ROUTES, type Capability } from './runtime';
+import { CAPABILITY_ROUTES, type Capability, type ModelSelection } from './runtime';
 import { SarvamAdapter } from './adapters/sarvam';
+import { OpenRouterAdapter } from './adapters/openrouter';
 import { aiError, type AIError, type AIRequest } from './provider';
 
 /**
@@ -35,11 +36,14 @@ const STREAMABLE: ReadonlySet<Capability> = new Set<Capability>([
     'understand.text',
 ] as Capability[]);
 
-/** One adapter instance, matching how the non-streaming runtime holds its own. */
-let sarvam: SarvamAdapter | null = null;
-function sarvamAdapter(): SarvamAdapter {
-    if (!sarvam) sarvam = new SarvamAdapter();
-    return sarvam;
+/** One adapter instance per provider, matching how the runtime holds its own. */
+const adapters = new Map<'sarvam' | 'openrouter', SarvamAdapter | OpenRouterAdapter>();
+function adapterFor(provider: 'sarvam' | 'openrouter'): SarvamAdapter | OpenRouterAdapter {
+    const existing = adapters.get(provider);
+    if (existing) return existing;
+    const created = provider === 'openrouter' ? new OpenRouterAdapter() : new SarvamAdapter();
+    adapters.set(provider, created);
+    return created;
 }
 
 export type StreamStart =
@@ -49,12 +53,19 @@ export type StreamStart =
 /**
  * Begin a streamed call, or explain why it cannot be streamed.
  *
+ * WITH a router selection, the stream runs on the selected provider's own
+ * streamChat — never silently on Sarvam. WITHOUT one (legacy callers), Sarvam is
+ * the default, matching the capability route.
+ *
  * A capability that cannot stream returns an ERROR rather than silently falling
  * back to the buffered path. A silent fallback would present a stream that never
  * streams — the caller would wait for tokens that are never coming and have no
  * way to tell that from a slow model.
  */
-export async function beginStream(request: AIRequest): Promise<StreamStart> {
+export async function beginStream(
+    request: AIRequest,
+    selection?: ModelSelection,
+): Promise<StreamStart> {
     if (!STREAMABLE.has(request.capability)) {
         return {
             ok: false,
@@ -67,10 +78,19 @@ export async function beginStream(request: AIRequest): Promise<StreamStart> {
     }
 
     const route = CAPABILITY_ROUTES[request.capability];
-    if (!route || route.primary !== 'sarvam') {
-        // V1 is Sarvam-only and the runtime says so out loud rather than quietly
-        // trying another provider — the same no-silent-fallback rule the
-        // non-streaming router follows.
+    if (!route) {
+        return {
+            ok: false,
+            error: aiError('CAPABILITY_UNSUPPORTED', 'Unknown capability.', request.requestId),
+        };
+    }
+
+    const provider = selection ? selection.provider : route.primary;
+    // A selected provider that can stream is the only other lane OpenRouter
+    // needs; everything not explicitly routed to Sarvam's unit endpoints stays
+    // out. The no-silent-fallback rule applies to streaming exactly as to
+    // dispatch: if the selected provider cannot stream, say so.
+    if (provider !== 'sarvam' && provider !== 'openrouter') {
         return {
             ok: false,
             error: aiError(
@@ -82,6 +102,9 @@ export async function beginStream(request: AIRequest): Promise<StreamStart> {
         };
     }
 
+    const adapter = adapterFor(provider);
+    const requestWithModel = selection ? { ...request, model: selection.modelId } : request;
+
     // The upstream call gets its own timeout. Without one, a provider that
     // accepts the connection and then goes quiet holds a serverless function
     // open until the platform kills it, and the user sees nothing at all.
@@ -90,9 +113,9 @@ export async function beginStream(request: AIRequest): Promise<StreamStart> {
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const started = await sarvamAdapter().streamChat(request, controller.signal);
+        const started = await adapter.streamChat(requestWithModel, controller.signal);
         if (!started.ok) return { ok: false, error: started.error };
-        return { ok: true, body: started.body, request };
+        return { ok: true, body: started.body, request: requestWithModel };
     } finally {
         // Cleared as soon as the stream is HANDED OVER, not when it finishes:
         // from here the body is read by `toVichithStream`, and leaving this armed

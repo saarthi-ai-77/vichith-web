@@ -28,6 +28,7 @@ import {
     type ProviderAdapter,
     type ProviderId,
 } from './provider';
+import type { ModelSelection } from './modelRouter';
 
 export class AIRouter {
     private readonly adapters = new Map<ProviderId, ProviderAdapter>();
@@ -45,17 +46,26 @@ export class AIRouter {
     /**
      * Dispatch a request.
      *
-     * Tries the primary, then the declared fallback if there is one AND the failure
-     * was the kind a different provider could survive. A bad payload fails the same
-     * way everywhere, so retrying it elsewhere just doubles the latency and the bill.
+     * With NO selection this is the legacy path: the capability route decides the
+     * provider, then a declared fallback may catch transport-shaped failures.
+     *
+     * With a `selection` (the Model Router's provider+model answer) the provider
+     * is the selection's — the route still supplies timeout/media/attribution —
+     * and fallback is DISABLED. Silent provider substitution is forbidden: if a
+     * user chose a model, another model answering in its place is worse than an
+     * error. A failed selected call returns its failure.
      */
-    async dispatch<T = unknown>(request: AIRequest): Promise<AIResult<T>> {
+    async dispatch<T = unknown>(
+        request: AIRequest,
+        selection?: ModelSelection,
+    ): Promise<AIResult<T>> {
         const route = CAPABILITY_ROUTES[request.capability];
         if (!route) {
             return aiError('CAPABILITY_UNSUPPORTED', `Unknown capability "${request.capability}".`, request.requestId);
         }
 
-        const primary = this.adapters.get(route.primary);
+        const resolvedProvider = selection ? selection.provider : route.primary;
+        const primary = this.adapters.get(resolvedProvider);
         if (!primary) {
             return aiError(
                 'PROVIDER_UNAVAILABLE',
@@ -66,19 +76,19 @@ export class AIRouter {
         }
 
         // A route pointing at a provider that cannot serve the capability is a
-        // configuration bug. Fail immediately and unmistakably rather than letting
-        // the adapter improvise — this is the check that stops a mis-declared route
-        // from silently degrading in production.
+        // configuration bug — or the router handed back a selection its chosen
+        // adapter cannot honour. Fail immediately and unmistakably.
         if (!primary.supports(request.capability)) {
             return aiError(
                 'CAPABILITY_UNSUPPORTED',
-                `Provider "${route.primary}" is routed for "${request.capability}" but does not support it.`,
+                `Provider "${resolvedProvider}" is routed for "${request.capability}" but does not support it.`,
                 request.requestId
             );
         }
 
-        const first = await this.attempt<T>(primary, request, route.timeoutMs);
-        if (first.ok) return first;
+        const requestWithSelection = selection ? { ...request, model: selection.modelId } : request;
+        const first = await this.attempt<T>(primary, requestWithSelection, route.timeoutMs);
+        if (first.ok || selection) return first;
 
         if (!route.fallback || !isWorthFallingBackOver(first.code)) return first;
 

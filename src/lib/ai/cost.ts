@@ -49,6 +49,13 @@ const RATES = {
         inputPerMTok: 48_000,
         outputPerMTok: 193_000,
     },
+    openrouter: {
+        // Aggregator lane: roughly the blended rate of a cheap frontier-mini chat
+        // model. Coarse by design — the whole point of estimating pre-flight is
+        // that the number may drift, and cost.ts exists to absorb exactly that.
+        inputPerMTok: 150_000,
+        outputPerMTok: 600_000,
+    },
 } as const;
 
 /**
@@ -81,5 +88,52 @@ export function costMicroUsd(provider: ProviderId, usage: AIUsage): number {
     // An adapter that reports cost directly wins over our estimate.
     if (usage.estimatedCostUsd) micro = usage.estimatedCostUsd * 1_000_000;
 
+    return Math.round(micro);
+}
+
+/**
+ * PRE-FLIGHT estimate of real spend for a request that has not run yet.
+ *
+ * What the user is actually charged is the EFFORT ledger (`effortFor`) — the
+ * currency the wallet understands. This function answers a different, internal
+ * question BEFORE anything is sent to a provider: "roughly how much of OUR money
+ * would this call cost on this provider?" It is the input to the router's rule
+ * that a cheap operation must never select an expensive model, and it is what a
+ * pre-flight quote uses to say "≈ $0.012" next to "4 credits".
+ *
+ * Deliberately coarse (`≈` honoured in the shape):
+ *   • chat capabilities — estimate tokens from prompt+expected output length
+ *   • unit-metered capabilities — audio seconds / characters, exactly like the
+ *     post-hoc function, because there is nothing to guess
+ *   • a provider with no rate for this shape estimates 0 — recorded, never
+ *     compared against, because 0 is "we don't know", not "it is free"
+ *
+ * `estimatedCostUsd` on usage never feeds this path: pre-flight has no usage.
+ */
+export function estimateCostMicroUsd(
+    provider: ProviderId,
+    capability: string,
+    magnitude: { characters?: number; audioSeconds?: number; videoSeconds?: number },
+): number {
+    const rates = RATES[provider];
+    if (!rates) return 0;
+
+    const CHAT_CAPABILITIES = new Set(['plan.edit', 'plan.research', 'understand.text']);
+
+    // Unit-metered shapes match the post-hoc function exactly — there is
+    // nothing to guess, so the estimate is the price.
+    if (provider === 'sarvam') {
+        let micro = (magnitude.audioSeconds ?? 0) * RATES.sarvam.perAudioSecond;
+        if (!CHAT_CAPABILITIES.has(capability)) {
+            // Translation / OCR-style per-k-char work: chars are the meter.
+            micro += (magnitude.characters ?? 0) * RATES.sarvam.perKChar;
+            return Math.round(micro);
+        }
+    }
+
+    // Chat estimate: chars ≈ 1/4 tokens. Output assumed half the input size —
+    // a coarseness the "≈" in the docblock claims, nothing more.
+    const charTok = Math.max(0, (magnitude.characters ?? 0) / 4);
+    const micro = (charTok / 1_000_000) * (rates.inputPerMTok + rates.outputPerMTok * 0.5);
     return Math.round(micro);
 }

@@ -37,3 +37,4 @@ export function initAIRuntime() {
 
 export { aiRouter };
 export * from './provider';
+export * from './modelRouter';

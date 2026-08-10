@@ -1,4 +1,4 @@
-import { ModelCatalogEntry } from './types';
+import { ModelCatalogEntry, LlmModelCatalogEntry } from './types';
 
 /**
  * Vichith Open-Source AI Video Model Catalog
@@ -88,4 +88,110 @@ export function getModelCatalogEntry(modelId: string): ModelCatalogEntry | undef
  */
 export function listModelCatalog(): ModelCatalogEntry[] {
   return Object.values(VICHITH_MODEL_CATALOG);
+}
+
+/**
+ * LLM model catalog — the OTHER half of the SAME canonical registry.
+ *
+ * The Model Router (`lib/ai/modelRouter.ts`) selects a provider + model from
+ * here for a capability + entitlement + cost. Nothing declares a provider's
+ * model list anywhere else. If the router needs a field, this file is where it
+ * goes. (The registry ratchet test will fail if a second model catalog appears.)
+ *
+ * Availability is deliberately NOT in `status`. That field is static product
+ * intent (shipped / coming soon / retired). Whether the model is actually
+ * *usable today* is a runtime verdict the router derives from:
+ *   status === 'available' && enabled && credential present && plan entitled
+ *   && provider healthy  — see `modelRouter.ts`.
+ */
+export const VICHITH_LLM_CATALOG: Record<string, LlmModelCatalogEntry> = {
+  /** Sarvam-105B — the free-tier chat/reasoning path. */
+  'sarvam-105b': {
+    modelId: 'sarvam-105b',
+    name: 'Sarvam-105B',
+    provider: 'sarvam',
+    // The reasoning + language set Sarvam actually serves over its OpenAI-
+    // compatible chat endpoint. NOT speech/OCR: those are unit-metered, model-
+    // fixed endpoints served through the adapter, and are not user-selectable.
+    capabilities: ['plan.edit', 'plan.research', 'understand.text'],
+    minPlan: 'free',
+    enabled: true,
+    status: 'available',
+    // Server-side only. `configured` is resolved at request time, never stored.
+    requiredEnv: 'SARVAM_API_KEY',
+    // The starter tier's hard ceiling — a routing constraint, not a preference.
+    maxOutputTokens: 4096,
+    // Cheapest lane so a cheap operation never reaches a deaarer model.
+    creditCost: 1,
+    supportsTools: true,
+    supportsStreaming: true,
+    supportsJsonMode: true,
+    attribution: 'Powered by Sarvam',
+  },
+
+  /** OpenRouter cost-optimized chat — the paid tier's economy lane. */
+  'openrouter/mini-chat': {
+    modelId: 'openrouter/mini-chat',
+    name: 'OpenRouter Mini',
+    provider: 'openrouter',
+    capabilities: ['plan.edit', 'plan.research', 'understand.text'],
+    minPlan: 'paid',
+    enabled: true,
+    status: 'available',
+    requiredEnv: 'OPENROUTER_API_KEY',
+    // No stdout cap from the gateway tier comparable to Sarvam's 4096 starter
+    // limit; the adapter still enforces a sane default ceiling per call.
+    maxOutputTokens: 16_384,
+    creditCost: 2,
+    supportsTools: true,
+    supportsStreaming: true,
+    supportsJsonMode: true,
+    attribution: 'Powered by OpenRouter',
+  },
+
+  /** OpenRouter high-quality reasoning — paid tier, dearest, last resort. */
+  'openrouter/reasoning-pro': {
+    modelId: 'openrouter/reasoning-pro',
+    name: 'OpenRouter Reasoning Pro',
+    provider: 'openrouter',
+    capabilities: ['plan.edit', 'plan.research', 'understand.text'],
+    minPlan: 'paid',
+    enabled: true,
+    status: 'available',
+    requiredEnv: 'OPENROUTER_API_KEY',
+    maxOutputTokens: 16_384,
+    creditCost: 4,
+    supportsTools: true,
+    supportsStreaming: true,
+    supportsJsonMode: true,
+    attribution: 'Powered by OpenRouter',
+  },
+
+  /** Reference entry proving the roadmap stays in the SAME registry. */
+  'sarvam-105b-plus': {
+    modelId: 'sarvam-105b-plus',
+    name: 'Sarvam-105B Plus',
+    provider: 'sarvam',
+    capabilities: ['plan.edit', 'plan.research', 'understand.text'],
+    minPlan: 'paid',
+    enabled: false,          // not switched on yet — must never be presented
+    status: 'coming_soon',   // product intent, not usable today
+    requiredEnv: 'SARVAM_API_KEY',
+    maxOutputTokens: 4096,
+    creditCost: 3,
+    supportsTools: true,
+    supportsStreaming: true,
+    supportsJsonMode: true,
+    attribution: 'Powered by Sarvam',
+  },
+};
+
+/** Get an LLM model entry by id, or undefined. */
+export function getLlmModelCatalogEntry(modelId: string): LlmModelCatalogEntry | undefined {
+  return VICHITH_LLM_CATALOG[modelId];
+}
+
+/** All LLM model entries as a clean array. */
+export function listLlmModelCatalog(): LlmModelCatalogEntry[] {
+  return Object.values(VICHITH_LLM_CATALOG);
 }

@@ -115,6 +115,14 @@ export interface AIRequest {
     readonly payload: Record<string, unknown>;
     /** Caller asked for a streamed response. Adapters may ignore it. */
     readonly stream?: boolean;
+    /**
+     * The wire model id, chosen by the MODEL ROUTER — never by the caller.
+     * The desktop speaks capabilities and must never name a model; this field
+     * is set server-side between `selectModel` and `dispatch`. Adapters fall
+     * back to their own default when absent, so the pre-router path (and every
+     * test that builds a bare AIRequest) keeps working untouched.
+     */
+    readonly model?: string;
 }
 
 export interface AIUsage {

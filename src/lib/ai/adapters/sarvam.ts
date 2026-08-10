@@ -518,7 +518,9 @@ export class SarvamAdapter implements ProviderAdapter {
                 return {
                     path: '/v1/chat/completions',
                     body: {
-                        model: CHAT_MODEL,
+                        // The Model Router's selection wins; the hardcoded default
+                        // is what the pre-router path (and bare-request tests) use.
+                        model: request.model ?? CHAT_MODEL,
                         messages,
                         // Low but not zero. Edit planning wants near-deterministic
                         // structure; exactly 0 makes some models loop on a bad token

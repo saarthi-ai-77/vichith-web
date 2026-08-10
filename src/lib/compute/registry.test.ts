@@ -21,6 +21,27 @@ function findDeclarations(dir: string): string[] {
     return results;
 }
 
+function findCatalogDeclarations(dir: string): string[] {
+    let results: string[] = [];
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+            results = results.concat(findCatalogDeclarations(fullPath));
+        } else if (fullPath.endsWith('.ts') && !fullPath.endsWith('.test.ts')) {
+            const content = fs.readFileSync(fullPath, 'utf8');
+            // The Model Router's "no seventh site" rule: exactly one place on
+            // disk may declare the live LLM catalog. A second registry file
+            // would let a model exist that availability checks never see.
+            if (content.includes('VICHITH_LLM_CATALOG: Record')) {
+                results.push(fullPath);
+            }
+        }
+    }
+    return results;
+}
+
 test('exactly ONE ModelCatalogEntry declaration exists', () => {
     // Navigate from src/lib/compute/registry.test.ts to src/
     const srcDir = path.resolve(__dirname, '../..');
@@ -35,5 +56,18 @@ test('exactly ONE ModelCatalogEntry declaration exists', () => {
     
     // Use path.sep to handle both Windows and Unix paths
     const expectedSuffix = `compute${path.sep}types.ts`;
+    expect(declarations[0].endsWith(expectedSuffix)).toBe(true);
+});
+
+test('exactly ONE VICHITH_LLM_CATALOG declaration exists (the no-seventh-site rule)', () => {
+    const srcDir = path.resolve(__dirname, '../..');
+    const declarations = findCatalogDeclarations(srcDir);
+
+    if (declarations.length !== 1) {
+        console.error('Found VICHITH_LLM_CATALOG in:', declarations);
+    }
+
+    expect(declarations.length).toBe(1);
+    const expectedSuffix = `compute${path.sep}registry.ts`;
     expect(declarations[0].endsWith(expectedSuffix)).toBe(true);
 });

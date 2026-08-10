@@ -2,13 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
-import { checkQuota, chargeForCall, hasDevelopmentUsageBypass, reserveCredits, settleCredits } from '@/lib/ai/quota';
+import { checkQuota, chargeForCall, getWalletBalance, hasDevelopmentUsageBypass, reserveCredits, settleCredits } from '@/lib/ai/quota';
 import { toVichithStream } from '@/lib/ai/stream';
 import { beginStream } from '@/lib/ai/streamRouter';
 import { effortFor, buildMeter, type ExecutionClass, type Magnitude } from '@/lib/ai/effort';
-import { costMicroUsd } from '@/lib/ai/cost';
+import { costMicroUsd, estimateCostMicroUsd } from '@/lib/ai/cost';
+import { selectModel, type ModelSelection } from '@/lib/ai/modelRouter';
+import { listLlmModelCatalog } from '@/lib/compute/registry';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Capabilities the LLM catalog serves — the ones the Model Router governs.
+ * Everything else is a unit-metered Sarvam lane (transcription, translation,
+ * OCR, synthesis) with no model choice, and must never be routed through the
+ * catalog. Computed once at module load from the single source of truth.
+ */
+const LLM_SERVED: ReadonlySet<string> = new Set(
+    listLlmModelCatalog().flatMap((entry) => entry.capabilities),
+);
 
 /**
  * The platform's execution ceiling for this route.
@@ -109,6 +121,72 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // ── 3c. Model selection (the Model Router) ──────────────────────────
+        // Capability-aware: the router picks the cheapest model entitled for
+        // THIS user that can serve THIS capability and hold the requested
+        // output. A paid user may name a model explicitly; free users always
+        // route to Sarvam, and the router says so out loud if they try to ask
+        // for anything else. An unavailable model is an ERROR, never a silent
+        // substitution.
+        //
+        // SCOPE: the router governs the LLM lane (chat/reasoning — the
+        // capabilities the catalog declares). Unit-metered Sarvam endpoints
+        // (speech.transcribe, text.translate, document.ocr, …) have NO model
+        // choice — they are Sarvam lanes by design, and routing them through the
+        // catalog would refuse a perfectly valid caption request. They stay on
+        // the legacy capability route.
+        const servedByLlmCatalog = LLM_SERVED.has(capability);
+        const requestedModel =
+            servedByLlmCatalog && typeof body?.modelId === 'string' && body.modelId.trim()
+                ? body.modelId.trim()
+                : undefined;
+        const requestedMaxTokens =
+            servedByLlmCatalog && typeof body?.payload?.maxOutputTokens === 'number'
+                ? body.payload.maxOutputTokens
+                : undefined;
+
+        const selection = servedByLlmCatalog
+            ? selectModel({
+                  capability,
+                  plan,
+                  requestedModelId: requestedModel,
+                  requiredMaxTokens: requestedMaxTokens,
+              })
+            : null;
+
+        if (selection && !selection.ok) {
+            switch (selection.code) {
+                case 'ENTITLEMENT_REQUIRED':
+                    return json(403, {
+                        error: 'plan_required',
+                        message: selection.message,
+                        capability,
+                        requestId,
+                    });
+                case 'MODEL_UNAVAILABLE':
+                    return json(503, {
+                        error: 'model_unavailable',
+                        message: selection.message,
+                        capability,
+                        requestId,
+                    });
+                case 'OUTPUT_TOO_LONG':
+                    return json(400, {
+                        error: 'output_too_long',
+                        message: selection.message,
+                        capability,
+                        requestId,
+                    });
+                default:
+                    return json(400, {
+                        error: 'unserved_capability',
+                        message: selection.message,
+                        capability,
+                        requestId,
+                    });
+            }
+        }
+
         // ── 4. Media-upload approval ─────────────────────────────────────────
         // Declared on the ROUTE, so a capability cannot quietly begin uploading
         // media later without this gate noticing (AI_RUNTIME_V1.md §5.3).
@@ -126,6 +204,43 @@ export async function POST(request: NextRequest) {
         const magnitude: Magnitude = readMagnitude(body?.payload);
         const rawUnits = effortFor(capability, magnitude, executionClass);
         const jobId = typeof body?.jobId === 'string' && body.jobId.trim() ? body.jobId.trim() : null;
+
+        // COST PRE-FLIGHT — told BEFORE anything runs.
+        //
+        // The estimate, in CREDITS, is the same `rawUnits` the reservation
+        // below holds: one estimate, one number, quoted before the provider is
+        // touched. No cheap op gets over-billed, and an expensive one is never a
+        // surprise — the reader sees "this is N credits, you have M".
+        //
+        // The balance is read, never re-architected: `reserve_credits` remains
+        // the single atomic reservation and the real enforcement. This read only
+        // decides whether to send the request at all, so M < N refuses with the
+        // numbers VISIBLE instead of a generic "Insufficient balance." from deep
+        // in an RPC.
+        if (!developmentBypass) {
+            const balance = await getWalletBalance(identity.userId);
+            if (balance !== null && balance < rawUnits) {
+                // Unit-metered lanes have no model choice; their provider is Sarvam
+                // by construction, so the live-cost line always refers to Sarvam.
+                const provider = selection?.selection.provider ?? 'sarvam';
+                const microUsdSome = estimateCostMicroUsd(provider, capability, magnitude);
+                // A zero estimate means "we don't know" (cost.ts), never "it is
+                // free" — so it is shown only when it says something real.
+                const costLine = microUsdSome > 0
+                    ? ` The live provider cost is roughly $${(microUsdSome / 1_000_000).toFixed(3)}.`
+                    : '';
+                return json(402, {
+                    error: 'insufficient_funds',
+                    message:
+                        `This is estimated at ${rawUnits} credit${rawUnits === 1 ? '' : 's'}, ` +
+                        `and your balance is ${Math.max(0, balance)}.` +
+                        costLine +
+                        ` Add credits and try again.`,
+                    estimate: { credits: rawUnits, currentBalance: Math.max(0, balance) },
+                    requestId,
+                });
+            }
+        }
 
         const reservation = developmentBypass
             ? { allowed: true as const, reservationId: 'dev_bypass' }
@@ -151,7 +266,7 @@ export async function POST(request: NextRequest) {
                 requestId,
                 payload: (body?.payload ?? {}) as Record<string, unknown>,
                 stream: true,
-            });
+            }, selection?.selection);
 
             if (!streamed.ok) {
                 const status = streamed.error.code === 'QUOTA_EXCEEDED' ? 429 : streamed.error.retryable ? 503 : 400;
@@ -175,7 +290,7 @@ export async function POST(request: NextRequest) {
                     // `usage` is whatever the provider reported on the final
                     // frame; typed loosely here because a stream may end before
                     // one arrives, and telemetry must record the run either way.
-                    { ok: true, requestId, data: null, provider: 'sarvam', attribution: 'Sarvam AI', latencyMs: 0, usage: usage as never },
+                    { ok: true, requestId, data: null, provider: selection?.selection.provider ?? 'sarvam', attribution: selection?.selection.attribution ?? 'Sarvam AI', latencyMs: 0, usage: usage as never },
                     requestId,
                     identity.issuer,
                     units,
@@ -202,12 +317,16 @@ export async function POST(request: NextRequest) {
         }
 
         // ── 5. Route + execute ───────────────────────────────────────────────
+        // For the LLM lane, the Model Router already decided which model runs;
+        // the dispatcher executes it and — because the selection is passed down —
+        // an adapter failure is a FAILURE, never a silent hop to another model.
+        // Unit-metered capabilities pass no selection and keep the legacy route.
         const result = await router.dispatch({
             capability,
             requestId,
             payload: (body?.payload ?? {}) as Record<string, unknown>,
             stream: body?.stream === true,
-        });
+        }, selection?.selection);
 
         // ── 6. Telemetry ─────────────────────────────────────────────────────
         // Recorded for successes AND failures: a failure rate that never reaches

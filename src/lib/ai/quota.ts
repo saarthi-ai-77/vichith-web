@@ -215,6 +215,30 @@ export type ReservationResult =
     | { allowed: false; reason: 'insufficient_balance' | 'error'; message: string };
 
 /**
+ * Read the user's current wallet balance — the M side of a "you have M" quote.
+ *
+ * Read-only; this is NOT a second reservation. The enforcement stays with the
+ * single `reserve_credits` RPC, which refuses atomically when M < N. This is the
+ * pre-flight honesty layer: the user is shown the numbers BEFORE anything runs.
+ */
+export async function getWalletBalance(userId: string): Promise<number | null> {
+    try {
+        const supabase = getSupabaseClient();
+        const { data: wallet } = await supabase
+            .from('wallets')
+            .select('balance')
+            .eq('user_id', userId)
+            .maybeSingle();
+        return wallet?.balance ?? 0;
+    } catch (err) {
+        console.error('[ai] wallet balance read failed:', err);
+        // Fail open on a database blip: missing the estimate should not block
+        // work. The reservation below still enforces the real boundary.
+        return null;
+    }
+}
+
+/**
  * Reserve credits BEFORE the provider call.
  */
 export async function reserveCredits(userId: string, jobId: string | null, unitsToReserve: number): Promise<ReservationResult> {
