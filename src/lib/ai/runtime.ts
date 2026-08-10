@@ -10,6 +10,7 @@
 
 import { aiRouter } from './router';
 import { SarvamAdapter } from './adapters/sarvam';
+import { OpenRouterAdapter } from './adapters/openrouter';
 
 let registered = false;
 
@@ -28,6 +29,7 @@ export function initAIRuntime() {
         // one with no routes pointing at it is one careless edit away from being
         // live again without anyone deciding it should be.
         aiRouter.register(new SarvamAdapter());
+        aiRouter.register(new OpenRouterAdapter());
         registered = true;
     }
     return aiRouter;

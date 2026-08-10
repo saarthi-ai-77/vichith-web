@@ -41,7 +41,7 @@ export type Capability =
  * adapter is a routing-table entry rather than a type change rippling through the
  * pipeline — but nothing routes to it today.
  */
-export type ProviderId = 'gemini' | 'sarvam';
+export type ProviderId = 'gemini' | 'sarvam' | 'openrouter';
 
 /** Where a capability may run. Cloud today; the enum exists so the native-first
  *  execution hierarchy has somewhere to record "this one never leaves the machine". */
