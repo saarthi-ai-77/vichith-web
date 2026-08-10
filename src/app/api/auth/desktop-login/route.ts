@@ -144,6 +144,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // NO USER BY HERE MEANS SIGNUP DID NOT COMPLETE — say so, do not crash.
+    //
+    // The sign-in branch returns 401 when `user` is null, so only signup can reach
+    // this line without one: Supabase returned no session (email confirmation
+    // enabled is the common case), so the `supabaseSession && !user` block above
+    // never created the local row, and the duplicate check at the top of the
+    // signup branch is skipped because `user` is falsy.
+    //
+    // Execution then reached `user.id` below and threw — a 500 for the ordinary
+    // "confirm your email" flow. tsc caught it as `'user' is possibly null`; it was
+    // a real runtime crash, not a type complaint.
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: 'signup_incomplete',
+          message:
+            'Your account was created but is not active yet. Check your email to confirm your address, then sign in.',
+        },
+        { status: 202 },
+      );
+    }
+
     // Generate single-use authorization code (expires in ≤60 seconds)
     const nowInSeconds = Math.floor(Date.now() / 1000);
     const expiresAt = nowInSeconds + 60; // 60 seconds TTL
