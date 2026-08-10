@@ -48,25 +48,32 @@ export async function POST(request: NextRequest) {
     // password is deliberately gone by then. Nothing about the wire the desktop
     // speaks changes — only who issued the tokens inside the response.
     let supabaseSession: IdentitySession | null = null;
-    if (supabaseIdentityEnabled()) {
-      const outcome =
-        action === 'signup'
-          ? await supabaseSignUp(email, password, display_name)
-          : await supabaseSignIn(email, password);
+    const outcome =
+      action === 'signup'
+        ? await supabaseSignUp(email, password, display_name)
+        : await supabaseSignIn(email, password);
 
-      if (outcome.kind === 'rejected') {
-        return NextResponse.json(
-          { error: outcome.error, message: outcome.message },
-          { status: 400 }
-        );
-      }
-      if (outcome.kind === 'session') {
-        supabaseSession = outcome.session;
-      }
-      // 'fallback' means this person is not a Supabase Auth account — which during
-      // the migration is most of them. Drop through to the legacy check rather than
-      // refusing, so flipping the flag locks nobody out.
+    if (outcome.kind === 'rejected') {
+      return NextResponse.json(
+        { error: outcome.error, message: outcome.message },
+        { status: 400 }
+      );
     }
+    
+    // For signup, if Supabase fallback occurs (e.g. misconfigured), we must fail.
+    // We strictly enforce Supabase Auth for all new signups.
+    if (action === 'signup' && outcome.kind === 'fallback') {
+      return NextResponse.json(
+        { error: 'server_error', message: 'Identity service is unavailable.' },
+        { status: 500 }
+      );
+    }
+
+    if (outcome.kind === 'session') {
+      supabaseSession = outcome.session;
+    }
+    // For signin, 'fallback' means this person is not a Supabase Auth account.
+    // Drop through to the legacy check rather than refusing.
 
     let user = await findUserByEmail(email);
 
@@ -85,19 +92,17 @@ export async function POST(request: NextRequest) {
 
     if (action === 'signup') {
       // `user` is already set when Supabase just created the account above, so the
-      // duplicate check applies only to the legacy path.
+      // duplicate check applies only to the legacy path (which is now unreachable for signups, 
+      // but we keep the safety check).
       if (user && !supabaseSession) {
         return NextResponse.json(
           { error: 'user_exists', message: 'An account with this email already exists.' },
           { status: 400 }
         );
       }
-      // Salted and stretched from the very first account created after this ships
-      // (S-7). The migration for EXISTING rows is a separate, still-open decision;
-      // that is no reason to keep minting new weak hashes while it is made.
-      if (!user) {
-        user = await createUser(email, await hashPasswordSecure(password), display_name);
-      }
+      // db.ts's password_hash insert path stops being reachable for NEW users.
+      // All new users are inserted via the `supabaseSession && !user` block above
+      // with an unguessable password hash, delegating authentication entirely to Supabase.
     } else {
       // Sign in mode
       if (!user) {
