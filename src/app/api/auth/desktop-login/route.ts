@@ -117,7 +117,8 @@ export async function POST(request: NextRequest) {
       user = await createUser(
         email,
         await hashPasswordSecure(crypto.randomUUID()),
-        display_name
+        display_name,
+        supabaseSession.user.id
       );
     }
 

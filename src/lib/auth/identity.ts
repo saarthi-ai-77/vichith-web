@@ -8,9 +8,6 @@
  * the desktop and the website can change on different days, in either order, and a
  * mistake in one does not sign anybody out.
  *
- * Without it, every switch is a synchronised cutover between a shipped desktop
- * binary and a web deployment — precisely the thing that cannot be rolled back.
- *
  * ORDER: Supabase first, legacy second.
  *   • Supabase is where we are going, so new sessions take the fast path.
  *   • Legacy is still LIVE today — the sign-in button issues website JWTs — so it
@@ -57,20 +54,8 @@ async function verifySupabase(token: string): Promise<Identity | null> {
         const { data, error } = await supabase.auth.getUser(token);
         if (error || !data?.user?.email) return null;
         
-        const supabaseId = data.user.id;
-        
-        // 3. identity.ts resolves a token to the canonical id THROUGH that mapping
-        // when one exists, and to the legacy/Supabase id when it does not.
-        // The Canonical ID must remain public.users.id so no PK ever moves and
-        // legacy tables are not orphaned.
-        const { data: mapping } = await supabase
-            .from('users')
-            .select('id')
-            .eq('auth_user_id', supabaseId)
-            .maybeSingle();
-            
         return { 
-            userId: mapping ? mapping.id : supabaseId, 
+            userId: data.user.id, 
             email: data.user.email, 
             issuer: 'supabase' 
         };
@@ -80,11 +65,58 @@ async function verifySupabase(token: string): Promise<Identity | null> {
     }
 }
 
+// Module-level cache for legacy ID -> auth_user_id mappings.
+// Positive mappings (auth_user_id found) are cached indefinitely.
+// Negative mappings (null) are cached for 5 minutes.
+const legacyMappingCache = new Map<string, { id: string | null, expiresAt: number }>();
+
 /** Verify the legacy website-minted HS256 JWT. */
-function verifyLegacy(token: string): Identity | null {
+async function verifyLegacy(token: string): Promise<Identity | null> {
     const payload = verifyAccessToken(token);
     if (!payload?.sub) return null;
-    return { userId: payload.sub, email: payload.email ?? '', issuer: 'legacy' };
+    
+    const legacyId = payload.sub;
+    const email = payload.email ?? '';
+    
+    // Check cache
+    const cached = legacyMappingCache.get(legacyId);
+    if (cached && Date.now() < cached.expiresAt) {
+        return {
+            userId: cached.id || legacyId,
+            email,
+            issuer: 'legacy'
+        };
+    }
+    
+    // Cache miss or expired null: look up in database
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+        .from('users')
+        .select('auth_user_id')
+        .eq('id', legacyId)
+        .single();
+        
+    if (error && error.code !== 'PGRST116') {
+        // PGRST116 means no rows found. Any other error means DB failure.
+        // FAIL CLOSED on DB error to avoid fragmenting billing data.
+        throw new Error('Database error during identity resolution.');
+    }
+    
+    const authUserId = data?.auth_user_id || null;
+    
+    if (authUserId) {
+        // Cache indefinitely (e.g. 10 years)
+        legacyMappingCache.set(legacyId, { id: authUserId, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 365 * 10 });
+    } else {
+        // Cache null for 5 minutes
+        legacyMappingCache.set(legacyId, { id: null, expiresAt: Date.now() + 1000 * 60 * 5 });
+    }
+    
+    return {
+        userId: authUserId || legacyId,
+        email,
+        issuer: 'legacy'
+    };
 }
 
 /**
@@ -101,5 +133,5 @@ export async function authenticate(request: Request): Promise<Identity | null> {
     // A Supabase JWT is always three dot-separated segments; so is ours, so shape
     // cannot disambiguate. Try Supabase first because that is the destination, and
     // fall back rather than branching on a guess.
-    return (await verifySupabase(token)) ?? verifyLegacy(token);
+    return (await verifySupabase(token)) ?? (await verifyLegacy(token));
 }

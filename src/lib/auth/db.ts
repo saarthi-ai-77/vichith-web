@@ -165,10 +165,11 @@ export async function findUserById(userId: string): Promise<UserRecord | null> {
 export async function createUser(
   email: string,
   passwordHash: string,
-  displayName?: string
+  displayName?: string,
+  forcedId?: string
 ): Promise<UserRecord> {
   const cleanEmail = email.trim().toLowerCase();
-  const userId = crypto.randomUUID();
+  const userId = forcedId || crypto.randomUUID();
   const name = displayName || cleanEmail.split('@')[0];
   const createdAt = new Date().toISOString();
 
