@@ -42,7 +42,8 @@ const MODEL_FOR: Partial<Record<Capability, string>> = {
     'plan.research': 'gemini-2.5-flash',
     'understand.text': 'gemini-2.5-flash',
     'understand.image': 'gemini-2.5-flash',
-    'understand.video': 'gemini-2.5-pro',
+    'understand.video.deep': 'gemini-1.5-pro',
+    'understand.video.summarize': 'gemini-1.5-flash',
     // Fallback duty only — Sarvam is primary for both (see CAPABILITY_ROUTES).
     'text.translate': 'gemini-2.5-flash',
     'document.ocr': 'gemini-2.5-flash',

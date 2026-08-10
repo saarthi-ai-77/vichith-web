@@ -607,7 +607,8 @@ export class SarvamAdapter implements ProviderAdapter {
             }
 
             case 'understand.image':
-            case 'understand.video':
+            case 'understand.video.deep':
+            case 'understand.video.summarize':
                 // Named explicitly rather than falling to the generic message,
                 // because "unsupported capability" reads like a bug when it is in
                 // fact a deliberate V1 boundary. Sarvam Vision reads documents, not

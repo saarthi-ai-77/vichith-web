@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         const developmentBypass = hasDevelopmentUsageBypass(identity.userId);
         const quota = developmentBypass
             ? { allowed: true as const, remainingThisMonth: -1, usedUnits: 0 }
-            : await checkQuota(identity.userId, plan);
+            : await checkQuota(identity.userId, plan, capability);
         if (!quota.allowed) {
             const status = quota.reason === 'rate' ? 429 : 403;
             return NextResponse.json(
@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
 
         const reservation = developmentBypass
             ? { allowed: true as const, reservationId: 'dev_bypass' }
-            : await reserveCredits(identity.userId, jobId, rawUnits);
+            : await reserveCredits(identity.userId, jobId, rawUnits, capability);
 
         if (!reservation.allowed) {
             return json(402, { error: 'insufficient_funds', message: reservation.message, requestId });

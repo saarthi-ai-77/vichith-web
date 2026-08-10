@@ -23,6 +23,7 @@ describe('Credit Ledger State Machine', () => {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
             gte: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
             single: vi.fn().mockResolvedValue({ data: { balance: 100 }, error: null }),
             rpc: vi.fn(),
         };
@@ -33,7 +34,7 @@ describe('Credit Ledger State Machine', () => {
         await grantSignupCreditsIdempotent('user-1');
         
         expect(mockSupabase.from).toHaveBeenCalledWith('wallets');
-        expect(mockSupabase.insert).toHaveBeenCalledWith({ user_id: 'user-1', balance: 100 });
+        expect(mockSupabase.insert).toHaveBeenCalledWith({ user_id: 'user-1', granted_balance: 100 });
         expect(mockSupabase.from).toHaveBeenCalledWith('credit_transactions');
         expect(mockSupabase.insert).toHaveBeenCalledWith({
             user_id: 'user-1',
@@ -137,61 +138,53 @@ describe('Credit Ledger State Machine', () => {
         });
     });
     
-    it('enforces monthly ceiling alongside wallet in checkQuota', async () => {
-        // burst check ends in .gte()
+    it('enforces daily ceiling alongside wallet in checkQuota', async () => {
+        // burst check
         mockSupabase.gte.mockResolvedValueOnce({ count: 0, error: null });
         
-        // monthly check ends in .gte()
-        mockSupabase.gte.mockResolvedValueOnce({ data: [{ credits_cost: 100 }], error: null });
+        // daily reasoning check
+        mockSupabase.gte.mockResolvedValueOnce({ count: 100, error: null });
         
-        // wallet check ends in .single() (won't be called because it fails earlier, but just in case)
-        
-        const result = await checkQuota('user-1', 'free');
+        const result = await checkQuota('user-1', 'free', 'plan.edit');
         
         expect(result).toEqual({
             allowed: false,
             reason: 'monthly',
-            message: 'You have used your AI allowance for this month.',
+            message: 'You have used your daily thinking allowance. Please upgrade to Pro for unlimited reasoning, or wait until tomorrow.',
             usedUnits: 100
         });
     });
     
-    it('allows request when both monthly ceiling and wallet pass', async () => {
-        // burst check ends in .gte()
+    it('allows request when daily ceiling and wallet pass', async () => {
+        // burst check
         mockSupabase.gte.mockResolvedValueOnce({ count: 0, error: null });
         
-        // monthly check ends in .gte()
-        mockSupabase.gte.mockResolvedValueOnce({ data: [{ credits_cost: 50 }], error: null });
+        // daily reasoning check
+        mockSupabase.gte.mockResolvedValueOnce({ count: 40, error: null });
         
-        // wallet check ends in .single()
-        mockSupabase.single.mockResolvedValueOnce({ data: { balance: 100 }, error: null });
-        
-        const result = await checkQuota('user-1', 'free');
+        const result = await checkQuota('user-1', 'free', 'plan.edit');
         
         expect(result).toEqual({
             allowed: true,
-            remainingThisMonth: 50,
-            usedUnits: 50
+            remainingThisMonth: 10,
+            usedUnits: 40,
         });
     });
 
     it('enforces wallet balance exhaustion and returns reason: credits', async () => {
-        // burst check ends in .gte()
+        // burst check
         mockSupabase.gte.mockResolvedValueOnce({ count: 0, error: null });
         
-        // monthly check ends in .gte()
-        mockSupabase.gte.mockResolvedValueOnce({ data: [{ credits_cost: 50 }], error: null });
+        // wallet check
+        mockSupabase.single.mockResolvedValueOnce({ data: { granted_balance: 0 }, error: null });
         
-        // wallet check ends in .single(), returning empty balance
-        mockSupabase.single.mockResolvedValueOnce({ data: { balance: 0 }, error: null });
-        
-        const result = await checkQuota('user-1', 'free');
+        const result = await checkQuota('user-1', 'free', 'speech.transcribe');
         
         expect(result).toEqual({
             allowed: false,
             reason: 'credits',
-            message: 'You have exhausted your credits.',
-            usedUnits: 50
+            message: 'This action requires AI credits, and your balance is 0. Add credits to continue.',
+            usedUnits: 0,
         });
     });
 });

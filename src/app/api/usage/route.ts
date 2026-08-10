@@ -27,12 +27,14 @@ export async function GET(request: NextRequest) {
 
     const { entitlements } = await getUserProfileAndEntitlements(identity.userId);
     const plan = entitlements?.plan ?? 'free';
-    const quota = await checkQuota(identity.userId, plan);
+    
+    // Check reasoning quota explicitly using a known reasoning capability
+    const reasoningQuota = await checkQuota(identity.userId, plan, 'plan.edit');
 
     const supabase = getSupabaseClient();
     const { data: wallet } = await supabase
         .from('wallets')
-        .select('balance')
+        .select('granted_balance, purchased_balance')
         .eq('user_id', identity.userId)
         .maybeSingle();
 
@@ -47,16 +49,23 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
+    const allowance = plan === 'paid' ? 9999 : 50;
+    const percent = allowance > 0 ? Math.min(100, Math.round((reasoningQuota.usedUnits / allowance) * 100)) : 100;
+
     return NextResponse.json({
       plan,
-      // A user who is OVER the ceiling still gets a meter: that is exactly when
-      // the number matters most, so this reports usage rather than refusing
-      // because the gate would have said no.
-      meter: buildMeter(quota.usedUnits, plan),
-      remainingThisMonth: quota.allowed ? quota.remainingThisMonth : 0,
+      meter: {
+        usedUnits: reasoningQuota.usedUnits,
+        allowanceUnits: allowance,
+        percentUsed: percent,
+        plan
+      },
+      remainingThisMonth: reasoningQuota.allowed ? reasoningQuota.remainingThisMonth : 0,
       wallet: {
         exists: !!wallet,
-        balance: wallet?.balance ?? 0,
+        granted_balance: wallet?.granted_balance ?? 0,
+        purchased_balance: wallet?.purchased_balance ?? 0,
+        balance: (wallet?.granted_balance ?? 0) + (wallet?.purchased_balance ?? 0),
       },
       transactions: transactions ?? [],
     });
@@ -87,7 +96,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClient();
     const { data: wallet } = await supabase
         .from('wallets')
-        .select('balance')
+        .select('granted_balance, purchased_balance')
         .eq('user_id', identity.userId)
         .maybeSingle();
 
@@ -95,7 +104,9 @@ export async function POST(request: NextRequest) {
       accepted: acceptedCount,
       wallet: {
         exists: !!wallet,
-        balance: wallet?.balance ?? 0,
+        granted_balance: wallet?.granted_balance ?? 0,
+        purchased_balance: wallet?.purchased_balance ?? 0,
+        balance: (wallet?.granted_balance ?? 0) + (wallet?.purchased_balance ?? 0),
       }
     });
   } catch (err: any) {

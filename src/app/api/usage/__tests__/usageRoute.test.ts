@@ -53,7 +53,7 @@ describe('/api/usage route', () => {
             eq: vi.fn().mockReturnThis(),
             order: vi.fn().mockReturnThis(),
             range: vi.fn().mockReturnThis(),
-            maybeSingle: vi.fn().mockResolvedValue({ data: { balance: 50 }, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: { granted_balance: 50, purchased_balance: 0 }, error: null }),
         };
         (supabaseModule.getSupabaseClient as any).mockReturnValue(mockSupabase);
     });
@@ -68,7 +68,7 @@ describe('/api/usage route', () => {
             const json = await res.json();
 
             expect(res.status).toBe(200);
-            expect(json.wallet).toEqual({ exists: true, balance: 50 });
+            expect(json.wallet).toEqual({ exists: true, balance: 50, granted_balance: 50, purchased_balance: 0 });
             expect(json.transactions).toEqual([]);
         });
 
@@ -81,11 +81,11 @@ describe('/api/usage route', () => {
             const json = await res.json();
 
             expect(res.status).toBe(200);
-            expect(json.wallet).toEqual({ exists: false, balance: 0 });
+            expect(json.wallet).toEqual({ exists: false, balance: 0, granted_balance: 0, purchased_balance: 0 });
         });
         
         it('fetches paginated transactions', async () => {
-            mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { balance: 50 }, error: null });
+            mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { granted_balance: 50, purchased_balance: 0 }, error: null });
             mockSupabase.range.mockResolvedValueOnce({ data: [{ id: 'tx-1' }], error: null });
 
             const req = createMockRequest('http://localhost/api/usage?limit=10&offset=5');
@@ -100,7 +100,7 @@ describe('/api/usage route', () => {
     describe('POST', () => {
         it('saves usage and fetches wallet balance', async () => {
             (dbModule.saveUsageEvents as any).mockResolvedValue(2);
-            mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { balance: 30 }, error: null });
+            mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { granted_balance: 30, purchased_balance: 0 }, error: null });
 
             const req = createMockRequest('http://localhost/api/usage', 'POST', { events: [{}, {}] });
             const res = await POST(req);
@@ -109,7 +109,7 @@ describe('/api/usage route', () => {
             expect(res.status).toBe(200);
             expect(dbModule.saveUsageEvents).toHaveBeenCalledWith('user-1', [{}, {}]);
             expect(json.accepted).toBe(2);
-            expect(json.wallet).toEqual({ exists: true, balance: 30 });
+            expect(json.wallet).toEqual({ exists: true, balance: 30, granted_balance: 30, purchased_balance: 0 });
         });
     });
 });

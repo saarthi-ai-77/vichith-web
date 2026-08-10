@@ -106,7 +106,10 @@ export const CAPABILITY_EFFORT: Record<Capability, CapabilityEffort> = {
     'plan.research':     { reasoning: 'deep',     media: 'none',  magnitude: 'fixed',          providerCalls: 1 },
     'understand.text':   { reasoning: 'light',    media: 'text',  magnitude: 'perKChar',       providerCalls: 1 },
     'understand.image':  { reasoning: 'moderate', media: 'image', magnitude: 'perImage',       providerCalls: 1 },
-    'understand.video':  { reasoning: 'moderate', media: 'video', magnitude: 'perVideoSecond', providerCalls: 1 },
+    'understand.video.transcribe': { reasoning: 'none', media: 'audio', magnitude: 'perAudioMinute', providerCalls: 1 },
+    'understand.video.scenes':     { reasoning: 'light', media: 'video', magnitude: 'perVideoSecond', providerCalls: 1 },
+    'understand.video.summarize':  { reasoning: 'moderate', media: 'video', magnitude: 'fixed', providerCalls: 1 }, // Flat 5 units via effortFor override later if needed, but the formula: reasoning=2, media=8 => 10 base. With magnitude=fixed(1) it is 10. We'll handle this in effortFor.
+    'understand.video.deep':       { reasoning: 'moderate', media: 'video', magnitude: 'perVideoSecond', providerCalls: 1 },
     'speech.transcribe': { reasoning: 'none',     media: 'audio', magnitude: 'perAudioMinute', providerCalls: 1 },
     'speech.translate':  { reasoning: 'light',    media: 'audio', magnitude: 'perAudioMinute', providerCalls: 1 },
     'speech.synthesize': { reasoning: 'none',     media: 'text',  magnitude: 'perKChar',       providerCalls: 1 },
@@ -172,6 +175,11 @@ export function effortFor(
 
     const traits = CAPABILITY_EFFORT[capability];
     if (!traits) return 0;
+    
+    // Explicit exception for understand.video.summarize flat rate of 5 units.
+    if (capability === 'understand.video.summarize') {
+        return 5 * multiplier;
+    }
 
     const raw = baseEffort(traits) * magnitudeFactor(traits.magnitude, magnitude) * multiplier;
     return Math.max(1, Math.ceil(raw));

@@ -24,6 +24,7 @@
 
 import { getSupabaseClient } from '../supabase';
 import { allowanceFor } from './effort';
+import { Capability, meterFor } from './provider';
 
 export interface PlanLimits {
     /** Requests allowed in any 60-second window. Burst protection.
@@ -93,7 +94,7 @@ export type QuotaVerdict =
  * monthly ceiling and the provider-side cost alarms are the backstops for the
  * window where that happens — see DEPLOYMENT.md §3.
  */
-export async function checkQuota(userId: string, plan: string): Promise<QuotaVerdict> {
+export async function checkQuota(userId: string, plan: string, capability: Capability): Promise<QuotaVerdict> {
     const limits = limitsForPlan(plan);
 
     if (limits.perMinute === 0) {
@@ -103,6 +104,7 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
     try {
         const supabase = getSupabaseClient();
         const now = Date.now();
+        const meter = meterFor(capability);
 
         // ── Burst window ──
         const minuteAgo = now - 60_000;
@@ -125,56 +127,59 @@ export async function checkQuota(userId: string, plan: string): Promise<QuotaVer
             };
         }
 
-        // ── Monthly ceiling, in COST UNITS ──
-        // Summed over `credits_cost` rather than counted as rows.
-        // Calendar month, not a rolling 30 days: it matches how a user reads their
-        // plan and resets predictably.
-        const startOfMonth = new Date();
-        startOfMonth.setUTCDate(1);
-        startOfMonth.setUTCHours(0, 0, 0, 0);
+        if (meter === 'reasoning') {
+            // ── Daily Reasoning Allowance (50 calls/day free, unlimited paid) ──
+            if (plan !== 'paid') {
+                const startOfDay = new Date();
+                startOfDay.setUTCHours(0, 0, 0, 0);
 
-        const { data: rows, error: monthlyErr } = await supabase
-            .from('usage_events')
-            .select('credits_cost')
-            .eq('user_id', userId)
-            .eq('type', 'ai_request')
-            .gte('ts', startOfMonth.getTime());
+                const { count: dailyCalls, error: dailyErr } = await supabase
+                    .from('usage_events')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('user_id', userId)
+                    .eq('type', 'ai_request')
+                    .in('capability', [
+                        'plan.edit', 'plan.research', 'understand.text', 'understand.image',
+                        'understand.video.summarize', 'understand.video.deep',
+                        'understand.video.transcribe', 'understand.video.scenes'
+                    ])
+                    .gte('ts', startOfDay.getTime());
 
-        if (monthlyErr) throw monthlyErr;
+                if (dailyErr) throw dailyErr;
+                
+                const calls = dailyCalls ?? 0;
+                if (calls >= 50) {
+                    return {
+                        allowed: false,
+                        reason: 'monthly', // Reusing 'monthly' reason code for client compatibility, though this is a daily limit
+                        message: `You have used your daily thinking allowance. Please upgrade to Pro for unlimited reasoning, or wait until tomorrow.`,
+                        usedUnits: calls,
+                    };
+                }
+                return { allowed: true, remainingThisMonth: Math.max(0, 50 - calls), usedUnits: calls };
+            }
+            return { allowed: true, remainingThisMonth: 9999, usedUnits: 0 };
+        } else {
+            // ── Generation Wallet Balance ──
+            const { data: wallet, error: walletErr } = await supabase
+                .from('wallets')
+                .select('granted_balance, purchased_balance')
+                .eq('user_id', userId)
+                .single();
 
-        const usedUnits = (rows ?? []).reduce(
-            (sum: number, r: { credits_cost: number | null }) => sum + (r.credits_cost ?? 0),
-            0
-        );
-        const allowance = allowanceFor(plan);
-
-        if (usedUnits >= allowance) {
-            return {
-                allowed: false,
-                reason: 'monthly',
-                message: `You have used your AI allowance for this month.`,
-                usedUnits,
-            };
+            if (walletErr && walletErr.code !== 'PGRST116') throw walletErr;
+            
+            const totalBalance = (wallet?.granted_balance ?? 0) + (wallet?.purchased_balance ?? 0);
+            if (!wallet || totalBalance <= 0) {
+                return {
+                    allowed: false,
+                    reason: 'credits',
+                    message: `This action requires AI credits, and your balance is 0. Add credits to continue.`,
+                    usedUnits: 0,
+                };
+            }
+            return { allowed: true, remainingThisMonth: totalBalance, usedUnits: 0 };
         }
-
-        // ── Check Wallet Balance ──
-        const { data: wallet, error: walletErr } = await supabase
-            .from('wallets')
-            .select('balance')
-            .eq('user_id', userId)
-            .single();
-
-        if (walletErr && walletErr.code !== 'PGRST116') throw walletErr;
-        if (wallet && (wallet.balance ?? 0) <= 0) {
-            return {
-                allowed: false,
-                reason: 'credits',
-                message: `You have exhausted your credits.`,
-                usedUnits,
-            };
-        }
-
-        return { allowed: true, remainingThisMonth: Math.max(0, allowance - usedUnits), usedUnits };
     } catch (err) {
         console.error('[ai] quota check failed, allowing request:', err);
         return { allowed: true, remainingThisMonth: -1, usedUnits: 0 };
@@ -190,7 +195,7 @@ export async function grantSignupCreditsIdempotent(userId: string): Promise<void
         
         const { error: walletErr } = await supabase
             .from('wallets')
-            .insert({ user_id: userId, balance: 100 });
+            .insert({ user_id: userId, granted_balance: 100 });
             
         if (walletErr && walletErr.code !== '23505') {
             console.error('[ai] Failed to create wallet for user', userId, walletErr);
@@ -226,10 +231,10 @@ export async function getWalletBalance(userId: string): Promise<number | null> {
         const supabase = getSupabaseClient();
         const { data: wallet } = await supabase
             .from('wallets')
-            .select('balance')
+            .select('granted_balance, purchased_balance')
             .eq('user_id', userId)
             .maybeSingle();
-        return wallet?.balance ?? 0;
+        return (wallet?.granted_balance ?? 0) + (wallet?.purchased_balance ?? 0);
     } catch (err) {
         console.error('[ai] wallet balance read failed:', err);
         // Fail open on a database blip: missing the estimate should not block
@@ -239,10 +244,44 @@ export async function getWalletBalance(userId: string): Promise<number | null> {
 }
 
 /**
+ * Returns the current daily reasoning calls for a user.
+ */
+export async function getReasoningUsage(userId: string): Promise<number> {
+    try {
+        const supabase = getSupabaseClient();
+        const startOfDay = new Date();
+        startOfDay.setUTCHours(0, 0, 0, 0);
+
+        const { count: dailyCalls, error: dailyErr } = await supabase
+            .from('usage_events')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('type', 'ai_request')
+            .in('capability', [
+                'plan.edit', 'plan.research', 'understand.text', 'understand.image',
+                'understand.video.summarize', 'understand.video.deep',
+                'understand.video.transcribe', 'understand.video.scenes'
+            ])
+            .gte('ts', startOfDay.getTime());
+
+        if (dailyErr) throw dailyErr;
+        return dailyCalls ?? 0;
+    } catch (err) {
+        console.error('[ai] getReasoningUsage failed:', err);
+        return 0;
+    }
+}
+
+/**
  * Reserve credits BEFORE the provider call.
  */
-export async function reserveCredits(userId: string, jobId: string | null, unitsToReserve: number): Promise<ReservationResult> {
+export async function reserveCredits(userId: string, jobId: string | null, unitsToReserve: number, capability?: Capability): Promise<ReservationResult> {
     if (unitsToReserve <= 0) return { allowed: true, reservationId: 'free_call' };
+    
+    // Reasoning capabilities do not reserve credits
+    if (capability && meterFor(capability) === 'reasoning') {
+        return { allowed: true, reservationId: 'reasoning_call' };
+    }
 
     try {
         const supabase = getSupabaseClient();

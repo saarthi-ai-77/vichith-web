@@ -28,7 +28,10 @@ export type Capability =
     | 'plan.research'        // research reasoning
     | 'understand.text'      // summarise, classify, extract
     | 'understand.image'     // describe / locate within a still
-    | 'understand.video'     // scene and content understanding from frames
+    | 'understand.video.transcribe' // audio -> text inside video
+    | 'understand.video.scenes'     // visual scene detection
+    | 'understand.video.summarize'  // local STT + cloud LLM summary
+    | 'understand.video.deep'       // frame-by-frame cloud vision analysis
     // ── Sarvam: speech and language ──
     | 'speech.transcribe'    // audio → text with word timings
     | 'speech.translate'     // speech → English text, one step
@@ -96,7 +99,10 @@ export const CAPABILITY_ROUTES: Record<Capability, CapabilityRoute> = {
     // shots, motion and frame captions computed on the user's own machine. See
     // PERCEPTION_REASONING_ARCHITECTURE.md.
     'understand.image':   { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 90_000,  sendsMedia: true,  attribution: 'Powered by Sarvam' },
-    'understand.video':   { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 180_000, sendsMedia: true,  attribution: 'Powered by Sarvam' },
+    'understand.video.transcribe': { primary: 'sarvam', fallback: null, locality: 'local', timeoutMs: 60_000, sendsMedia: false, attribution: null },
+    'understand.video.scenes':     { primary: 'sarvam', fallback: null, locality: 'local', timeoutMs: 60_000, sendsMedia: false, attribution: null },
+    'understand.video.summarize':  { primary: 'sarvam', fallback: null, locality: 'cloud', timeoutMs: 90_000,  sendsMedia: false, attribution: 'Powered by Sarvam' },
+    'understand.video.deep':       { primary: 'sarvam', fallback: null, locality: 'cloud', timeoutMs: 180_000, sendsMedia: true,  attribution: 'Powered by Sarvam' },
 
     'speech.transcribe':  { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 300_000, sendsMedia: true,  attribution: 'Powered by Sarvam' },
     'speech.translate':   { primary: 'sarvam', fallback: null,     locality: 'cloud', timeoutMs: 300_000, sendsMedia: true,  attribution: 'Powered by Sarvam' },
@@ -187,4 +193,28 @@ export function aiError(
     retryable = false
 ): AIError {
     return { ok: false, code, message, requestId, retryable };
+}
+
+/** 
+ * Strict classification of capabilities into 'reasoning' (daily limit) vs 'generation' (credit balance).
+ */
+export function meterFor(capability: Capability): 'reasoning' | 'generation' {
+    switch (capability) {
+        case 'plan.edit':
+        case 'plan.research':
+        case 'understand.text':
+        case 'understand.image':
+        case 'understand.video.summarize':
+        case 'understand.video.deep':
+        case 'understand.video.transcribe':
+        case 'understand.video.scenes':
+            return 'reasoning';
+            
+        case 'speech.transcribe':
+        case 'speech.translate':
+        case 'speech.synthesize':
+        case 'text.translate':
+        case 'document.ocr':
+            return 'generation';
+    }
 }
