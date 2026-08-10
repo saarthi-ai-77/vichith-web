@@ -9,6 +9,7 @@ export interface UserRecord {
   email_verified: boolean;
   display_name: string;
   password_hash?: string;
+  auth_user_id?: string | null;
   created_at: string;
 }
 

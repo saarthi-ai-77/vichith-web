@@ -53,9 +53,27 @@ export function bearerToken(request: Request): string | null {
  */
 async function verifySupabase(token: string): Promise<Identity | null> {
     try {
-        const { data, error } = await getSupabaseClient().auth.getUser(token);
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase.auth.getUser(token);
         if (error || !data?.user?.email) return null;
-        return { userId: data.user.id, email: data.user.email, issuer: 'supabase' };
+        
+        const supabaseId = data.user.id;
+        
+        // 3. identity.ts resolves a token to the canonical id THROUGH that mapping
+        // when one exists, and to the legacy/Supabase id when it does not.
+        // The Canonical ID must remain public.users.id so no PK ever moves and
+        // legacy tables are not orphaned.
+        const { data: mapping } = await supabase
+            .from('users')
+            .select('id')
+            .eq('auth_user_id', supabaseId)
+            .maybeSingle();
+            
+        return { 
+            userId: mapping ? mapping.id : supabaseId, 
+            email: data.user.email, 
+            issuer: 'supabase' 
+        };
     } catch {
         // A Supabase outage must not take the legacy path down with it.
         return null;

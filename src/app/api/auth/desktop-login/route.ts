@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { getSupabaseClient } from '@/lib/supabase';
 import { findUserByEmail, createUser, createAuthCode, updateUserPasswordHash } from '@/lib/auth/db';
 import { createAuthCodeString } from '@/lib/auth/tokens';
 import { hashPasswordSecure, verifyPassword } from '@/lib/auth/password';
@@ -76,6 +77,15 @@ export async function POST(request: NextRequest) {
     // Drop through to the legacy check rather than refusing.
 
     let user = await findUserByEmail(email);
+
+    if (supabaseSession && user && !user.auth_user_id) {
+      // The trigger on auth.users should have linked them, but as a secondary
+      // safety net, if they exist locally but aren't mapped yet, map them now.
+      const supabase = getSupabaseClient();
+      await supabase.from('users').update({ auth_user_id: supabaseSession.user.id }).eq('id', user.id);
+      // Mutate the loaded user object so the rest of the flow is correct.
+      user.auth_user_id = supabaseSession.user.id;
+    }
 
     if (supabaseSession && !user) {
       // Authenticated by Supabase but with no local row yet: create one so profile,
