@@ -54,7 +54,28 @@ export async function POST(request: NextRequest) {
         ? await supabaseSignUp(email, password, display_name)
         : await supabaseSignIn(email, password);
 
-    if (outcome.kind === 'rejected') {
+    // A SUPABASE REJECTION IS NOT THE END OF A SIGN-IN — the legacy credential
+    // may still be the one that governs this account.
+    //
+    // During the migration a person can exist in BOTH systems with DIFFERENT
+    // passwords: an old scrypt hash in public.users, and a newer bcrypt hash in
+    // auth.users created when they signed up on app.vichith.in. Refusing here sent
+    // exactly those users "Invalid email or password" on the desktop while their
+    // old password was still perfectly valid, because the legacy check below was
+    // never reached.
+    //
+    // The comment further down already intended this — "drop through to the legacy
+    // check rather than refusing" — but only handled `fallback` (no Supabase
+    // account at all), not `rejected` (an account whose password did not match).
+    //
+    // SIGNUP still refuses immediately: a rejected signup is a real failure and
+    // there is no legacy path to fall through to.
+    //
+    // This grants nothing new. The legacy hash is a credential that already works
+    // and stays valid until Step 6 retires it — the rule being "never delete the
+    // working path first". Both must fail before the user is turned away, which
+    // happens in the sign-in branch below.
+    if (outcome.kind === 'rejected' && action === 'signup') {
       return NextResponse.json(
         { error: outcome.error, message: outcome.message },
         { status: 400 }
