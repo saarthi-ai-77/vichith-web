@@ -129,38 +129,72 @@ export const VICHITH_LLM_CATALOG: Record<string, LlmModelCatalogEntry> = {
     attribution: 'Powered by Sarvam',
   },
 
-  /** OpenRouter cost-optimized chat — the paid tier's economy lane. */
-  'openrouter/mini-chat': {
-    modelId: 'openrouter/mini-chat',
-    name: 'OpenRouter Mini',
+  /** Gemini 1.5 Flash — Fast reasoning for Free and Basic users */
+  'gemini-1.5-flash': {
+    modelId: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash',
+    provider: 'gemini',
+    capabilities: ['plan.edit', 'plan.research', 'understand.text', 'text.translate', 'document.ocr'],
+    minPlan: 'free', // Free & Basic get this
+    enabled: true,
+    status: 'available',
+    requiredEnv: 'GEMINI_API_KEY',
+    maxOutputTokens: 8192,
+    creditCost: 1,
+    supportsTools: true,
+    supportsStreaming: true,
+    supportsJsonMode: true,
+    attribution: 'Powered by Gemini',
+  },
+
+  /** Gemini 1.5 Pro — Deep reasoning for Pro users */
+  'gemini-1.5-pro': {
+    modelId: 'gemini-1.5-pro',
+    name: 'Gemini 1.5 Pro',
+    provider: 'gemini',
+    capabilities: ['plan.edit', 'plan.research', 'understand.text', 'text.translate', 'document.ocr'],
+    minPlan: 'pro',
+    enabled: true,
+    status: 'available',
+    requiredEnv: 'GEMINI_API_KEY',
+    maxOutputTokens: 8192,
+    creditCost: 3,
+    supportsTools: true,
+    supportsStreaming: true,
+    supportsJsonMode: true,
+    attribution: 'Powered by Gemini',
+  },
+
+  /** Claude 3.5 Sonnet — Top tier reasoning for Pro */
+  'openrouter/anthropic/claude-3.5-sonnet': {
+    modelId: 'openrouter/anthropic/claude-3.5-sonnet',
+    name: 'Claude 3.5 Sonnet',
     provider: 'openrouter',
     capabilities: ['plan.edit', 'plan.research', 'understand.text'],
-    minPlan: 'paid',
+    minPlan: 'pro',
     enabled: true,
     status: 'available',
     requiredEnv: 'OPENROUTER_API_KEY',
-    // No stdout cap from the gateway tier comparable to Sarvam's 4096 starter
-    // limit; the adapter still enforces a sane default ceiling per call.
-    maxOutputTokens: 16_384,
-    creditCost: 2,
+    maxOutputTokens: 8192,
+    creditCost: 4,
     supportsTools: true,
     supportsStreaming: true,
     supportsJsonMode: true,
     attribution: 'Powered by OpenRouter',
   },
 
-  /** OpenRouter high-quality reasoning — paid tier, dearest, last resort. */
-  'openrouter/reasoning-pro': {
-    modelId: 'openrouter/reasoning-pro',
-    name: 'OpenRouter Reasoning Pro',
+  /** GLM 5.2 (glm-4 on OpenRouter) — Cheap deep reasoning for Pro */
+  'openrouter/zhipu/glm-4': {
+    modelId: 'openrouter/zhipu/glm-4',
+    name: 'GLM 5.2',
     provider: 'openrouter',
     capabilities: ['plan.edit', 'plan.research', 'understand.text'],
-    minPlan: 'paid',
+    minPlan: 'pro',
     enabled: true,
     status: 'available',
     requiredEnv: 'OPENROUTER_API_KEY',
-    maxOutputTokens: 16_384,
-    creditCost: 4,
+    maxOutputTokens: 8192,
+    creditCost: 2,
     supportsTools: true,
     supportsStreaming: true,
     supportsJsonMode: true,
@@ -173,7 +207,7 @@ export const VICHITH_LLM_CATALOG: Record<string, LlmModelCatalogEntry> = {
     name: 'Sarvam-105B Plus',
     provider: 'sarvam',
     capabilities: ['plan.edit', 'plan.research', 'understand.text'],
-    minPlan: 'paid',
+    minPlan: 'pro',
     enabled: false,          // not switched on yet — must never be presented
     status: 'coming_soon',   // product intent, not usable today
     requiredEnv: 'SARVAM_API_KEY',

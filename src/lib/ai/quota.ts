@@ -55,7 +55,9 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     // single job, and the MONTHLY effort ceiling remains the real cost control —
     // this limit exists to stop hammering, not to meter spend.
     free: { perMinute: 30 },
-    paid: { perMinute: 120 },
+    basic: { perMinute: 60 },
+    pro: { perMinute: 120 },
+    paid: { perMinute: 120 }, // Legacy alias
 };
 
 export function limitsForPlan(plan: string): PlanLimits {
@@ -128,37 +130,39 @@ export async function checkQuota(userId: string, plan: string, capability: Capab
         }
 
         if (meter === 'reasoning') {
-            // ── Daily Reasoning Allowance (50 calls/day free, unlimited paid) ──
-            if (plan !== 'paid') {
-                const startOfDay = new Date();
-                startOfDay.setUTCHours(0, 0, 0, 0);
+            // ── Daily Reasoning Allowance (500K free, 2M basic, 10M pro) ──
+            const { data: ent, error: entErr } = await supabase
+                .from('entitlements')
+                .select('reasoning_tokens_used_today, reasoning_reset_at')
+                .eq('user_id', userId)
+                .single();
 
-                const { count: dailyCalls, error: dailyErr } = await supabase
-                    .from('usage_events')
-                    .select('id', { count: 'exact', head: true })
-                    .eq('user_id', userId)
-                    .eq('type', 'ai_request')
-                    .in('capability', [
-                        'plan.edit', 'plan.research', 'understand.text', 'understand.image',
-                        'understand.video.summarize', 'understand.video.deep',
-                        'understand.video.transcribe', 'understand.video.scenes'
-                    ])
-                    .gte('ts', startOfDay.getTime());
+            if (entErr && entErr.code !== 'PGRST116') throw entErr;
 
-                if (dailyErr) throw dailyErr;
-                
-                const calls = dailyCalls ?? 0;
-                if (calls >= 50) {
-                    return {
-                        allowed: false,
-                        reason: 'monthly', // Reusing 'monthly' reason code for client compatibility, though this is a daily limit
-                        message: `You have used your daily thinking allowance. Please upgrade to Pro for unlimited reasoning, or wait until tomorrow.`,
-                        usedUnits: calls,
-                    };
-                }
-                return { allowed: true, remainingThisMonth: Math.max(0, 50 - calls), usedUnits: calls };
+            let tokensUsed = Number(ent?.reasoning_tokens_used_today || 0);
+
+            // If past reset time, treat as 0 for this read. The RPC handles actual reset on write.
+            if (ent?.reasoning_reset_at && Date.now() >= new Date(ent.reasoning_reset_at).getTime()) {
+                tokensUsed = 0;
             }
-            return { allowed: true, remainingThisMonth: 9999, usedUnits: 0 };
+
+            let limit = 500_000;
+            if (plan === 'basic') limit = 2_000_000;
+            if (plan === 'pro' || plan === 'paid') limit = 10_000_000;
+
+            if (tokensUsed >= limit) {
+                const upgradeMsg = (plan === 'pro' || plan === 'paid')
+                    ? `Maximum usage reached for the day.`
+                    : `You have used your daily thinking allowance. Please upgrade to Pro for more reasoning, or wait until tomorrow.`;
+                
+                return {
+                    allowed: false,
+                    reason: 'monthly', // Reusing 'monthly' reason code for client compatibility
+                    message: upgradeMsg,
+                    usedUnits: tokensUsed,
+                };
+            }
+            return { allowed: true, remainingThisMonth: Math.max(0, limit - tokensUsed), usedUnits: tokensUsed };
         } else {
             // ── Generation Wallet Balance ──
             const { data: wallet, error: walletErr } = await supabase
@@ -244,28 +248,24 @@ export async function getWalletBalance(userId: string): Promise<number | null> {
 }
 
 /**
- * Returns the current daily reasoning calls for a user.
+ * Returns the current daily reasoning tokens used for a user.
  */
 export async function getReasoningUsage(userId: string): Promise<number> {
     try {
         const supabase = getSupabaseClient();
-        const startOfDay = new Date();
-        startOfDay.setUTCHours(0, 0, 0, 0);
-
-        const { count: dailyCalls, error: dailyErr } = await supabase
-            .from('usage_events')
-            .select('id', { count: 'exact', head: true })
+        const { data: ent } = await supabase
+            .from('entitlements')
+            .select('reasoning_tokens_used_today, reasoning_reset_at')
             .eq('user_id', userId)
-            .eq('type', 'ai_request')
-            .in('capability', [
-                'plan.edit', 'plan.research', 'understand.text', 'understand.image',
-                'understand.video.summarize', 'understand.video.deep',
-                'understand.video.transcribe', 'understand.video.scenes'
-            ])
-            .gte('ts', startOfDay.getTime());
+            .single();
 
-        if (dailyErr) throw dailyErr;
-        return dailyCalls ?? 0;
+        let tokensUsed = Number(ent?.reasoning_tokens_used_today || 0);
+
+        if (ent?.reasoning_reset_at && Date.now() >= new Date(ent.reasoning_reset_at).getTime()) {
+            tokensUsed = 0;
+        }
+
+        return tokensUsed;
     } catch (err) {
         console.error('[ai] getReasoningUsage failed:', err);
         return 0;
@@ -319,6 +319,19 @@ export async function settleCredits(reservationId: string, actualUnits: number):
         });
     } catch (err) {
         console.error('[ai] settleCredits failed:', err);
+    }
+}
+
+export async function deductReasoningTokens(userId: string, tokens: number): Promise<void> {
+    if (tokens <= 0) return;
+    try {
+        const supabase = getSupabaseClient();
+        await supabase.rpc('add_reasoning_tokens', {
+            p_user_id: userId,
+            p_tokens: tokens
+        });
+    } catch (err) {
+        console.error('[ai] deductReasoningTokens failed:', err);
     }
 }
 

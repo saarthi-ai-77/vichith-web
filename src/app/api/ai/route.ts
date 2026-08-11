@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/auth/identity';
 import { getUserProfileAndEntitlements, saveUsageEvents } from '@/lib/auth/db';
 import { initAIRuntime, CAPABILITY_ROUTES, type AIResult, type Capability } from '@/lib/ai/runtime';
-import { checkQuota, chargeForCall, getWalletBalance, hasDevelopmentUsageBypass, reserveCredits, settleCredits } from '@/lib/ai/quota';
+import { checkQuota, chargeForCall, getWalletBalance, hasDevelopmentUsageBypass, reserveCredits, settleCredits, deductReasoningTokens } from '@/lib/ai/quota';
 import { toVichithStream } from '@/lib/ai/stream';
 import { beginStream } from '@/lib/ai/streamRouter';
 import { effortFor, buildMeter, type ExecutionClass, type Magnitude } from '@/lib/ai/effort';
@@ -279,7 +279,13 @@ export async function POST(request: NextRequest) {
                 const units = await chargeForCall(identity.userId, jobId, rawUnits);
                 
                 if (reservation.reservationId && reservation.reservationId !== 'dev_bypass' && reservation.reservationId !== 'free_call') {
-                    await settleCredits(reservation.reservationId, completed ? units : 0);
+                    if (reservation.reservationId === 'reasoning_call') {
+                        const usageTyped = usage as any;
+                        const tokens = (usageTyped?.inputTokens || 0) + (usageTyped?.outputTokens || 0);
+                        await deductReasoningTokens(identity.userId, tokens);
+                    } else {
+                        await settleCredits(reservation.reservationId, completed ? units : 0);
+                    }
                 }
                 
                 void recordUsage(
@@ -346,7 +352,12 @@ export async function POST(request: NextRequest) {
         const units = await chargeForCall(identity.userId, jobId, actualRawUnits);
 
         if (reservation.reservationId && reservation.reservationId !== 'dev_bypass' && reservation.reservationId !== 'free_call') {
-            await settleCredits(reservation.reservationId, result.ok ? units : 0);
+            if (reservation.reservationId === 'reasoning_call') {
+                const tokens = result.ok ? ((result.usage.inputTokens || 0) + (result.usage.outputTokens || 0)) : 0;
+                await deductReasoningTokens(identity.userId, tokens);
+            } else {
+                await settleCredits(reservation.reservationId, result.ok ? units : 0);
+            }
         }
 
         // COST — what WE spent. Recorded alongside, never joined to the above.

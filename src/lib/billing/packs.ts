@@ -4,7 +4,7 @@ export interface CreditPack {
     id: PackId;
     name: string;
     description: string;
-    priceUsd: number; // in whole dollars
+    priceInr: number; // in whole rupees
     credits: number;
 }
 
@@ -13,21 +13,21 @@ export const CREDIT_PACKS: Record<PackId, CreditPack> = {
         id: 'starter',
         name: 'Starter',
         description: 'Just need a few more for this video',
-        priceUsd: 5,
+        priceInr: 399,
         credits: 500,
     },
     standard: {
         id: 'standard',
         name: 'Standard',
         description: 'I\'m doing a project this weekend',
-        priceUsd: 10,
+        priceInr: 799,
         credits: 1200,
     },
     bulk: {
         id: 'bulk',
         name: 'Bulk',
         description: 'I create daily, need a buffer',
-        priceUsd: 20,
+        priceInr: 1499,
         credits: 2500,
     },
 };

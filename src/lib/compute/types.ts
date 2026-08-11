@@ -52,11 +52,11 @@ export interface LlmModelCatalogEntry {
   /** Human label for the selector UI. */
   readonly name: string;
   /** Which AI provider adapter executes this model. */
-  readonly provider: 'sarvam' | 'openrouter';
+  readonly provider: 'sarvam' | 'openrouter' | 'gemini';
   /** The capabilities this model can actually serve. */
   readonly capabilities: readonly string[];
   /** Entitlement floor. `free` models serve every signed-in plan. */
-  readonly minPlan: 'free' | 'paid';
+  readonly minPlan: 'free' | 'basic' | 'pro';
   /**
    * Operator switch. A model can be present in the registry yet disabled for
    * deployment reasons (credential limit, cost alarm, live-catalog uncertainty).

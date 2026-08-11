@@ -35,6 +35,7 @@ describe('GET /api/v1/ai/models — the selector contract', () => {
 
         process.env.SARVAM_API_KEY = 'test-sarvam-key';
         process.env.OPENROUTER_API_KEY = 'test-openrouter-key';
+        process.env.GEMINI_API_KEY = 'test-gemini-key';
 
         (identityModule.authenticate as any).mockResolvedValue({
             userId: 'user-1',
@@ -69,7 +70,7 @@ describe('GET /api/v1/ai/models — the selector contract', () => {
         expect(sarvam.usable).toBe(true);
 
         // A paid-configured environment: the mini lane is usable too.
-        const mini = json.models.find((m: any) => m.model_id === 'openrouter/mini-chat');
+        const mini = json.models.find((m: any) => m.model_id === 'gemini-1.5-pro');
         expect(mini.usable).toBe(true);
     });
 
@@ -88,14 +89,14 @@ describe('GET /api/v1/ai/models — the selector contract', () => {
         expect(sarvam.usable).toBe(true); // free lane still honest
 
         // The paid models are PRESENT (not hidden) and locked with an upgrade reason.
-        const mini = json.models.find((m: any) => m.model_id === 'openrouter/mini-chat');
+        const mini = json.models.find((m: any) => m.model_id === 'gemini-1.5-pro');
         expect(mini).toBeDefined();
         expect(mini.usable).toBe(false);
         expect(mini.locked_reason).toMatch(/paid plans/i);
     });
 
     it('never presents a server-configuration gap as usable', async () => {
-        delete process.env.OPENROUTER_API_KEY;
+        delete process.env.GEMINI_API_KEY;
         (dbModule.getUserProfileAndEntitlements as any).mockResolvedValue({
             entitlements: { plan: 'paid', autonomy_runs_remaining: 10, renews_at: null },
         });
@@ -103,7 +104,7 @@ describe('GET /api/v1/ai/models — the selector contract', () => {
         const res = await GET(createMockRequest());
         const json = await res.json();
 
-        const mini = json.models.find((m: any) => m.model_id === 'openrouter/mini-chat');
+        const mini = json.models.find((m: any) => m.model_id === 'gemini-1.5-pro');
         expect(mini.usable).toBe(false);
         expect(mini.locked_reason).toMatch(/configured/i);
     });

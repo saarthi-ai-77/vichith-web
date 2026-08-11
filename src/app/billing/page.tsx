@@ -106,7 +106,7 @@ export default function BillingPage() {
                             <p className="text-gray-400 text-sm mt-2 flex-grow">{pack.description}</p>
                             
                             <div className="my-6">
-                                <div className="text-3xl font-bold">${pack.priceUsd}</div>
+                                <div className="text-3xl font-bold">₹{pack.priceInr}</div>
                                 <div className="text-sm text-gray-500 mt-1">for {pack.credits.toLocaleString()} credits</div>
                             </div>
 

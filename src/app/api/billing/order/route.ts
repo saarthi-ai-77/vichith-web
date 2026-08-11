@@ -51,13 +51,13 @@ export async function POST(request: NextRequest) {
 
         const razorpay = new Razorpay({ key_id, key_secret });
 
-        // Amount must be in the smallest currency unit. USD -> cents.
-        const amountInCents = pack.priceUsd * 100;
+        // Amount must be in the smallest currency unit. INR -> paise.
+        const amountInPaise = pack.priceInr * 100;
 
         // Create the order
         const order = await razorpay.orders.create({
-            amount: amountInCents,
-            currency: 'USD',
+            amount: amountInPaise,
+            currency: 'INR',
             // Store the context in notes. The webhook will blindly trust these notes
             // because they are signed by Razorpay.
             notes: {

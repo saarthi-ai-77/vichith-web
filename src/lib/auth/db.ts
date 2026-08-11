@@ -25,6 +25,8 @@ export interface EntitlementsRecord {
   plan: string;
   credits_balance: number;
   autonomy_runs_remaining: number;
+  reasoning_tokens_used_today: number;
+  reasoning_reset_at: string | null;
   renews_at: string | null;
   updated_at?: string;
 }
@@ -261,6 +263,8 @@ export async function ensureUserEntitlementsAndProfile(
     plan: 'free',
     credits_balance: 0,
     autonomy_runs_remaining: 10,
+    reasoning_tokens_used_today: 0,
+    reasoning_reset_at: null,
     renews_at: null,
   };
 

@@ -192,7 +192,7 @@ describe('POST /api/ai cost pre-flight', () => {
             createMockRequest({
                 capability: 'plan.edit',
                 payload: {},
-                modelId: 'openrouter/mini-chat',
+                modelId: 'gemini-1.5-pro',
             }),
         );
         const json = await res.json();

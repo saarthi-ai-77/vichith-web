@@ -36,12 +36,14 @@ import type { Capability, ProviderId } from './provider';
 
 // ── Entitlement ──────────────────────────────────────────────────────────────
 
-export type PlanId = 'free' | 'paid';
+export type PlanId = 'free' | 'basic' | 'pro' | 'paid';
 
 /** Whether a plan clears a model's `minPlan` floor. */
 function isEntitled(plan: string, minPlan: LlmModelCatalogEntry['minPlan']): boolean {
-    if (minPlan === 'free') return plan === 'free' || plan === 'paid';
-    return plan === 'paid';
+    const levels: Record<string, number> = { free: 0, basic: 1, pro: 2, paid: 2 };
+    const userLevel = levels[plan] ?? 0;
+    const requiredLevel = levels[minPlan] ?? 0;
+    return userLevel >= requiredLevel;
 }
 
 // ── Health ───────────────────────────────────────────────────────────────────

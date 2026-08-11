@@ -7,3 +7,35 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
+model users {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String   @unique
+  email_verified Boolean? @default(true)
+  display_name   String?
+  password_hash  String?
+  auth_user_id   String?  @unique @db.Uuid
+}
+
+model profiles {
+  user_id String @id @db.Uuid
+}
+
+model entitlements {
+  user_id String @id @db.Uuid
+}
+
+model usage_events {
+  id      String @id
+  user_id String @db.Uuid
+}
+
+model auth_codes {
+  code    String @id
+  user_id String @db.Uuid
+}
+
+model refresh_tokens {
+  token   String @id
+  user_id String @db.Uuid
+}

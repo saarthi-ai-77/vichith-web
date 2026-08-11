@@ -82,13 +82,13 @@ describe('rule 1 — cheap operations never select expensive models', () => {
     it('a paid user may explicitly opt UP, and the router honours the pick', () => {
         const result = selectModel({
             capability: 'plan.edit',
-            plan: 'paid',
-            requestedModelId: 'openrouter/reasoning-pro',
-            env: ENV_READY,
+            plan: 'pro',
+            requestedModelId: 'openrouter/anthropic/claude-3.5-sonnet',
+            env: { ...ENV_READY, GEMINI_API_KEY: 'x' },
             health: healthy(),
         });
         expect(result.ok).toBe(true);
-        if (result.ok) expect(result.selection.modelId).toBe('openrouter/reasoning-pro');
+        if (result.ok) expect(result.selection.modelId).toBe('openrouter/anthropic/claude-3.5-sonnet');
     });
 
     it('a free user auto-routes to Sarvam (the only entitled model)', () => {
@@ -121,7 +121,7 @@ describe('rule 2 — unavailable models are never selected', () => {
     });
 
     it('an unconfigured provider (missing env) is never usable', () => {
-        const entry = getLlmModelCatalogEntry('openrouter/mini-chat');
+        const entry = getLlmModelCatalogEntry('gemini-1.5-pro');
         const av = availabilityFor(entry!, 'paid', envWith('SARVAM_API_KEY'), healthy());
         expect(av.usable).toBe(false);
         expect(av.configured).toBe(false);
@@ -131,14 +131,14 @@ describe('rule 2 — unavailable models are never selected', () => {
         const result = selectModel({
             capability: 'plan.edit',
             plan: 'free',
-            requestedModelId: 'openrouter/mini-chat',
-            env: ENV_READY,
+            requestedModelId: 'gemini-1.5-pro',
+            env: { SARVAM_API_KEY: 'x', GEMINI_API_KEY: 'x' },
             health: healthy(),
         });
         expect(result.ok).toBe(false);
         if (!result.ok) {
             expect(result.code).toBe('MODEL_UNAVAILABLE');
-            expect(result.message).toMatch(/paid plan/i);
+            expect(result.message).toMatch(/paid plan|pro plan/i);
         }
     });
 
@@ -183,7 +183,7 @@ describe('rule 3 — no silent fallback', () => {
         const result = selectModel({
             capability: 'speech.transcribe',
             plan: 'paid',
-            requestedModelId: 'openrouter/reasoning-pro',
+            requestedModelId: 'openrouter/anthropic/claude-3.5-sonnet',
             env: ENV_READY,
             health: healthy(),
         });
@@ -237,15 +237,15 @@ describe('rule 4 — output ceilings are routing constraints', () => {
     it('a request beyond every entitled model refuses rather than silently truncating', () => {
         const result = selectModel({
             capability: 'plan.edit',
-            plan: 'paid',
-            requiredMaxTokens: 100_000,
-            env: ENV_READY,
+            plan: 'pro',
+            requiredMaxTokens: 100000,
+            env: { ...ENV_READY, GEMINI_API_KEY: 'x' },
             health: healthy(),
         });
         expect(result.ok).toBe(false);
         if (!result.ok) {
             expect(result.code).toBe('OUTPUT_TOO_LONG');
-            expect(result.message).toMatch(/16384/);
+            expect(result.message).toMatch(/8192/);
         }
     });
 
@@ -284,7 +284,7 @@ describe('availability gates', () => {
         // `allowanceFor`/`limitsForPlan` default unknown plans to free. The Model
         // Router must match: "read 'paid' only when the entitlement literally
         // says paid" is the fail-closed version of that same principle.
-        const entry = getLlmModelCatalogEntry('openrouter/mini-chat');
+        const entry = getLlmModelCatalogEntry('gemini-1.5-pro');
         const av = availabilityFor(entry!, 'premium-trial', ENV_READY, healthy());
         expect(av.entitled).toBe(false);
         expect(av.usable).toBe(false);

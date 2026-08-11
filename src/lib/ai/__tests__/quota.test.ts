@@ -143,15 +143,18 @@ describe('Credit Ledger State Machine', () => {
         mockSupabase.gte.mockResolvedValueOnce({ count: 0, error: null });
         
         // daily reasoning check
-        mockSupabase.gte.mockResolvedValueOnce({ count: 100, error: null });
+        mockSupabase.single.mockResolvedValueOnce({ 
+            data: { reasoning_tokens_used_today: 500000, reasoning_reset_at: null }, 
+            error: null 
+        });
         
         const result = await checkQuota('user-1', 'free', 'plan.edit');
         
         expect(result).toEqual({
             allowed: false,
             reason: 'monthly',
-            message: 'You have used your daily thinking allowance. Please upgrade to Pro for unlimited reasoning, or wait until tomorrow.',
-            usedUnits: 100
+            message: 'You have used your daily thinking allowance. Please upgrade to Pro for more reasoning, or wait until tomorrow.',
+            usedUnits: 500000,
         });
     });
     
@@ -160,14 +163,17 @@ describe('Credit Ledger State Machine', () => {
         mockSupabase.gte.mockResolvedValueOnce({ count: 0, error: null });
         
         // daily reasoning check
-        mockSupabase.gte.mockResolvedValueOnce({ count: 40, error: null });
+        mockSupabase.single.mockResolvedValueOnce({ 
+            data: { reasoning_tokens_used_today: 100000, reasoning_reset_at: null }, 
+            error: null 
+        });
         
         const result = await checkQuota('user-1', 'free', 'plan.edit');
         
         expect(result).toEqual({
             allowed: true,
-            remainingThisMonth: 10,
-            usedUnits: 40,
+            remainingThisMonth: 400000,
+            usedUnits: 100000,
         });
     });
 
