@@ -46,24 +46,23 @@ export function SceneChithra() {
 
   return (
     <div
-      className="scene absolute inset-0 flex flex-col items-center justify-center preserve-3d"
-      style={{ transform: "translateZ(-4000px)" }}
+      className="scene relative md:absolute inset-0 flex flex-col items-center justify-center md:preserve-3d min-h-screen py-24 md:py-0 md:[transform:translateZ(-4000px)]"
       data-z="-4000"
     >
-      <div className="text-center max-w-3xl mb-16" style={{ transform: "translateZ(200px)" }}>
-        <h2 className="text-6xl font-medium tracking-tighter mb-4">
+      <div className="text-center w-full max-w-3xl mb-16 px-6 md:px-0 md:[transform:translateZ(200px)]">
+        <h2 className="text-5xl md:text-6xl font-medium tracking-tighter mb-4">
           Meet <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-accent-deep">Chithra</span>
         </h2>
-        <p className="text-2xl text-muted-foreground font-light">
+        <p className="text-xl md:text-2xl text-muted-foreground font-light">
           Not a chatbot. An <span className="serif-accent">orchestrator.</span>
         </p>
       </div>
 
       {/* Chithra's 'Interface' representation */}
-      <div className="relative w-full max-w-4xl h-96 grid-field border-t border-b border-line flex items-center justify-between px-12 preserve-3d">
+      <div className="relative w-full max-w-4xl min-h-96 md:grid-field border-t border-b border-line flex flex-col md:flex-row items-center justify-between px-6 py-12 md:px-12 md:py-0 md:preserve-3d">
         
         {/* Input Intent */}
-        <div className="w-64 glass-panel p-6 shadow-float" style={{ transform: "translateZ(150px) rotateY(10deg)" }}>
+        <div className="w-full max-w-[16rem] glass-panel p-6 shadow-float mb-12 md:mb-0 md:[transform:translateZ(150px)_rotateY(10deg)]">
           <div className="eyebrow mb-3">Intent</div>
           <div className="text-sm font-medium leading-relaxed">
             {intentWords.map((word, i) => (
@@ -75,7 +74,7 @@ export function SceneChithra() {
         </div>
 
         {/* The orchestrator engine (Chithra) */}
-        <div className="relative w-32 h-32 flex items-center justify-center preserve-3d" style={{ transform: "translateZ(50px)" }}>
+        <div className="relative w-32 h-32 flex items-center justify-center md:preserve-3d mb-12 md:mb-0 md:[transform:translateZ(50px)]">
            {/* Abstract rotating rings */}
            <div className="absolute inset-0 border border-accent/40 rounded-full animate-[spin_4s_linear_infinite]" style={{ transform: "rotateX(70deg)" }}></div>
            <div className="absolute inset-0 border border-accent/40 rounded-full animate-[spin_6s_linear_infinite_reverse]" style={{ transform: "rotateY(70deg)" }}></div>
@@ -84,7 +83,7 @@ export function SceneChithra() {
         </div>
 
         {/* Output Generation */}
-        <div className="w-64 glass-panel p-6 shadow-float flex flex-col gap-4" style={{ transform: "translateZ(150px) rotateY(-10deg)" }}>
+        <div className="w-full max-w-[16rem] glass-panel p-6 shadow-float flex flex-col gap-4 md:[transform:translateZ(150px)_rotateY(-10deg)]">
           <div className="eyebrow">Execution Plan</div>
           <div className="flex flex-col gap-3">
             {["Generate Storyboard", "Select Diffusion Model", "Render Sequence"].map((text, i) => (
@@ -100,10 +99,9 @@ export function SceneChithra() {
           </div>
         </div>
 
-        {/* Connecting Flow Line */}
+        {/* Connecting Flow Line (Desktop Only) */}
         <div 
-          className="absolute top-1/2 left-[17rem] right-[17rem] h-[2px] -translate-y-1/2 overflow-hidden"
-          style={{ transform: "translateZ(-50px)" }}
+          className="hidden md:block absolute top-1/2 left-[17rem] right-[17rem] h-[2px] -translate-y-1/2 overflow-hidden md:[transform:translateZ(-50px)]"
         >
            <div 
              ref={lineRef} 

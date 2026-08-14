@@ -11,20 +11,22 @@ export function SpatialCanvas({ children }: { children: React.ReactNode }) {
   const cameraRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let ctx = gsap.context(() => {
+    let mm = gsap.matchMedia();
+
+    mm.add("(min-width: 768px)", () => {
       // The total scroll distance for the experience
       const scrollDistance = 10000;
 
       // Animate the camera rig along the Z-axis
       gsap.to(cameraRef.current, {
-        z: scrollDistance, // Move 8000px deep into the scene
+        z: scrollDistance, // Move 10000px deep into the scene
         ease: "none",
         force3D: true,
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top",
           end: `+=${scrollDistance}`,
-          scrub: 1.5, // Increased smoothing to prevent mouse wheel jitter
+          scrub: 1.5,
           pin: true,
           anticipatePin: 1,
           onUpdate: (self) => {
@@ -32,7 +34,7 @@ export function SpatialCanvas({ children }: { children: React.ReactNode }) {
             const scenes = gsap.utils.toArray<HTMLElement>('.scene');
             
             const applyOpacityToLeaves = (element: HTMLElement, op: number) => {
-              if (element.classList.contains('preserve-3d')) {
+              if (element.classList.contains('preserve-3d') || element.classList.contains('md:preserve-3d')) {
                 // Do not apply opacity to preserve-3d containers as it flattens the 3D space
                 Array.from(element.children).forEach(child => applyOpacityToLeaves(child as HTMLElement, op));
               } else {
@@ -66,26 +68,26 @@ export function SpatialCanvas({ children }: { children: React.ReactNode }) {
           }
         },
       });
-    }, containerRef);
+    });
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, []);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen overflow-hidden bg-background preserve-3d perspective-1000"
+      className="relative w-full flex flex-col md:block md:h-screen md:overflow-hidden bg-background md:preserve-3d md:perspective-1000"
     >
       <div
         ref={cameraRef}
-        className="absolute inset-0 preserve-3d"
+        className="relative flex flex-col md:block w-full md:absolute md:inset-0 md:preserve-3d"
         style={{ transform: "translateZ(0px)" }}
       >
         {children}
       </div>
       
-      {/* Scroll Hint */}
-      <div id="scroll-hint" className="absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground eyebrow flex flex-col items-center gap-2 opacity-50 transition-opacity duration-300">
+      {/* Scroll Hint (Hidden on mobile as it's just a normal scroll) */}
+      <div id="scroll-hint" className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground eyebrow flex-col items-center gap-2 opacity-50 transition-opacity duration-300">
         <span>Scroll to explore</span>
         <div className="w-px h-8 bg-gradient-to-b from-muted-foreground to-transparent"></div>
       </div>
