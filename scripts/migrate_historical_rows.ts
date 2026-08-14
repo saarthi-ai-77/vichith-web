@@ -39,8 +39,8 @@ async function main() {
             email: user.email,
             email_verified: user.email_verified,
             display_name: user.display_name,
-            password_hash: null, // Dummy password hash
-            auth_user_id: authId, // Point to itself
+            password_hash: 'PROXY_ROW', // Dummy password hash
+            auth_user_id: null, // Proxy rows don't map to themselves, legacy row holds the mapping
           },
         });
         console.log(`  - Created proxy row ${authId}`);

@@ -1,33 +1,28 @@
-'use client';
-
-import { Nav } from "@/components/v/Nav";
-import { Hero } from "@/components/v/Hero";
-import { ScrollScenes } from "@/components/v/ScrollScenes";
-import { Workflow } from "@/components/v/Workflow";
-import { Studio } from "@/components/v/Studio";
-import { Chithra } from "@/components/v/Chithra";
-import { Generation } from "@/components/v/Generation";
-import { Cloud } from "@/components/v/Cloud";
-import { Collaboration } from "@/components/v/Collaboration";
-import { MobileHandoff } from "@/components/v/MobileHandoff";
-import { Docs } from "@/components/v/Docs";
-import { Waitlist } from "@/components/v/Waitlist";
+import { Nav } from "@/components/site/Nav";
+import { SpatialCanvas } from "@/components/site/SpatialCanvas";
+import { SceneIdea } from "@/components/site/scenes/SceneIdea";
+import { SceneContext } from "@/components/site/scenes/SceneContext";
+import { SceneChithra } from "@/components/site/scenes/SceneChithra";
+import { SceneProject } from "@/components/site/scenes/SceneProject";
+import { SceneEcosystem } from "@/components/site/scenes/SceneEcosystem";
+import { SceneClosing } from "@/components/site/scenes/SceneClosing";
 
 export default function Home() {
   return (
     <main className="relative bg-background">
       <Nav />
-      <Hero />
-      <ScrollScenes />
-      <Workflow />
-      <Studio />
-      <Chithra />
-      <Generation />
-      <Cloud />
-      <Collaboration />
-      <MobileHandoff />
-      <Docs />
-      <Waitlist />
+      {/* 
+        The SpatialCanvas handles the global GSAP ScrollTrigger timeline.
+        It pins the view and moves the camera along the Z-axis.
+      */}
+      <SpatialCanvas>
+        <SceneIdea />
+        <SceneContext />
+        <SceneChithra />
+        <SceneProject />
+        <SceneEcosystem />
+        <SceneClosing />
+      </SpatialCanvas>
     </main>
   );
 }

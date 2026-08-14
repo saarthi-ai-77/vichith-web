@@ -3,8 +3,8 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
-  title: "Vichith | One workflow. Every creative tool. Powered by AI.",
-  description: "Vichith is an AI desktop creative workspace with Chithra Editorial Brain, OpenTimelineIO non-destructive editing, and multi-model AI orchestration. One workflow. Every creative tool. Powered by AI.",
+  title: "Vichith — From a sentence to a finished frame.",
+  description: "Vichith is a creative workspace where you describe what you're making. Chithra turns it into a project — characters, references, storyboard, and generations — on the web, with a desktop editor to finish the work.",
   icons: {
     icon: "/favicon_io/favicon-32x32.png",
     apple: "/favicon_io/apple-touch-icon.png",

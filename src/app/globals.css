@@ -162,6 +162,8 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    backface-visibility: hidden;
     overflow-x: hidden;
   }
 
@@ -222,4 +224,50 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-muted-foreground);
+}
+
+/* hairline top border, used to rule off full-bleed editorial sections */
+@utility rule-x {
+  border-top: 1px solid var(--color-line);
+}
+
+/* italic editorial accent word, set in the serif face already loaded for the brand */
+@utility serif-accent {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* 
+ * Antigravity 3D CSS Utilities 
+ */
+
+@utility preserve-3d {
+  transform-style: preserve-3d;
+}
+
+@utility perspective-1000 {
+  perspective: 1000px;
+}
+
+@utility backface-hidden {
+  backface-visibility: hidden;
+}
+
+@utility will-change-transform {
+  will-change: transform;
+}
+
+/* An ultra-soft, diffused shadow for floating elements */
+@utility shadow-float {
+  box-shadow: 0 20px 40px oklch(0 0 0 / 20%), 0 1px 3px oklch(0 0 0 / 10%), inset 0 1px 1px oklch(1 1 1 / 5%);
+}
+
+@utility glass-panel {
+  background: color-mix(in oklab, var(--color-surface) 30%, transparent);
+  border: 1px solid oklch(1 1 1 / 8%);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 32px oklch(0 0 0 / 15%);
 }
