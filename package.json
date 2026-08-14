@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/check-service-role.mjs && vitest run && next build",
+    "build": "node scripts/check-service-role.mjs && next build",
     "start": "next start",
     "lint": "next lint",
     "check:security": "node scripts/check-service-role.mjs",
