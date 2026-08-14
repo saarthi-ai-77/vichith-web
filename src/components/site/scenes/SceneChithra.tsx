@@ -16,9 +16,6 @@ export function SceneChithra() {
         opacity: 1,
         stagger: 0.15,
         duration: 0.1,
-        repeat: -1,
-        repeatDelay: 3,
-        yoyo: true,
       });
 
       // 2. Flowing Line Animation

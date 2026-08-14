@@ -14,7 +14,7 @@ export function SceneClosing() {
         </h1>
         <div className="flex flex-col md:flex-row gap-4 justify-center w-full max-w-sm mx-auto md:max-w-none">
           <a 
-            href="https://app.vichith.com" 
+            href="https://app.vichith.in" 
             className="w-full md:w-auto px-10 py-5 bg-foreground text-background font-bold text-lg rounded-full hover:bg-accent hover:text-background transition-colors duration-300 shadow-[0_0_20px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] hover:shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent)_60%,transparent)]"
           >
             Start Creating
@@ -26,12 +26,12 @@ export function SceneClosing() {
       </div>
       
       {/* Footer minimal integration */}
-      <div className="absolute bottom-8 left-0 right-0 flex flex-col md:flex-row justify-between items-center px-6 md:px-12 text-sm text-muted-foreground eyebrow gap-8 md:gap-0" style={{ transform: "translateZ(100px)" }}>
+      <div className="absolute bottom-8 left-0 right-0 flex flex-col md:flex-row justify-between items-center px-6 md:px-12 text-sm text-muted-foreground eyebrow gap-8 md:gap-0">
          <div>© 2026 Vichith Inc.</div>
          <div className="flex flex-wrap justify-center gap-6">
-            <a href="#" className="hover:text-foreground transition-colors">Twitter</a>
-            <a href="#" className="hover:text-foreground transition-colors">Discord</a>
-            <a href="#" className="hover:text-foreground transition-colors">Careers</a>
+            <a href="https://x.com/vichith_ai" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">X</a>
+            <a href="https://discord.gg/679D4UsTS" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Discord</a>
+            <a href="https://www.instagram.com/vichith.ai" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Instagram</a>
          </div>
       </div>
     </div>
