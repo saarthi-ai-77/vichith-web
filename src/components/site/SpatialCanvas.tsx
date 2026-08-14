@@ -11,9 +11,7 @@ export function SpatialCanvas({ children }: { children: React.ReactNode }) {
   const cameraRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let mm = gsap.matchMedia();
-
-    mm.add("(min-width: 768px)", () => {
+    let ctx = gsap.context(() => {
       // The total scroll distance for the experience
       const scrollDistance = 10000;
 
@@ -70,24 +68,24 @@ export function SpatialCanvas({ children }: { children: React.ReactNode }) {
       });
     });
 
-    return () => mm.revert();
+    return () => ctx.revert();
   }, []);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full flex flex-col md:block md:h-screen md:overflow-hidden bg-background md:preserve-3d md:perspective-1000"
+      className="relative w-full h-screen overflow-hidden bg-background preserve-3d perspective-1000"
     >
       <div
         ref={cameraRef}
-        className="relative flex flex-col md:block w-full md:absolute md:inset-0 md:preserve-3d"
+        className="absolute inset-0 preserve-3d w-full"
         style={{ transform: "translateZ(0px)" }}
       >
         {children}
       </div>
       
-      {/* Scroll Hint (Hidden on mobile as it's just a normal scroll) */}
-      <div id="scroll-hint" className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground eyebrow flex-col items-center gap-2 opacity-50 transition-opacity duration-300">
+      {/* Scroll Hint */}
+      <div id="scroll-hint" className="absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground eyebrow flex flex-col items-center gap-2 opacity-50 transition-opacity duration-300">
         <span>Scroll to explore</span>
         <div className="w-px h-8 bg-gradient-to-b from-muted-foreground to-transparent"></div>
       </div>

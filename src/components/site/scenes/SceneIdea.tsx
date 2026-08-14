@@ -22,7 +22,8 @@ export function SceneIdea() {
 
   return (
     <div
-      className="scene relative md:absolute inset-0 flex flex-col items-center justify-center md:preserve-3d min-h-screen py-32 md:py-0 md:[transform:translateZ(0px)]"
+      className="scene absolute inset-0 flex flex-col items-center justify-center preserve-3d"
+      style={{ transform: "translateZ(0px)" }}
       data-z="0"
     >
       <div className="flex flex-col items-center justify-center w-full select-none px-4 md:px-0" ref={textRef}>

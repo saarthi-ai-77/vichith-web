@@ -3,7 +3,8 @@
 export function SceneClosing() {
   return (
     <div
-      className="scene relative md:absolute inset-0 flex flex-col items-center justify-center md:preserve-3d min-h-screen py-24 md:py-0 md:[transform:translateZ(-10000px)]"
+      className="scene absolute inset-0 flex flex-col items-center justify-center preserve-3d"
+      style={{ transform: "translateZ(-10000px)" }}
       data-z="-10000"
     >
       <div className="text-center w-full px-6 md:px-0">
@@ -25,7 +26,7 @@ export function SceneClosing() {
       </div>
       
       {/* Footer minimal integration */}
-      <div className="relative md:absolute mt-32 md:mt-0 bottom-8 left-0 right-0 flex flex-col md:flex-row justify-between items-center px-6 md:px-12 text-sm text-muted-foreground eyebrow gap-8 md:gap-0 md:[transform:translateZ(100px)]">
+      <div className="absolute bottom-8 left-0 right-0 flex flex-col md:flex-row justify-between items-center px-6 md:px-12 text-sm text-muted-foreground eyebrow gap-8 md:gap-0" style={{ transform: "translateZ(100px)" }}>
          <div>© 2026 Vichith Inc.</div>
          <div className="flex flex-wrap justify-center gap-6">
             <a href="#" className="hover:text-foreground transition-colors">Twitter</a>

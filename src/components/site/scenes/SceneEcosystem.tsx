@@ -3,7 +3,8 @@
 export function SceneEcosystem() {
   return (
     <div
-      className="scene relative md:absolute inset-0 flex flex-col items-center justify-center md:preserve-3d min-h-screen py-24 md:py-0 md:[transform:translateZ(-8000px)]"
+      className="scene absolute inset-0 flex items-center justify-center preserve-3d"
+      style={{ transform: "translateZ(-8000px)" }}
       data-z="-8000"
     >
       {/* 
@@ -11,7 +12,8 @@ export function SceneEcosystem() {
         which then expands to become the Desktop UI window.
       */}
       <div 
-        className="w-[90vw] md:w-[90vw] h-[60vh] md:h-[80vh] border border-line rounded-2xl overflow-hidden bg-background/80 backdrop-blur-2xl shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col relative md:[transform:translateZ(100px)]"
+        className="w-[90vw] h-[60vh] md:h-[80vh] border border-line rounded-2xl overflow-hidden bg-background/80 backdrop-blur-2xl shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col relative"
+        style={{ transform: "translateZ(100px)" }}
       >
         {/* Fake Desktop Titlebar */}
         <div className="h-10 border-b border-line flex items-center px-4 gap-4 bg-surface/50">
@@ -56,7 +58,7 @@ export function SceneEcosystem() {
         </div>
 
         {/* Overlay Text explaining the transition */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-6 md:p-0 md:[transform:translateZ(200px)]">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-6 md:p-0" style={{ transform: "translateZ(200px)" }}>
            <h2 className="text-4xl md:text-6xl text-white font-medium drop-shadow-2xl text-center leading-tight">
              <span className="eyebrow block mb-4 tracking-widest text-white/50 text-xs md:text-sm">THE FINISHED WORK</span>
              From Web Ideation <br />
