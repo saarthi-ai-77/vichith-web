@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 
 const REQUEST_ACCESS_URL = "https://app.vichith.in/request-access";
+const LOGIN_URL = "https://app.vichith.in/login";
 const INVITE_URL = "https://app.vichith.in/invite";
 const logo = { url: "/favicon_io/android-chrome-192x192.png" };
 
@@ -38,12 +39,12 @@ export function Nav() {
             </a>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
           <a
-            href={INVITE_URL}
+            href={LOGIN_URL}
             className="hidden px-3 py-2 text-[13px] text-dim transition-colors duration-300 hover:text-foreground sm:inline-flex"
           >
-            Have an invite?
+            Sign in
           </a>
           <a
             href={REQUEST_ACCESS_URL}
