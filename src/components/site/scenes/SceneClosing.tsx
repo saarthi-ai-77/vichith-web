@@ -14,14 +14,17 @@ export function SceneClosing() {
         </h1>
         <div className="flex flex-col md:flex-row gap-4 justify-center w-full max-w-sm mx-auto md:max-w-none">
           <a
-            href="https://app.vichith.in/login"
+            href="https://app.vichith.in/request-access"
             className="w-full md:w-auto px-10 py-5 bg-foreground text-background font-bold text-lg rounded-full hover:bg-accent hover:text-background transition-colors duration-300 shadow-[0_0_20px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] hover:shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent)_60%,transparent)]"
           >
-            Start Creating
+            Request Early Access
           </a>
-          <button className="w-full md:w-auto px-10 py-5 bg-transparent border border-line text-foreground font-medium text-lg rounded-full hover:bg-surface transition-colors duration-300">
-            View the Gallery
-          </button>
+          <a
+            href="https://app.vichith.in/invite"
+            className="w-full md:w-auto px-10 py-5 bg-transparent border border-line text-foreground font-medium text-lg rounded-full hover:bg-surface transition-colors duration-300 text-center"
+          >
+            Enter Invite Code
+          </a>
         </div>
       </div>
       
