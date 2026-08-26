@@ -3,6 +3,18 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
+// `Math.random()` in render draws a different value on the server than on
+// the client's own hydration pass, so the waveform below used to trigger a
+// real hydration mismatch on every homepage load. A deterministic function
+// of the bar's own index looks equally "random" but produces the exact
+// same value in both environments -- no seed to keep in sync, nothing
+// stored, just the same pure function called with the same input twice.
+function pseudoRandomHeight(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  const frac = x - Math.floor(x);
+  return frac * 80 + 20;
+}
+
 export function SceneEcosystem() {
   const assetRef = useRef<HTMLDivElement>(null);
   const layerAudioRef = useRef<HTMLDivElement>(null);
@@ -199,7 +211,7 @@ export function SceneEcosystem() {
                        <span className="text-[10px] text-muted-foreground font-mono w-12">AUDIO</span>
                        <div className="flex-1 flex items-center gap-[2px] px-2 h-full py-1">
                           {[...Array(24)].map((_, i) => (
-                            <div key={i} className="flex-1 bg-muted-foreground/40 rounded-full" style={{ height: `${Math.random() * 80 + 20}%` }}></div>
+                            <div key={i} className="flex-1 bg-muted-foreground/40 rounded-full" style={{ height: `${pseudoRandomHeight(i)}%` }}></div>
                           ))}
                        </div>
                     </div>

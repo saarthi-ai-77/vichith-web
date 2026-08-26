@@ -8,12 +8,6 @@
  */
 
 @theme {
-  --font-display: "Outfit", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-syne: "Syne", "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-editorial: "Newsreader", Georgia, serif;
-  --font-sans: "Plus Jakarta Sans", "DM Sans", ui-sans-serif, system-ui, sans-serif;
-
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --color-ink: oklch(0.16 0.008 200);
   --color-accent: oklch(0.82 0.15 178);
   --color-accent-deep: oklch(0.62 0.12 180);
@@ -22,6 +16,22 @@
   --color-surface: oklch(0.19 0.008 200);
   --color-surface-2: oklch(0.23 0.009 200);
   --ease-cine: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* V1 redesign Stage B — font tokens now reference next/font's runtime CSS
+ * vars (set via className on <html>, layout.tsx), so this needs `inline`
+ * (Tailwind v4 resolves the var() at usage time rather than inlining a
+ * build-time constant) -- kept as its own block, deliberately separate from
+ * the dead shadcn @theme inline block below (unused defaults, see that
+ * block's own header comment), so this doesn't get entangled with it.
+ * Inter/Newsreader/Syne now match apps/app/src/app/layout.tsx exactly --
+ * one brand voice, one set of files defining it, not two. */
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-syne), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-syne: var(--font-syne), ui-sans-serif, sans-serif;
+  --font-editorial: var(--font-newsreader), Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 /*

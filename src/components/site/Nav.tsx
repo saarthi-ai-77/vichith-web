@@ -7,12 +7,6 @@ const LOGIN_URL = "https://app.vichith.in/login";
 const INVITE_URL = "https://app.vichith.in/invite";
 const logo = { url: "/favicon_io/android-chrome-192x192.png" };
 
-const links = [
-  ["Workflow", "#workflow"],
-  ["Chithra", "#chithra"],
-  ["Studio", "#studio"],
-] as const;
-
 export function Nav() {
   const { scrollY } = useScroll();
   const bg = useTransform(scrollY, [0, 120], ["rgba(0,0,0,0)", "rgba(0,0,0,0.55)"]);
@@ -28,17 +22,12 @@ export function Nav() {
           <img src={logo.url} alt="Vichith" className="h-6 w-6" />
           <span className="font-display text-[15px] tracking-tight">vichith</span>
         </a>
-        <div className="ml-4 hidden items-center gap-7 md:flex">
-          {links.map(([label, href]) => (
-            <a
-              key={label}
-              href={href}
-              className="text-[13px] text-dim transition-colors duration-300 hover:text-foreground"
-            >
-              {label}
-            </a>
-          ))}
-        </div>
+        {/* V1 audit — these used to link to #workflow/#chithra/#studio, ids
+         *  that only ever existed on the old sections.tsx homepage (dead,
+         *  now removed). The current homepage is a single GSAP-pinned
+         *  scroll-jack (SpatialCanvas, pin:true) rather than a normal
+         *  in-flow page, so a native #anchor jump can't land correctly on
+         *  it either -- removed rather than left pointing at nothing. */}
         <div className="ml-auto flex items-center gap-3">
           <a
             href={LOGIN_URL}
