@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import { DEPTH } from "@/lib/spatial";
 
 export function SceneContext() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,8 +31,8 @@ export function SceneContext() {
     <div
       ref={containerRef}
       className="scene absolute inset-0 preserve-3d"
-      style={{ transform: "translateZ(-2000px)" }}
-      data-z="-2000"
+      style={{ transform: `translateZ(${DEPTH.context}px)` }}
+      data-z={DEPTH.context}
     >
       {/* Centered, scaled container for mobile to preserve the scattered layout */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[800px] scale-[0.4] sm:scale-[0.6] md:scale-100 preserve-3d pointer-events-none">

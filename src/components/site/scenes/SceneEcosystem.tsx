@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import { DEPTH } from "@/lib/spatial";
 
 // `Math.random()` in render draws a different value on the server than on
 // the client's own hydration pass, so the waveform below used to trigger a
@@ -133,8 +134,8 @@ export function SceneEcosystem() {
   return (
     <div
       className="scene absolute inset-0 flex items-center justify-center preserve-3d"
-      style={{ transform: "translateZ(-8000px)" }}
-      data-z="-8000"
+      style={{ transform: `translateZ(${DEPTH.ecosystem}px)` }}
+      data-z={DEPTH.ecosystem}
     >
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl flex flex-col items-center justify-center scale-[0.4] sm:scale-[0.55] md:scale-100 preserve-3d pointer-events-none">
         
@@ -182,10 +183,16 @@ export function SceneEcosystem() {
              <div className="w-1/2 h-1/2 rounded-full bg-white/30 blur-sm"></div>
            </div>
 
-           {/* RIGHT: VICHITH APP (Precision Control) */}
+           {/* RIGHT: VICHITH DESKTOP (Precision Control) -- CONFIRMED BUG,
+               FIXED (marketing audit Phase 1): this said "VICHITH APP",
+               ambiguous with the real, live web app at app.vichith.in
+               sitting right next to it. This panel visualizes the desktop
+               editor specifically (timeline, audio/mask tracks, playhead) --
+               name it as that, matching Footer.tsx's already-correct
+               "Desktop app" label, which the homepage itself never rendered. */}
            <div className="w-full max-w-[450px] h-[500px] glass-panel shadow-float flex flex-col p-6 md:p-8 relative" style={{ transform: "translateZ(50px) rotateY(-10deg)" }}>
               <div className="flex justify-between items-center mb-8 border-b border-line pb-4">
-                 <span className="font-mono text-sm tracking-widest text-muted-foreground">VICHITH APP</span>
+                 <span className="font-mono text-sm tracking-widest text-muted-foreground">VICHITH DESKTOP</span>
                  <span className="text-[10px] uppercase tracking-wider border border-accent/50 text-accent px-2 py-1 rounded shadow-[0_0_10px_color-mix(in_oklab,var(--color-accent)_40%,transparent)]">Coming Soon</span>
               </div>
               

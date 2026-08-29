@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import { DEPTH } from "@/lib/spatial";
 
 export function SceneProject() {
   const gridRef = useRef<HTMLDivElement>(null);
@@ -21,15 +22,21 @@ export function SceneProject() {
   return (
     <div
       className="scene absolute inset-0 flex flex-col items-center justify-center preserve-3d"
-      style={{ transform: "translateZ(-6000px)" }}
-      data-z="-6000"
+      style={{ transform: `translateZ(${DEPTH.project}px)` }}
+      data-z={DEPTH.project}
     >
       <div className="absolute top-20 left-20 w-full px-6 md:px-0 md:w-1/3 mb-8 md:mb-0 z-10 pointer-events-auto" style={{ transform: "translateZ(300px)" }}>
          <h2 className="text-4xl md:text-5xl tracking-tighter mb-4 text-center md:text-left">
            The <span className="serif-accent">Project</span> Canvas
          </h2>
+         {/* CONFIRMED OVERCLAIM, FIXED (marketing audit Phase 1/2): "Ready for
+             fine-tuning" stated a capability -- manual node authoring --
+             that doesn't exist. Canvas visualizes provenance; it doesn't
+             yet let you build the graph by hand. The node+edge visual below
+             is an honest abstraction of the real thing; only this line
+             overclaimed. */}
          <p className="text-muted-foreground text-lg text-center md:text-left">
-           Everything generated becomes part of a unified spatial workspace. Ready for fine-tuning.
+           Every reference, prompt, and generation — connected in one visual trace of how the work came together.
          </p>
       </div>
 

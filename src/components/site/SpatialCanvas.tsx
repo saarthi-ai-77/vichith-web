@@ -3,8 +3,16 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SCROLL_DISTANCE } from "@/lib/spatial";
 
 gsap.registerPlugin(ScrollTrigger);
+
+/** Fired every camera update with the same cameraZ/progress values already
+ *  driving the opacity pass below — lets a scene do its OWN richer per-beat
+ *  treatment (scale, blur, text reveal, whatever) without a second,
+ *  independent ScrollTrigger that would have to somehow reproduce the exact
+ *  same 0-1 progress this one already computed. One source of truth. */
+export const CAMERA_EVENT = "vichith:camera-update";
 
 export function SpatialCanvas({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -13,7 +21,7 @@ export function SpatialCanvas({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let ctx = gsap.context(() => {
       // The total scroll distance for the experience
-      const scrollDistance = 10000;
+      const scrollDistance = SCROLL_DISTANCE;
 
       // Animate the camera rig along the Z-axis
       gsap.to(cameraRef.current, {
@@ -63,6 +71,10 @@ export function SpatialCanvas({ children }: { children: React.ReactNode }) {
             if (scrollHint) {
               scrollHint.style.opacity = self.progress > 0.95 ? '0' : '0.5';
             }
+
+            window.dispatchEvent(new CustomEvent(CAMERA_EVENT, {
+              detail: { cameraZ, progress: self.progress, velocity: self.getVelocity() },
+            }));
           }
         },
       });

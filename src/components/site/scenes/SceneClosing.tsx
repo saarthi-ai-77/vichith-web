@@ -1,11 +1,13 @@
 "use client";
 
+import { DEPTH } from "@/lib/spatial";
+
 export function SceneClosing() {
   return (
     <div
       className="scene absolute inset-0 flex flex-col items-center justify-center preserve-3d"
-      style={{ transform: "translateZ(-10000px)" }}
-      data-z="-10000"
+      style={{ transform: `translateZ(${DEPTH.closing}px)` }}
+      data-z={DEPTH.closing}
     >
       <div className="text-center w-full px-6 md:px-0">
         <h1 className="text-[18vw] md:text-[10vw] leading-[1.1] md:leading-none tracking-tighter font-medium mb-12">
