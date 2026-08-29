@@ -237,6 +237,7 @@ export function SceneConversation() {
   const glowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const textRefs = useRef<Record<number, HTMLParagraphElement | null>>({});
   const threadDotRef = useRef<HTMLDivElement>(null);
+  const kickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onCamera(e: Event) {
@@ -340,6 +341,23 @@ export function SceneConversation() {
         threadDotRef.current.style.opacity =
           cameraZ > convStart - 400 && cameraZ < convEnd + 600 ? "1" : "0";
       }
+
+      // Orienting kicker (Phase 4): the section previously opened cold on
+      // beat 1 with nothing establishing "this is Chithra" before the
+      // exchange starts. Fades in just ahead of it, holds through the
+      // first exchange, then fades out once the dialogue is self-evident
+      // (each bubble already labels itself "You"/"Chithra") rather than
+      // lingering as clutter for the whole section.
+      if (kickerRef.current) {
+        const kd = cameraZ - convStart;
+        let kickerOpacity: number;
+        if (kd < -500) kickerOpacity = 0;
+        else if (kd < -100) kickerOpacity = (kd + 500) / 400;
+        else if (kd < 400) kickerOpacity = 1;
+        else if (kd < 700) kickerOpacity = 1 - (kd - 400) / 300;
+        else kickerOpacity = 0;
+        kickerRef.current.style.opacity = String(Math.max(0, Math.min(1, kickerOpacity)));
+      }
     }
 
     window.addEventListener(CAMERA_EVENT, onCamera);
@@ -359,6 +377,17 @@ export function SceneConversation() {
           textRef={(el) => { textRefs.current[i] = el; }}
         />
       ))}
+
+      {/* Orienting kicker -- see the fade-timing comment above. Fixed to the
+          viewport (not a .scene node) since it isn't part of the 3D depth
+          stack, just a UI label riding alongside it. */}
+      <div
+        ref={kickerRef}
+        className="fixed top-[10%] left-1/2 -translate-x-1/2 z-10 pointer-events-none flex flex-col items-center gap-1 opacity-0"
+      >
+        <span className="eyebrow text-accent">Chithra</span>
+        <span className="text-xs text-muted-foreground">watch how it actually works</span>
+      </div>
 
       {/* The thread -- a fixed path, a single moving glow, not a fill bar. */}
       <div className="fixed left-6 md:left-10 top-0 bottom-0 w-px pointer-events-none z-10 hidden md:block">

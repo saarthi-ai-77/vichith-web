@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 export function SceneIdea() {
   const textRef = useRef<HTMLDivElement>(null);
+  // CONFIRMED BUG, FIXED (found live): the subhead's entrance was originally
+  // a one-shot gsap.fromTo() tween -- verified stuck permanently at its own
+  // FROM values (opacity 0), never progressing, even wrapped in
+  // gsap.context()+revert (the established pattern every other Scene* uses
+  // for exactly this class of bug). Root cause not fully pinned down before
+  // switching approach -- rather than keep guessing at GSAP/Next-dev timing
+  // interactions, this uses plain React state + a CSS transition instead,
+  // which has no dependency on GSAP's lifecycle at all and was verified
+  // working immediately.
+  const [subheadVisible, setSubheadVisible] = useState(false);
 
   // We rely on the global camera rig for movement, but we can add micro-interactions here
   useEffect(() => {
@@ -18,6 +28,9 @@ export function SceneIdea() {
       yoyo: true,
       ease: "sine.inOut",
     });
+
+    const t = setTimeout(() => setSubheadVisible(true), 600);
+    return () => clearTimeout(t);
   }, []);
 
   return (
@@ -51,6 +64,20 @@ export function SceneIdea() {
             visuals.
           </span>
         </div>
+
+        {/* Supporting line -- states the actual problem (Phase 1 audit's
+            Layer-1 gap: nothing on the site named it before). Deliberately
+            modest against the huge type above it. */}
+        <p
+          className="mt-14 md:mt-[3vw] max-w-[36ch] px-6 text-center text-base md:text-lg font-light leading-relaxed text-muted-foreground"
+          style={{
+            transition: "opacity 1000ms ease-out, transform 1000ms ease-out",
+            opacity: subheadVisible ? 1 : 0,
+            transform: subheadVisible ? "translateY(0px)" : "translateY(12px)",
+          }}
+        >
+          Every AI tool splits your process into pieces. Vichith keeps it connected — from the first idea to the finished frame.
+        </p>
 
       </div>
     </div>

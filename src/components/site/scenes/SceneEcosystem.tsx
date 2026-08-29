@@ -191,11 +191,18 @@ export function SceneEcosystem() {
                name it as that, matching Footer.tsx's already-correct
                "Desktop app" label, which the homepage itself never rendered. */}
            <div className="w-full max-w-[450px] h-[500px] glass-panel shadow-float flex flex-col p-6 md:p-8 relative" style={{ transform: "translateZ(50px) rotateY(-10deg)" }}>
-              <div className="flex justify-between items-center mb-8 border-b border-line pb-4">
+              <div className="flex justify-between items-center mb-4 border-b border-line pb-4">
                  <span className="font-mono text-sm tracking-widest text-muted-foreground">VICHITH DESKTOP</span>
                  <span className="text-[10px] uppercase tracking-wider border border-accent/50 text-accent px-2 py-1 rounded shadow-[0_0_10px_color-mix(in_oklab,var(--color-accent)_40%,transparent)]">Coming Soon</span>
               </div>
-              
+
+              {/* Marketing audit Phase 4: "Control deeply" previously had no
+                  concrete referent in this panel -- just a wireframe mockup.
+                  One line naming what deep control actually means. */}
+              <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+                Frame-accurate timeline editing, precision color and audio — for the shots that need a human&rsquo;s final touch.
+              </p>
+
               <div className="flex-1 flex flex-col relative">
                  {/* Composition View */}
                  <div className="w-full h-40 bg-background/50 rounded-lg border border-line flex items-center justify-center mb-6 relative overflow-hidden">
