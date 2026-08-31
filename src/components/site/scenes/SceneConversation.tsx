@@ -194,7 +194,7 @@ function BeatCard({
               ref={glowRef}
               data-develop=""
               className="w-72 aspect-video rounded-xl overflow-hidden relative bg-gradient-to-br from-accent/40 via-accent-deep/30 to-surface"
-              style={{ filter: "blur(14px) saturate(0.3)" }}
+              style={{ filter: "blur(14px) saturate(0.3)", backgroundImage: "url('/lighthouse.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
             >
               <div
                 className="absolute inset-0 opacity-25 mix-blend-overlay"
@@ -214,7 +214,10 @@ function BeatCard({
           // language SceneProject's own graph uses, foreshadowing it rather
           // than introducing a new visual vocabulary for one beat.
           <div className="flex items-center gap-3">
-            <div className="w-36 aspect-video rounded-lg bg-gradient-to-br from-accent/50 to-accent-deep/40 border border-accent/40 shadow-float shrink-0" />
+            <div 
+              className="w-36 aspect-video rounded-lg bg-gradient-to-br from-accent/50 to-accent-deep/40 border border-accent/40 shadow-float shrink-0" 
+              style={{ backgroundImage: "url('/lighthouse.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+            />
             <div className="flex items-center gap-2">
               <svg width="28" height="12" viewBox="0 0 28 12" className="text-accent/60 shrink-0">
                 <path d="M0 6 H28" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />

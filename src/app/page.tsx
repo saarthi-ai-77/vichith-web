@@ -6,6 +6,7 @@ import { SceneConversation } from "@/components/site/scenes/SceneConversation";
 import { SceneProject } from "@/components/site/scenes/SceneProject";
 import { SceneEcosystem } from "@/components/site/scenes/SceneEcosystem";
 import { SceneClosing } from "@/components/site/scenes/SceneClosing";
+import { GlobalMatrix } from "@/components/site/GlobalMatrix";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
         It pins the view and moves the camera along the Z-axis.
       */}
       <SpatialCanvas>
+        <GlobalMatrix />
         <SceneIdea />
         <SceneContext />
         {/* SceneChithra (one static "meet the orchestrator" moment) replaced

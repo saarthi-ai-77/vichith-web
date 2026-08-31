@@ -1,5 +1,11 @@
 -- 019_renew_granted_credits_guard.sql
--- Written for founder review. NOT applied — same convention as 018.
+-- APPLIED to production. Confirmed by the founder 2026-08-31.
+--
+-- The header below said "NOT applied" for longer than it was true, and that
+-- claim was repeated downstream in MASTER_CONTEXT and in a later audit as a
+-- live bug. A migration file is a poor place to track application status —
+-- it cannot know — so treat this line as a note, and the database as the
+-- authority.
 --
 -- CRITICAL, LIVE BUG. Retrieved from production via
 -- `SELECT pg_get_functiondef('renew_granted_credits'::regproc);` (2026-08-29,
