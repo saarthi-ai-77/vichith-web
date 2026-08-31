@@ -51,8 +51,11 @@ export function SceneContext() {
           className="floating-panel absolute top-[10%] left-[5%] w-64 h-80 glass-panel shadow-float flex flex-col justify-end p-4 pointer-events-auto"
           style={{ transform: "translateZ(300px) rotateY(15deg) rotateX(-5deg)" }}
         >
-          <div className="w-full h-3/4 bg-white/5 rounded-md mb-4 overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent mix-blend-overlay"></div>
+          <div 
+            className="w-full h-3/4 bg-white/5 rounded-md mb-4 overflow-hidden relative"
+            style={{ backgroundImage: "url('/man.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent"></div>
           </div>
           <div className="eyebrow">Character Ref: 01</div>
         </div>
@@ -62,9 +65,9 @@ export function SceneContext() {
           style={{ transform: "translateZ(500px) rotateY(-20deg) rotateZ(5deg)" }}
         >
           <div className="w-full h-full bg-white/5 rounded-md relative grid grid-cols-3 gap-2 p-2">
-             <div className="bg-white/10 rounded-sm h-full"></div>
-             <div className="bg-white/10 rounded-sm h-full"></div>
-             <div className="bg-white/10 rounded-sm h-full"></div>
+             <div className="bg-white/10 rounded-sm h-full overflow-hidden relative" style={{ backgroundImage: "url('/pouring_tea.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+             <div className="bg-white/10 rounded-sm h-full overflow-hidden relative" style={{ backgroundImage: "url('/split_pour.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+             <div className="bg-white/10 rounded-sm h-full overflow-hidden relative" style={{ backgroundImage: "url('/shot.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
           </div>
           <div className="eyebrow mt-3">Storyboard Sequence</div>
         </div>
