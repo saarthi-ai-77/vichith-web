@@ -4,128 +4,81 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { DEPTH } from "@/lib/spatial";
 
-// `Math.random()` in render draws a different value on the server than on
-// the client's own hydration pass, so the waveform below used to trigger a
-// real hydration mismatch on every homepage load. A deterministic function
-// of the bar's own index looks equally "random" but produces the exact
-// same value in both environments -- no seed to keep in sync, nothing
-// stored, just the same pure function called with the same input twice.
-function pseudoRandomHeight(seed: number): number {
-  const x = Math.sin(seed * 12.9898) * 43758.5453;
-  const frac = x - Math.floor(x);
-  return frac * 80 + 20;
-}
-
 export function SceneEcosystem() {
-  const assetRef = useRef<HTMLDivElement>(null);
-  const layerAudioRef = useRef<HTMLDivElement>(null);
-  const layerMaskRef = useRef<HTMLDivElement>(null);
-  const playheadRef = useRef<HTMLDivElement>(null);
-  const webCoreRef = useRef<HTMLDivElement>(null);
-  const webNodesRef = useRef<HTMLDivElement[]>([]);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const inspectorRef = useRef<HTMLDivElement>(null);
+  const chithraBubbleRef = useRef<HTMLDivElement>(null);
+  const clipRefs = useRef<HTMLDivElement[]>([]);
 
   useEffect(() => {
     let ctx = gsap.context(() => {
-      let mm = gsap.matchMedia();
+       const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
+       
+       // Ensure elements are centered perfectly for x/y animations
+       gsap.set(clipRefs.current, { xPercent: -50, yPercent: -50 });
 
-      mm.add({
-        isDesktop: "(min-width: 768px)",
-        isMobile: "(max-width: 767px)"
-      }, (context) => {
-        let { isDesktop } = context.conditions as { isDesktop: boolean };
-        
-        const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 });
-
-        // 1. Web exploration phase (Fluid nodes pulse)
-        tl.to(webNodesRef.current, {
-          opacity: 1,
-          boxShadow: "0 0 15px var(--color-accent)",
-          stagger: 0.2,
-          duration: 0.4,
-          ease: "power2.out",
-        })
-        // Generation core activates
-        .to(webCoreRef.current, {
-          scale: 1.1,
-          boxShadow: "0 0 30px var(--color-accent)",
-          duration: 0.5,
-          ease: "back.out(1.5)",
-        }, "-=0.2")
-        .to(webNodesRef.current, {
-          boxShadow: "0 0 0px transparent",
-          opacity: 0.4,
-          stagger: 0.2,
-          duration: 0.4,
-        }, "-=0.2");
-
-        // 2. Creative Asset emerges from Web core
-        tl.set(assetRef.current, {
-          opacity: 0,
-          x: isDesktop ? -250 : 0, // Inside Web panel
-          y: isDesktop ? 50 : -200,
-          scale: 0.5,
-          width: "8rem",
-          height: "5rem",
-          borderRadius: "0.5rem"
-        })
-        .to(assetRef.current, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.6,
-          ease: "back.out(1.2)",
-        })
-        
-        // 3. Asset travels to App panel
-        .to(assetRef.current, {
-          x: isDesktop ? 250 : 0, // Into App timeline
-          y: isDesktop ? 90 : 130, // Adjusted to land perfectly on the top track
-          duration: 1.5,
-          ease: "power2.inOut",
-        })
-
-        // 4. Asset transforms into Timeline Layers (Fractures into deep control)
-        .to(assetRef.current, {
-          width: "18rem", // Stretches into a video track
-          height: "1.5rem",
-          borderRadius: "0.25rem",
-          duration: 0.5,
-          ease: "power3.out",
-        })
-        
-        // Audio and Mask layers reveal from behind the main video track
-        .set([layerAudioRef.current, layerMaskRef.current], {
-           opacity: 0,
-           y: -20, // Start slightly hidden behind the main track
-        })
-        .to(layerAudioRef.current, {
+       // Initial Setup (Stage 1: Grid View)
+       gsap.set(timelineRef.current, { y: 200, opacity: 0 });
+       gsap.set(inspectorRef.current, { x: 200, opacity: 0 });
+       gsap.set(canvasRef.current, { opacity: 0, scale: 0.95 });
+       gsap.set(chithraBubbleRef.current, { opacity: 0, y: 10, scale: 0.8 });
+       
+       clipRefs.current.forEach((clip, i) => {
+         const row = Math.floor(i / 2);
+         const col = i % 2;
+         gsap.set(clip, {
+           x: col === 0 ? -140 : 140,
+           y: row === 0 ? -80 : 80,
+           width: 260,
+           height: 150,
+           borderRadius: 8,
            opacity: 1,
-           y: 0,
-           duration: 0.4,
-           ease: "power2.out",
-        }, "-=0.2")
-        .to(layerMaskRef.current, {
-           opacity: 1,
-           y: 0,
-           duration: 0.4,
-           ease: "power2.out",
-        }, "-=0.2")
+           filter: "hue-rotate(0deg) saturate(1) brightness(1)"
+         });
+       });
 
-        // 5. Playhead sweeps across layers (Control & Precision)
-        .set(playheadRef.current, { opacity: 1, x: -140 })
-        .to(playheadRef.current, {
-           x: 140,
-           duration: 1.5,
-           ease: "none",
-        })
+       // Phase 1: Generated assets are visible in the grid.
+       // Hold the view so the user registers the "Create" phase.
+       tl.to({}, { duration: 1.5 });
 
-        // Fade out to reset loop
-        .to([assetRef.current, layerAudioRef.current, layerMaskRef.current, playheadRef.current, webCoreRef.current], {
-           opacity: 0,
-           duration: 0.5,
-        })
-        .set(webCoreRef.current, { scale: 1 });
+       // Phase 2: Open in Studio (Stage 3)
+       // The Studio UI elements slide in to surround the assets.
+       tl.to(canvasRef.current, { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" })
+         .to(timelineRef.current, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }, "<")
+         .to(inspectorRef.current, { x: 0, opacity: 1, duration: 0.8, ease: "power3.out" }, "<");
 
-      });
+       // The key transition: assets drop from the grid into the timeline tracks
+       clipRefs.current.forEach((clip, i) => {
+         tl.to(clip, {
+           x: -285 + (i * 190), // Spaced horizontally
+           y: 155,              // Land precisely on the timeline track
+           width: 180,
+           height: 40,
+           borderRadius: 4,
+           duration: 1,
+           ease: "power2.inOut"
+         }, "-=0.6");
+       });
+
+       // Phase 3: Create + Edit together (Stage 4)
+       // Chithra intent appears (backend manipulation)
+       tl.to(chithraBubbleRef.current, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, "+=0.5")
+         // The clips visibly update to reflect the new state (e.g., moodier lighting)
+         .to(clipRefs.current, { filter: "hue-rotate(15deg) saturate(1.3) brightness(0.8)", stagger: 0.1, duration: 0.4 })
+         // The main canvas also updates
+         .to(canvasRef.current, { filter: "hue-rotate(15deg) saturate(1.3) brightness(0.8)", duration: 0.6 }, "<");
+         
+       // End hold to let the user register the finished edit
+       tl.to({}, { duration: 2.5 });
+       
+       // Reset loop
+       tl.to([canvasRef.current, timelineRef.current, inspectorRef.current, chithraBubbleRef.current, ...clipRefs.current], {
+         opacity: 0,
+         duration: 0.5
+       });
+       
     });
 
     return () => ctx.revert();
@@ -137,108 +90,116 @@ export function SceneEcosystem() {
       style={{ transform: `translateZ(${DEPTH.ecosystem}px)` }}
       data-z={DEPTH.ecosystem}
     >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl flex flex-col items-center justify-center scale-[0.4] sm:scale-[0.55] md:scale-100 preserve-3d pointer-events-none">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl flex flex-col items-center justify-center scale-[0.4] sm:scale-[0.55] md:scale-100 preserve-3d pointer-events-none">
         
         {/* Typographic Anchor */}
-        <div className="text-center mb-16 md:mb-24 z-10 pointer-events-auto" style={{ transform: "translateZ(150px)" }}>
+        <div className="text-center mb-10 z-10 pointer-events-auto" style={{ transform: "translateZ(150px)" }}>
            <h2 className="text-5xl md:text-7xl font-light tracking-tight leading-tight">
              Create freely.<br />
              <span className="serif-accent text-accent">Control deeply.</span>
            </h2>
+           <p className="mt-4 text-muted-foreground text-base md:text-lg max-w-md mx-auto">
+             From the first visual to the final edit, your project stays in one unified workspace.
+           </p>
         </div>
 
-        {/* Split Layout */}
-        <div className="w-full flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 preserve-3d relative pointer-events-auto">
-           
-           {/* LEFT: VICHITH WEB (Exploration) */}
-           <div className="w-full max-w-[450px] h-[500px] glass-panel shadow-float flex flex-col p-6 md:p-8 relative" style={{ transform: "translateZ(50px) rotateY(10deg)" }}>
-              <div className="flex justify-between items-center mb-12 border-b border-line pb-4">
-                 <span className="font-mono text-sm tracking-widest text-muted-foreground">VICHITH WEB</span>
-                 <span className="text-[10px] uppercase tracking-wider bg-surface px-2 py-1 rounded text-foreground">Available Now</span>
-              </div>
-              
-              <div className="flex-1 relative flex items-center justify-center">
-                 {/* Fluid Nodes */}
-                 <div ref={el => { if (el) webNodesRef.current[0] = el; }} className="absolute top-0 left-0 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">Idea & Context</div>
-                 <div ref={el => { if (el) webNodesRef.current[1] = el; }} className="absolute top-1/4 right-0 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">Chithra</div>
-                 <div ref={el => { if (el) webNodesRef.current[2] = el; }} className="absolute bottom-1/4 left-4 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">References</div>
-                 <div ref={el => { if (el) webNodesRef.current[3] = el; }} className="absolute bottom-0 right-4 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">Iterate</div>
-
-                 {/* Generation Core */}
-                 <div ref={webCoreRef} className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-transparent border border-accent/40 flex items-center justify-center relative shadow-[inset_0_0_20px_rgba(var(--color-accent),0.2)]">
-                    <div className="w-12 h-12 rounded-full bg-accent/30 blur-md"></div>
-                    <div className="absolute inset-0 rounded-full border border-dashed border-accent/60 animate-[spin_10s_linear_infinite]"></div>
-                 </div>
-              </div>
+        {/* Unified Workspace Canvas */}
+        <div 
+          ref={workspaceRef}
+          className="w-full h-[550px] relative glass-panel shadow-float rounded-2xl border border-line overflow-hidden pointer-events-auto bg-surface/20"
+          style={{ transform: "translateZ(50px) rotateX(2deg)" }}
+        >
+           {/* Top Header */}
+           <div className="h-12 border-b border-line flex items-center px-4 justify-between bg-surface/80 backdrop-blur-md z-30 relative">
+             <div className="flex gap-2">
+               <div className="w-3 h-3 rounded-full bg-white/10"></div>
+               <div className="w-3 h-3 rounded-full bg-white/10"></div>
+               <div className="w-3 h-3 rounded-full bg-white/10"></div>
+             </div>
+             <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Vichith Studio V1</span>
+             <div className="w-16"></div>
            </div>
 
-           {/* BRIDGE ANIMATION ELEMENT (The Creative Asset) */}
-           <div 
-             ref={assetRef}
-             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-accent to-accent-deep border border-accent/80 shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent),transparent_60%)] z-20 flex items-center justify-center opacity-0 pointer-events-none overflow-hidden"
-             style={{ transform: "translateZ(100px)" }}
-           >
-             <div className="absolute inset-0 bg-white/20 mix-blend-overlay"></div>
-             {/* Abstract thumbnail detail */}
-             <div className="w-1/2 h-1/2 rounded-full bg-white/30 blur-sm"></div>
-           </div>
+           <div className="relative w-full h-[calc(100%-3rem)] flex items-center justify-center perspective-1000">
+             
+             {/* Studio Canvas Area */}
+             <div 
+               ref={canvasRef} 
+               className="absolute top-6 left-6 w-[65%] h-[280px] bg-background/90 rounded-lg border border-line overflow-hidden shadow-2xl z-0"
+             >
+               <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent flex items-center justify-center">
+                 <img src="/lighthouse.jpg" alt="Canvas" className="w-full h-full object-cover mix-blend-overlay opacity-50" />
+               </div>
+               <div className="absolute top-3 left-3 bg-background/80 px-2 py-1 rounded text-[10px] font-mono text-muted-foreground uppercase border border-line">Sequence View</div>
+             </div>
 
-           {/* RIGHT: VICHITH DESKTOP (Precision Control) -- CONFIRMED BUG,
-               FIXED (marketing audit Phase 1): this said "VICHITH APP",
-               ambiguous with the real, live web app at app.vichith.in
-               sitting right next to it. This panel visualizes the desktop
-               editor specifically (timeline, audio/mask tracks, playhead) --
-               name it as that, matching Footer.tsx's already-correct
-               "Desktop app" label, which the homepage itself never rendered. */}
-           <div className="w-full max-w-[450px] h-[500px] glass-panel shadow-float flex flex-col p-6 md:p-8 relative" style={{ transform: "translateZ(50px) rotateY(-10deg)" }}>
-              <div className="flex justify-between items-center mb-4 border-b border-line pb-4">
-                 <span className="font-mono text-sm tracking-widest text-muted-foreground">VICHITH DESKTOP</span>
-                 <span className="text-[10px] uppercase tracking-wider border border-accent/50 text-accent px-2 py-1 rounded shadow-[0_0_10px_color-mix(in_oklab,var(--color-accent)_40%,transparent)]">Coming Soon</span>
-              </div>
+             {/* Studio Inspector Area */}
+             <div 
+               ref={inspectorRef} 
+               className="absolute top-6 right-6 w-[25%] h-[280px] bg-surface/80 backdrop-blur-md rounded-lg border border-line p-5 z-10 flex flex-col gap-5"
+             >
+               <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Properties</span>
+               <div className="w-1/2 h-2 bg-white/10 rounded"></div>
+               <div className="w-full h-24 bg-background/50 rounded border border-white/5 relative overflow-hidden">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-accent/10 to-transparent"></div>
+               </div>
+               <div className="w-3/4 h-2 bg-white/10 rounded mt-2"></div>
+               <div className="w-full h-1 bg-accent/30 rounded mt-auto overflow-hidden">
+                  <div className="w-2/3 h-full bg-accent"></div>
+               </div>
+             </div>
 
-              {/* Marketing audit Phase 4: "Control deeply" previously had no
-                  concrete referent in this panel -- just a wireframe mockup.
-                  One line naming what deep control actually means. */}
-              <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
-                Frame-accurate timeline editing, precision color and audio — for the shots that need a human&rsquo;s final touch.
-              </p>
-
-              <div className="flex-1 flex flex-col relative">
-                 {/* Composition View */}
-                 <div className="w-full h-40 bg-background/50 rounded-lg border border-line flex items-center justify-center mb-6 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-surface to-transparent"></div>
-                    <span className="text-sm text-muted-foreground eyebrow z-10">Composition View</span>
+             {/* The Interactive Clips (Grid -> Timeline) */}
+             <div className="absolute top-1/2 left-1/2 z-20">
+               {[
+                 "/shot.jpg", 
+                 "/pouring_tea.jpg", 
+                 "/split_pour.jpg", 
+                 "/vintage.jpg"
+               ].map((src, i) => (
+                 <div
+                   key={i}
+                   ref={el => { if (el) clipRefs.current[i] = el; }}
+                   className="absolute bg-surface border border-line overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+                   style={{ 
+                     backgroundImage: `url('${src}')`, 
+                     backgroundSize: 'cover', 
+                     backgroundPosition: 'center',
+                   }}
+                 >
+                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent mix-blend-overlay"></div>
                  </div>
-                 
-                 {/* Deep Timeline Workspace */}
-                 <div className="flex-1 border border-line rounded-lg bg-surface/30 p-4 flex flex-col justify-center gap-3 relative overflow-hidden">
-                    
-                    {/* The Playhead */}
-                    <div ref={playheadRef} className="absolute top-0 bottom-0 w-px bg-accent z-30 opacity-0 shadow-[0_0_10px_var(--color-accent)]">
-                       <div className="w-2 h-2 rounded-full bg-accent absolute -top-1 -left-[3px]"></div>
-                    </div>
+               ))}
+             </div>
 
-                    {/* Timeline Tracks (Asset lands on top, these reveal below it) */}
-                    <div className="h-6 w-full relative"></div> {/* Placeholder for main asset track */}
-                    
-                    <div ref={layerAudioRef} className="h-6 w-full bg-surface/80 rounded border border-line flex items-center px-2 opacity-0">
-                       <span className="text-[10px] text-muted-foreground font-mono w-12">AUDIO</span>
-                       <div className="flex-1 flex items-center gap-[2px] px-2 h-full py-1">
-                          {[...Array(24)].map((_, i) => (
-                            <div key={i} className="flex-1 bg-muted-foreground/40 rounded-full" style={{ height: `${pseudoRandomHeight(i)}%` }}></div>
-                          ))}
-                       </div>
-                    </div>
-                    
-                    <div ref={layerMaskRef} className="h-6 w-full bg-surface/80 rounded border border-line flex items-center px-2 opacity-0">
-                       <span className="text-[10px] text-muted-foreground font-mono w-12">MASK</span>
-                       <div className="flex-1 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-                    </div>
+             {/* Timeline Tracks Area */}
+             <div 
+               ref={timelineRef} 
+               className="absolute bottom-0 left-0 w-full h-[180px] bg-surface/90 backdrop-blur-xl border-t border-line p-5 flex flex-col z-10"
+             >
+                <div className="flex justify-between items-center mb-4 opacity-40">
+                   <div className="flex gap-8 text-xs font-mono pl-2">
+                     <span>00:00:00</span><span>00:00:05</span><span>00:00:10</span><span>00:00:15</span>
+                   </div>
+                </div>
+                {/* Main Video Track Placeholder */}
+                <div className="w-full h-[40px] bg-background/60 rounded border border-white/5 mb-3 relative flex items-center px-1"></div>
+                {/* Secondary Audio/Mask Track */}
+                <div className="w-full h-[24px] bg-background/40 rounded border border-white/5 relative flex items-center px-2 opacity-50">
+                   <div className="w-full h-1 bg-accent/20 rounded-full"></div>
+                </div>
+             </div>
 
-                 </div>
-              </div>
+             {/* Chithra Action Kicker */}
+             <div 
+               ref={chithraBubbleRef} 
+               className="absolute top-[35%] left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur border border-accent/50 text-foreground px-4 py-2.5 rounded-full font-medium text-sm shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent),transparent_80%)] z-40 flex items-center gap-3"
+             >
+                <div className="w-2.5 h-2.5 bg-accent rounded-full animate-pulse shadow-[0_0_10px_var(--color-accent)]"></div>
+                Make the lighting moodier
+             </div>
+             
            </div>
-
         </div>
       </div>
     </div>
