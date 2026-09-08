@@ -1,207 +1,244 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { DEPTH } from "@/lib/spatial";
+import { SECTION_IDS } from "@/lib/spatial";
+
+const CLIPS = [
+  { id: 1, title: "Lighthouse Sunset", duration: "04.2s", src: "/lighthouse.jpg", speed: "1.0x" },
+  { id: 2, title: "Tea Pouring Ref", duration: "03.0s", src: "/pouring_tea.jpg", speed: "1.0x" },
+  { id: 3, title: "Split Angle", duration: "02.8s", src: "/split_pour.jpg", speed: "1.25x" },
+  { id: 4, title: "Vintage Street", duration: "05.1s", src: "/vintage.jpg", speed: "0.8x" },
+];
 
 export function SceneEcosystem() {
-  const workspaceRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const inspectorRef = useRef<HTMLDivElement>(null);
-  const chithraBubbleRef = useRef<HTMLDivElement>(null);
-  const clipRefs = useRef<HTMLDivElement[]>([]);
+  const sectionRef = useRef<HTMLElement>(null);
+  const workbenchRef = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  const [activeClipIndex, setActiveClipIndex] = useState(0);
+  const [isMoodier, setIsMoodier] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    let ctx = gsap.context(() => {
-       const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
-       
-       // Ensure elements are centered perfectly for x/y animations
-       gsap.set(clipRefs.current, { xPercent: -50, yPercent: -50 });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.15 }
+    );
 
-       // Initial Setup (Stage 1: Grid View)
-       gsap.set(timelineRef.current, { y: 200, opacity: 0 });
-       gsap.set(inspectorRef.current, { x: 200, opacity: 0 });
-       gsap.set(canvasRef.current, { opacity: 0, scale: 0.95 });
-       gsap.set(chithraBubbleRef.current, { opacity: 0, y: 10, scale: 0.8 });
-       
-       clipRefs.current.forEach((clip, i) => {
-         const row = Math.floor(i / 2);
-         const col = i % 2;
-         gsap.set(clip, {
-           x: col === 0 ? -140 : 140,
-           y: row === 0 ? -80 : 80,
-           width: 260,
-           height: 150,
-           borderRadius: 8,
-           opacity: 1,
-           filter: "hue-rotate(0deg) saturate(1) brightness(1)"
-         });
-       });
-
-       // Phase 1: Generated assets are visible in the grid.
-       // Hold the view so the user registers the "Create" phase.
-       tl.to({}, { duration: 1.5 });
-
-       // Phase 2: Open in Studio (Stage 3)
-       // The Studio UI elements slide in to surround the assets.
-       tl.to(canvasRef.current, { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" })
-         .to(timelineRef.current, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }, "<")
-         .to(inspectorRef.current, { x: 0, opacity: 1, duration: 0.8, ease: "power3.out" }, "<");
-
-       // The key transition: assets drop from the grid into the timeline tracks
-       clipRefs.current.forEach((clip, i) => {
-         tl.to(clip, {
-           x: -285 + (i * 190), // Spaced horizontally
-           y: 155,              // Land precisely on the timeline track
-           width: 180,
-           height: 40,
-           borderRadius: 4,
-           duration: 1,
-           ease: "power2.inOut"
-         }, "-=0.6");
-       });
-
-       // Phase 3: Create + Edit together (Stage 4)
-       // Chithra intent appears (backend manipulation)
-       tl.to(chithraBubbleRef.current, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, "+=0.5")
-         // The clips visibly update to reflect the new state (e.g., moodier lighting)
-         .to(clipRefs.current, { filter: "hue-rotate(15deg) saturate(1.3) brightness(0.8)", stagger: 0.1, duration: 0.4 })
-         // The main canvas also updates
-         .to(canvasRef.current, { filter: "hue-rotate(15deg) saturate(1.3) brightness(0.8)", duration: 0.6 }, "<");
-         
-       // End hold to let the user register the finished edit
-       tl.to({}, { duration: 2.5 });
-       
-       // Reset loop
-       tl.to([canvasRef.current, timelineRef.current, inspectorRef.current, chithraBubbleRef.current, ...clipRefs.current], {
-         opacity: 0,
-         duration: 0.5
-       });
-       
-    });
-
-    return () => ctx.revert();
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
   }, []);
 
+  // Intent simulation
+  const handleTriggerIntent = () => {
+    setIsMoodier((prev) => !prev);
+  };
+
   return (
-    <div
-      className="scene absolute inset-0 flex items-center justify-center preserve-3d"
-      style={{ transform: `translateZ(${DEPTH.ecosystem}px)` }}
-      data-z={DEPTH.ecosystem}
+    <section
+      id={SECTION_IDS.studio}
+      ref={sectionRef}
+      className="relative w-full py-24 md:py-36 px-6 md:px-12 border-t border-line/40 bg-background overflow-hidden"
     >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl flex flex-col items-center justify-center scale-[0.4] sm:scale-[0.55] md:scale-100 preserve-3d pointer-events-none">
+      <div className="max-w-[1240px] mx-auto flex flex-col items-center">
         
-        {/* Typographic Anchor */}
-        <div className="text-center mb-10 z-10 pointer-events-auto" style={{ transform: "translateZ(150px)" }}>
-           <h2 className="text-5xl md:text-7xl font-light tracking-tight leading-tight">
-             Create freely.<br />
-             <span className="serif-accent text-accent">Control deeply.</span>
-           </h2>
-           <p className="mt-4 text-muted-foreground text-base md:text-lg max-w-md mx-auto">
-             From the first visual to the final edit, your project stays in one unified workspace.
-           </p>
+        {/* Editorial Section Header */}
+        <div className="text-center max-w-3xl mb-12 md:mb-16 z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">04 / The Instrument</span>
+          </div>
+
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-tight mb-4 text-foreground">
+            Create freely. <br />
+            <span className="serif-accent text-accent">Control deeply.</span>
+          </h2>
+
+          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            From the first visual to the final edit, your project stays in one unified workspace. Multi-track timeline, non-destructive retiming, and instant directorial revisions.
+          </p>
+
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={handleTriggerIntent}
+              className={`px-4 py-2 rounded-full border text-xs font-mono transition-all duration-200 active:scale-[0.97] flex items-center gap-2 ${
+                isMoodier
+                  ? "bg-accent text-accent-foreground border-accent font-semibold shadow-md shadow-accent/20"
+                  : "bg-surface/60 border-line text-muted-foreground hover:text-foreground hover:border-line-strong"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${isMoodier ? "bg-black" : "bg-accent animate-pulse"}`} />
+              {isMoodier ? "Chithra Grade Active" : "Simulate: 'Make it moodier'"}
+            </button>
+          </div>
         </div>
 
-        {/* Unified Workspace Canvas */}
-        <div 
-          ref={workspaceRef}
-          className="w-full h-[550px] relative glass-panel shadow-float rounded-2xl border border-line overflow-hidden pointer-events-auto bg-surface/20"
-          style={{ transform: "translateZ(50px) rotateX(2deg)" }}
+        {/* Studio Workspace Interface Viewport */}
+        <div
+          ref={workbenchRef}
+          className={`w-full max-w-5xl rounded-2xl border border-line/80 bg-surface/30 backdrop-blur-xl shadow-2xl overflow-hidden transition-all duration-500 ${
+            isMoodier ? "border-accent/40 shadow-[0_0_50px_rgba(0,0,0,0.8)]" : ""
+          }`}
         >
-           {/* Top Header */}
-           <div className="h-12 border-b border-line flex items-center px-4 justify-between bg-surface/80 backdrop-blur-md z-30 relative">
-             <div className="flex gap-2">
-               <div className="w-3 h-3 rounded-full bg-white/10"></div>
-               <div className="w-3 h-3 rounded-full bg-white/10"></div>
-               <div className="w-3 h-3 rounded-full bg-white/10"></div>
-             </div>
-             <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Vichith Studio V1</span>
-             <div className="w-16"></div>
-           </div>
+          {/* Studio Top Chrome */}
+          <div className="h-11 border-b border-line px-4 flex items-center justify-between bg-surface/80">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+              <span className="ml-3 text-xs font-mono text-muted-foreground font-medium">Vichith Studio V1</span>
+            </div>
 
-           <div className="relative w-full h-[calc(100%-3rem)] flex items-center justify-center perspective-1000">
-             
-             {/* Studio Canvas Area */}
-             <div 
-               ref={canvasRef} 
-               className="absolute top-6 left-6 w-[65%] h-[280px] bg-background/90 rounded-lg border border-line overflow-hidden shadow-2xl z-0"
-             >
-               <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent flex items-center justify-center">
-                 <img src="/lighthouse.jpg" alt="Canvas" className="w-full h-full object-cover mix-blend-overlay opacity-50" />
-               </div>
-               <div className="absolute top-3 left-3 bg-background/80 px-2 py-1 rounded text-[10px] font-mono text-muted-foreground uppercase border border-line">Sequence View</div>
-             </div>
+            <div className="text-[11px] font-mono text-muted-foreground px-3 py-1 rounded bg-background/60 border border-line">
+              Sequence_01 · 24.00 FPS · 4K Rec.709
+            </div>
 
-             {/* Studio Inspector Area */}
-             <div 
-               ref={inspectorRef} 
-               className="absolute top-6 right-6 w-[25%] h-[280px] bg-surface/80 backdrop-blur-md rounded-lg border border-line p-5 z-10 flex flex-col gap-5"
-             >
-               <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Properties</span>
-               <div className="w-1/2 h-2 bg-white/10 rounded"></div>
-               <div className="w-full h-24 bg-background/50 rounded border border-white/5 relative overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-tr from-accent/10 to-transparent"></div>
-               </div>
-               <div className="w-3/4 h-2 bg-white/10 rounded mt-2"></div>
-               <div className="w-full h-1 bg-accent/30 rounded mt-auto overflow-hidden">
-                  <div className="w-2/3 h-full bg-accent"></div>
-               </div>
-             </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-accent" />
+              <span className="text-[10px] font-mono text-accent uppercase">Live Engine</span>
+            </div>
+          </div>
 
-             {/* The Interactive Clips (Grid -> Timeline) */}
-             <div className="absolute top-1/2 left-1/2 z-20">
-               {[
-                 "/shot.jpg", 
-                 "/pouring_tea.jpg", 
-                 "/split_pour.jpg", 
-                 "/vintage.jpg"
-               ].map((src, i) => (
-                 <div
-                   key={i}
-                   ref={el => { if (el) clipRefs.current[i] = el; }}
-                   className="absolute bg-surface border border-line overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)]"
-                   style={{ 
-                     backgroundImage: `url('${src}')`, 
-                     backgroundSize: 'cover', 
-                     backgroundPosition: 'center',
-                   }}
-                 >
-                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent mix-blend-overlay"></div>
-                 </div>
-               ))}
-             </div>
+          {/* Workbench Center Grid: Monitor & Inspector */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-0 border-b border-line">
+            
+            {/* Sequence Viewport Monitor (Left 8 cols) */}
+            <div className="md:col-span-8 p-4 sm:p-6 flex flex-col items-center justify-center bg-background/50 border-b md:border-b-0 md:border-r border-line">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black border border-line-strong shadow-lg">
+                <div
+                  className="w-full h-full transition-all duration-700"
+                  style={{
+                    backgroundImage: `url('${CLIPS[activeClipIndex].src}')`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    filter: isMoodier ? "hue-rotate(15deg) saturate(1.25) brightness(0.8) contrast(1.15)" : "none",
+                  }}
+                />
 
-             {/* Timeline Tracks Area */}
-             <div 
-               ref={timelineRef} 
-               className="absolute bottom-0 left-0 w-full h-[180px] bg-surface/90 backdrop-blur-xl border-t border-line p-5 flex flex-col z-10"
-             >
-                <div className="flex justify-between items-center mb-4 opacity-40">
-                   <div className="flex gap-8 text-xs font-mono pl-2">
-                     <span>00:00:00</span><span>00:00:05</span><span>00:00:10</span><span>00:00:15</span>
-                   </div>
+                {/* Chithra intent badge banner */}
+                {isMoodier && (
+                  <div className="absolute top-3 left-3 px-3 py-1 rounded-md bg-accent/90 text-accent-foreground text-xs font-semibold backdrop-blur-md shadow-md animate-in fade-in duration-300">
+                    Chithra Grade Applied: Contrast +15% · Warm Shift
+                  </div>
+                )}
+
+                {/* Transport Controls Bar */}
+                <div className="absolute bottom-3 inset-x-3 h-10 px-3 rounded-lg bg-background/80 backdrop-blur-md border border-line flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsPlaying((p) => !p)}
+                      className="w-6 h-6 rounded flex items-center justify-center text-foreground hover:text-accent transition-colors"
+                    >
+                      {isPlaying ? (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <rect x="6" y="4" width="4" height="16" />
+                          <rect x="14" y="4" width="4" height="16" />
+                        </svg>
+                      ) : (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M5 3l14 9-14 9V3z" />
+                        </svg>
+                      )}
+                    </button>
+                    <span className="text-xs font-mono text-muted-foreground">00:00:04:18</span>
+                  </div>
+
+                  <div className="text-[10px] font-mono text-muted-foreground">
+                    100% · {CLIPS[activeClipIndex].title}
+                  </div>
                 </div>
-                {/* Main Video Track Placeholder */}
-                <div className="w-full h-[40px] bg-background/60 rounded border border-white/5 mb-3 relative flex items-center px-1"></div>
-                {/* Secondary Audio/Mask Track */}
-                <div className="w-full h-[24px] bg-background/40 rounded border border-white/5 relative flex items-center px-2 opacity-50">
-                   <div className="w-full h-1 bg-accent/20 rounded-full"></div>
-                </div>
-             </div>
+              </div>
+            </div>
 
-             {/* Chithra Action Kicker */}
-             <div 
-               ref={chithraBubbleRef} 
-               className="absolute top-[35%] left-1/2 -translate-x-1/2 bg-surface/90 backdrop-blur border border-accent/50 text-foreground px-4 py-2.5 rounded-full font-medium text-sm shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent),transparent_80%)] z-40 flex items-center gap-3"
-             >
-                <div className="w-2.5 h-2.5 bg-accent rounded-full animate-pulse shadow-[0_0_10px_var(--color-accent)]"></div>
-                Make the lighting moodier
-             </div>
-             
-           </div>
+            {/* Studio Property Inspector (Right 4 cols) */}
+            <div className="md:col-span-4 p-4 sm:p-5 flex flex-col justify-between bg-surface/20 text-xs">
+              <div>
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-line">
+                  <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Clip Inspector</span>
+                  <span className="font-mono text-[10px] text-accent">Active Clip</span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-mono text-muted-foreground block mb-1">CLIP ASSET</label>
+                    <div className="font-medium text-foreground text-sm">{CLIPS[activeClipIndex].title}</div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-1">
+                      <span>PLAYBACK SPEED</span>
+                      <span className="text-accent">{CLIPS[activeClipIndex].speed}</span>
+                    </div>
+                    <div className="w-full h-1 bg-surface-2 rounded-full overflow-hidden">
+                      <div className="w-3/4 h-full bg-accent rounded-full" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-muted-foreground block mb-1">COLOR PROFILE</label>
+                    <div className="p-2 rounded bg-background/60 border border-line text-[11px] font-mono text-foreground flex items-center justify-between">
+                      <span>{isMoodier ? "Moodier Grade LUT" : "Neutral Rec.709"}</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isMoodier ? "bg-accent" : "bg-muted-foreground"}`} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-line mt-4">
+                <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+                  <span>TIMELINE OCCUPANCY</span>
+                  <span>15.1s TOTAL</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Timeline Multi-Track Area */}
+          <div className="p-4 bg-surface/40">
+            {/* Time Ruler */}
+            <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2 px-1">
+              <span>00:00:00</span>
+              <span>00:00:05</span>
+              <span>00:00:10</span>
+              <span>00:00:15</span>
+            </div>
+
+            {/* Video Track (V1) with 4 Clips */}
+            <div className="mb-2">
+              <div className="text-[9px] font-mono text-muted-foreground mb-1">TRACK V1 (VIDEO)</div>
+              <div className="grid grid-cols-4 gap-2 h-11">
+                {CLIPS.map((clip, i) => (
+                  <button
+                    key={clip.id}
+                    onClick={() => setActiveClipIndex(i)}
+                    className={`h-full rounded-md border p-1.5 flex items-center justify-between text-left transition-all ${
+                      activeClipIndex === i
+                        ? "border-accent bg-accent/15 text-foreground shadow-sm"
+                        : "border-line bg-surface/80 text-muted-foreground hover:border-line-strong"
+                    }`}
+                  >
+                    <span className="text-[11px] font-medium truncate">{clip.title}</span>
+                    <span className="text-[9px] font-mono opacity-60 shrink-0 ml-1">{clip.duration}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Audio Track (A1) */}
+            <div>
+              <div className="text-[9px] font-mono text-muted-foreground mb-1">TRACK A1 (AUDIO MASTER)</div>
+              <div className="w-full h-6 rounded-md bg-background/50 border border-line flex items-center px-2">
+                <div className="w-full h-1 bg-accent/30 rounded-full" />
+              </div>
+            </div>
+
+          </div>
+
         </div>
+
       </div>
-    </div>
+    </section>
   );
 }

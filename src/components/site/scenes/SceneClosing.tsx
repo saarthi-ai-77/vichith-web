@@ -1,44 +1,90 @@
 "use client";
 
-import { DEPTH } from "@/lib/spatial";
+import { SECTION_IDS } from "@/lib/spatial";
 
 export function SceneClosing() {
   return (
-    <div
-      className="scene absolute inset-0 flex flex-col items-center justify-center preserve-3d"
-      style={{ transform: `translateZ(${DEPTH.closing}px)` }}
-      data-z={DEPTH.closing}
+    <section
+      id={SECTION_IDS.closing}
+      className="relative w-full min-h-[90vh] flex flex-col justify-between py-20 md:py-28 px-6 md:px-12 lg:px-20 border-t border-line/40 bg-background overflow-hidden"
     >
-      <div className="text-center w-full px-6 md:px-0">
-        <h1 className="text-[18vw] md:text-[10vw] leading-[1.1] md:leading-none tracking-tighter font-medium mb-12">
-          Make what you <br className="hidden md:block" />
-          <span className="serif-accent text-accent md:ml-4">imagined.</span>
-        </h1>
-        <div className="flex flex-col md:flex-row gap-4 justify-center w-full max-w-sm mx-auto md:max-w-none">
+      {/* Background Volumetric Glow */}
+      <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+        <div className="w-[800px] h-[500px] rounded-full bg-accent/8 blur-[160px] mix-blend-screen" />
+        <div className="w-[500px] h-[300px] rounded-full bg-surface-2/60 blur-[120px]" />
+      </div>
+
+      {/* Main Closing Headline & CTA */}
+      <div className="flex-1 flex flex-col items-center justify-center text-center max-w-4xl mx-auto my-auto z-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-8">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+          <span className="text-[10px] font-mono text-accent uppercase tracking-widest">Early Access Phase 1</span>
+        </div>
+
+        <h2 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl leading-[1.02] tracking-tighter font-medium mb-8 text-foreground">
+          Make what you <br className="hidden sm:block" />
+          <span className="serif-accent text-accent sm:ml-4">imagined.</span>
+        </h2>
+
+        <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
+          The creative instrument for AI film and visual generation. Request access or join our creative cohort.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <a
             href="https://app.vichith.in/request-access"
-            className="w-full md:w-auto px-10 py-5 bg-foreground text-background font-bold text-lg rounded-full hover:bg-accent hover:text-background transition-colors duration-300 shadow-[0_0_20px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] hover:shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent)_60%,transparent)]"
+            className="w-full sm:w-auto px-8 py-4 rounded-full bg-foreground text-background font-bold text-base transition-all duration-150 hover:bg-accent hover:text-background active:scale-[0.97] shadow-xl shadow-black/40"
           >
             Request Early Access
           </a>
           <a
             href="https://app.vichith.in/invite"
-            className="w-full md:w-auto px-10 py-5 bg-transparent border border-line text-foreground font-medium text-lg rounded-full hover:bg-surface transition-colors duration-300 text-center"
+            className="w-full sm:w-auto px-8 py-4 rounded-full border border-line bg-surface/40 text-foreground font-semibold text-base transition-all duration-150 hover:bg-surface hover:border-line-strong active:scale-[0.97]"
           >
             Enter Invite Code
           </a>
         </div>
       </div>
-      
-      {/* Footer minimal integration */}
-      <div className="absolute bottom-8 left-0 right-0 flex flex-col md:flex-row justify-between items-center px-6 md:px-12 text-sm text-muted-foreground eyebrow gap-8 md:gap-0">
-         <div>© 2026 Vichith Inc.</div>
-         <div className="flex flex-wrap justify-center gap-6">
-            <a href="https://x.com/vichith_ai" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">X</a>
-            <a href="https://discord.gg/679D4UsTS" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Discord</a>
-            <a href="https://www.instagram.com/vichith.ai" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Instagram</a>
-         </div>
+
+      {/* Semantic Polish Footer */}
+      <div className="w-full max-w-[1240px] mx-auto pt-16 border-t border-line/50 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3">
+          <span className="font-display font-semibold text-foreground tracking-tight">vichith</span>
+          <span>© 2026 Vichith Inc. All rights reserved.</span>
+        </div>
+
+        <div className="flex items-center gap-2 font-mono text-[11px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span>All Systems Operational</span>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <a
+            href="https://x.com/vichith_ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors duration-150"
+          >
+            X (Twitter)
+          </a>
+          <a
+            href="https://discord.gg/679D4UsTS"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors duration-150"
+          >
+            Discord
+          </a>
+          <a
+            href="https://www.instagram.com/vichith.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors duration-150"
+          >
+            Instagram
+          </a>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

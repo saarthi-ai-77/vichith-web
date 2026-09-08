@@ -1,86 +1,218 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { DEPTH } from "@/lib/spatial";
+import { SECTION_IDS } from "@/lib/spatial";
 
 export function SceneProject() {
+  const sectionRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {
-    // Continuous subtle perspective tilt
-    gsap.to(gridRef.current, {
-      rotationX: 35,
-      rotationZ: -17,
-      duration: 10,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut"
-    });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.15 }
+    );
+
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!isInView || !gridRef.current) return;
+
+    const ctx = gsap.context(() => {
+      // Smooth cursor parallax tilt for the isometric canvas
+      const xTo = gsap.quickTo(gridRef.current, "rotationY", { duration: 0.8, ease: "power2.out" });
+      const yTo = gsap.quickTo(gridRef.current, "rotationX", { duration: 0.8, ease: "power2.out" });
+
+      const onMouseMove = (e: MouseEvent) => {
+        if (!gridRef.current) return;
+        const rect = gridRef.current.getBoundingClientRect();
+        const normX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+        const normY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+        xTo(-10 + normX * 8);
+        yTo(24 - normY * 6);
+      };
+
+      window.addEventListener("mousemove", onMouseMove, { passive: true });
+      return () => window.removeEventListener("mousemove", onMouseMove);
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, [isInView]);
+
   return (
-    <div
-      className="scene absolute inset-0 flex flex-col items-center justify-center preserve-3d"
-      style={{ transform: `translateZ(${DEPTH.project}px)` }}
-      data-z={DEPTH.project}
+    <section
+      id={SECTION_IDS.canvas}
+      ref={sectionRef}
+      className="relative w-full py-24 md:py-36 px-6 md:px-12 border-t border-line/40 bg-background overflow-hidden"
     >
-      <div className="absolute top-20 left-20 w-full px-6 md:px-0 md:w-1/3 mb-8 md:mb-0 z-10 pointer-events-auto" style={{ transform: "translateZ(300px)" }}>
-         <h2 className="text-4xl md:text-5xl tracking-tighter mb-4 text-center md:text-left">
-           The <span className="serif-accent">Project</span> Canvas
-         </h2>
-         {/* CONFIRMED OVERCLAIM, FIXED (marketing audit Phase 1/2): "Ready for
-             fine-tuning" stated a capability -- manual node authoring --
-             that doesn't exist. Canvas visualizes provenance; it doesn't
-             yet let you build the graph by hand. The node+edge visual below
-             is an honest abstraction of the real thing; only this line
-             overclaimed. */}
-         <p className="text-muted-foreground text-lg text-center md:text-left">
-           Every reference, prompt, and generation — connected in one visual trace of how the work came together.
-         </p>
-      </div>
+      <div className="max-w-[1240px] mx-auto flex flex-col items-center">
+        
+        {/* Editorial Section Header */}
+        <div className="text-center max-w-3xl mb-12 md:mb-16 z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">03 / Provenance</span>
+          </div>
 
-      {/* Isometric Grid of Assets - Scaled down for mobile */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          ref={gridRef}
-          className="w-[800px] h-[600px] preserve-3d scale-[0.4] sm:scale-[0.6] md:scale-100 origin-center pointer-events-auto"
-          style={{ transform: "rotateX(30deg) rotateZ(-15deg)" }}
-        >
-           {/* Background Grid */}
-           <div className="absolute inset-0 grid-field opacity-20 border border-line rounded-3xl"></div>
-           
-           {/* Storyboard Node */}
-           <div className="absolute top-[10%] left-[10%] w-48 h-32 glass-panel shadow-float flex items-center justify-center text-muted-foreground eyebrow" style={{ transform: "translateZ(80px)" }}>
-              Scene 01 / Ref
-           </div>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-tight mb-4 text-foreground">
+            The <span className="serif-accent text-accent">Project</span> Canvas.
+          </h2>
 
-           {/* Generation Node 1 */}
-           <div className="absolute top-[30%] left-[40%] w-64 h-40 bg-surface border border-line rounded-xl shadow-float overflow-hidden flex flex-col" style={{ transform: "translateZ(120px)" }}>
-              <div className="flex-1 bg-gradient-to-br from-white/5 to-transparent relative">
-                 <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent to-transparent"></div>
-              </div>
-              <div className="h-10 border-t border-line px-3 flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-accent"></div>
-                 <span className="text-xs text-muted-foreground">Generated Frame</span>
-              </div>
-           </div>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            Every reference, prompt, and generation — connected in one visual trace of how the work came together.
+          </p>
 
-           {/* Generation Node 2 */}
-           <div className="absolute bottom-[20%] right-[10%] w-56 h-56 glass-panel shadow-float flex items-center justify-center flex-col gap-4" style={{ transform: "translateZ(160px)" }}>
-              <div className="w-24 h-24 rounded-full border border-dashed border-accent/50 flex items-center justify-center">
-                 <div className="w-16 h-16 rounded-full bg-accent/20 blur-xl"></div>
-              </div>
-              <span className="text-xs font-mono text-accent">MODEL_READY</span>
-           </div>
-           
-           {/* Connection Lines (SVG) */}
-           <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30" style={{ transform: "translateZ(40px)" }}>
-              <path d="M 230 140 Q 300 200, 360 220" stroke="var(--color-line-strong)" fill="none" strokeWidth="2" strokeDasharray="4 4" />
-              <path d="M 520 300 Q 560 380, 580 400" stroke="var(--color-accent)" fill="none" strokeWidth="2" />
-           </svg>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <span className="px-3 py-1 rounded-full border border-line/80 bg-surface/40 text-xs font-mono text-muted-foreground">
+              Non-destructive Lineage
+            </span>
+            <span className="px-3 py-1 rounded-full border border-line/80 bg-surface/40 text-xs font-mono text-muted-foreground">
+              Bidirectional Dependencies
+            </span>
+            <span className="px-3 py-1 rounded-full border border-line/80 bg-surface/40 text-xs font-mono text-muted-foreground">
+              Direct Timeline Anchors
+            </span>
+          </div>
         </div>
+
+        {/* 3D Isometric Node Canvas Viewport */}
+        <div className="relative w-full max-w-5xl h-[440px] sm:h-[500px] md:h-[560px] flex items-center justify-center preserve-3d perspective-1000">
+          <div
+            ref={gridRef}
+            className="relative w-full max-w-[840px] h-[400px] sm:h-[440px] rounded-2xl border border-line/80 bg-surface/20 backdrop-blur-sm grid-field preserve-3d transition-transform duration-200"
+            style={{ transform: "rotateX(24deg) rotateY(-10deg) rotateZ(2deg)" }}
+          >
+            {/* SVG Connector Paths */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" aria-hidden="true">
+              <defs>
+                <linearGradient id="edgeGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--color-line-strong)" />
+                  <stop offset="100%" stopColor="var(--color-accent)" />
+                </linearGradient>
+                <linearGradient id="edgeGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--color-accent)" />
+                  <stop offset="100%" stopColor="var(--color-line-strong)" />
+                </linearGradient>
+              </defs>
+
+              {/* Node 1 to Node 2 */}
+              <path
+                d="M 160 140 C 240 140, 260 210, 360 210"
+                stroke="url(#edgeGrad1)"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+                fill="none"
+              />
+              {/* Node 2 to Node 3 */}
+              <path
+                d="M 480 210 C 560 210, 580 130, 660 130"
+                stroke="var(--color-accent)"
+                strokeWidth="2"
+                fill="none"
+              />
+              {/* Node 3 to Node 4 */}
+              <path
+                d="M 680 190 C 680 270, 540 310, 480 320"
+                stroke="url(#edgeGrad2)"
+                strokeWidth="1.5"
+                strokeDasharray="3 3"
+                fill="none"
+              />
+            </svg>
+
+            {/* Node 1: Storyboard Ref (Top Left) */}
+            <div
+              onMouseEnter={() => setActiveNode("ref")}
+              onMouseLeave={() => setActiveNode(null)}
+              className={`absolute top-[16%] left-[6%] sm:left-[8%] w-44 sm:w-52 glass-panel p-3 rounded-xl shadow-float transition-all duration-200 cursor-pointer ${
+                activeNode === "ref" ? "border-accent shadow-[0_0_25px_var(--color-accent)]" : "border-line"
+              }`}
+              style={{ transform: "translateZ(80px)" }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase">Input Ref</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+              </div>
+              <div
+                className="w-full h-20 rounded-md overflow-hidden bg-surface-2 mb-2"
+                style={{ backgroundImage: "url('/shot.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
+              />
+              <div className="text-xs font-medium text-foreground">Scene 01 / Lighting</div>
+            </div>
+
+            {/* Node 2: Generative Model Engine (Center) */}
+            <div
+              onMouseEnter={() => setActiveNode("model")}
+              onMouseLeave={() => setActiveNode(null)}
+              className={`absolute top-[36%] left-[34%] sm:left-[38%] w-48 sm:w-56 glass-panel p-4 rounded-xl shadow-float transition-all duration-200 cursor-pointer ${
+                activeNode === "model" ? "border-accent shadow-[0_0_25px_var(--color-accent)]" : "border-line"
+              }`}
+              style={{ transform: "translateZ(120px)" }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  <span className="text-[10px] font-mono text-accent uppercase">Generation Engine</span>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground">4 cr</span>
+              </div>
+              <div className="text-sm font-semibold text-foreground mb-1">Seedream 4.5</div>
+              <p className="text-[11px] text-muted-foreground">Hold light & atmospheric haze</p>
+            </div>
+
+            {/* Node 3: Generated Output Frame (Top Right) */}
+            <div
+              onMouseEnter={() => setActiveNode("output")}
+              onMouseLeave={() => setActiveNode(null)}
+              className={`absolute top-[12%] right-[6%] sm:right-[10%] w-48 sm:w-56 glass-panel p-3 rounded-xl shadow-float transition-all duration-200 cursor-pointer ${
+                activeNode === "output" ? "border-accent shadow-[0_0_25px_var(--color-accent)]" : "border-line"
+              }`}
+              style={{ transform: "translateZ(140px)" }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono text-accent uppercase">Master Output</span>
+                <span className="px-1.5 py-0.5 rounded bg-accent/20 text-[9px] font-mono text-accent">READY</span>
+              </div>
+              <div
+                className="w-full h-24 rounded-md overflow-hidden bg-surface-2 mb-2 relative"
+                style={{ backgroundImage: "url('/lighthouse.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
+              >
+                <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono text-white">
+                  4K · 16:9
+                </div>
+              </div>
+              <div className="text-xs font-medium text-foreground">Lighthouse_Sunset_01</div>
+            </div>
+
+            {/* Node 4: Timeline Destination Anchor (Bottom Center) */}
+            <div
+              onMouseEnter={() => setActiveNode("timeline")}
+              onMouseLeave={() => setActiveNode(null)}
+              className={`absolute bottom-[10%] left-[28%] sm:left-[35%] w-52 sm:w-60 glass-panel p-3 rounded-xl shadow-float transition-all duration-200 cursor-pointer ${
+                activeNode === "timeline" ? "border-accent shadow-[0_0_25px_var(--color-accent)]" : "border-line"
+              }`}
+              style={{ transform: "translateZ(90px)" }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase">Timeline Target</span>
+                <span className="text-[10px] font-mono text-accent">00:04:12</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">Track V1 · Cut 03</span>
+                <span className="text-[10px] font-mono text-muted-foreground">Speed 1.0x</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
-    </div>
+    </section>
   );
 }
