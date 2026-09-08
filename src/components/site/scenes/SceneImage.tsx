@@ -94,19 +94,19 @@ export function SceneImage() {
             </div>
 
             {/* The plate, and the real type on it */}
-            <div className="absolute bottom-8 left-7 right-7">
+            <div className="img-plate absolute bottom-8 left-7 right-7">
               <div className="inline-block rounded-md bg-background/90 backdrop-blur-sm px-4 py-3 border border-accent/25">
                 <div className="text-[10px] font-mono text-accent uppercase tracking-widest mb-1">
                   Shape + text layer
                 </div>
-                <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                <div className="img-type text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                   THE FIRST EPISODE
                 </div>
               </div>
             </div>
 
             {/* Selection chrome — the same language the editor itself uses */}
-            <div className="pointer-events-none absolute bottom-6 left-5 right-5 h-[92px] rounded-md border border-accent/50">
+            <div className="img-selection pointer-events-none absolute bottom-6 left-5 right-5 h-[92px] rounded-md border border-accent/50">
               <span className="absolute -top-1 -left-1 w-2 h-2 bg-accent rounded-[1px]" />
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-[1px]" />
               <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-accent rounded-[1px]" />

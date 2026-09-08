@@ -16,7 +16,7 @@ export function SceneEcosystem() {
   const workbenchRef = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(false);
   const [activeClipIndex, setActiveClipIndex] = useState(0);
-  const [isMoodier, setIsMoodier] = useState(false);
+  const [isReframed, setIsReframed] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
@@ -31,9 +31,10 @@ export function SceneEcosystem() {
     return () => observer.disconnect();
   }, []);
 
-  // Intent simulation
+  // Intent simulation. Every effect it shows is a tool the editor really has:
+  // split, retime, reframe, caption. Nothing here touches colour.
   const handleTriggerIntent = () => {
-    setIsMoodier((prev) => !prev);
+    setIsReframed((prev) => !prev);
   };
 
   return (
@@ -63,13 +64,13 @@ export function SceneEcosystem() {
             <button
               onClick={handleTriggerIntent}
               className={`px-4 py-2 rounded-full border text-xs font-mono transition-all duration-200 active:scale-[0.97] flex items-center gap-2 ${
-                isMoodier
+                isReframed
                   ? "bg-accent text-accent-foreground border-accent font-semibold shadow-md shadow-accent/20"
                   : "bg-surface/60 border-line text-muted-foreground hover:text-foreground hover:border-line-strong"
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${isMoodier ? "bg-black" : "bg-accent animate-pulse"}`} />
-              {isMoodier ? "Chithra Grade Active" : "Simulate: 'Make it moodier'"}
+              <span className={`w-2 h-2 rounded-full ${isReframed ? "bg-black" : "bg-accent animate-pulse"}`} />
+              {isReframed ? "Reels cut applied" : "Simulate: 'Cut this for Reels'"}
             </button>
           </div>
         </div>
@@ -78,7 +79,7 @@ export function SceneEcosystem() {
         <div
           ref={workbenchRef}
           className={`w-full max-w-5xl rounded-2xl border border-line/80 bg-surface/30 backdrop-blur-xl shadow-2xl overflow-hidden transition-all duration-500 ${
-            isMoodier ? "border-accent/40 shadow-[0_0_50px_rgba(0,0,0,0.8)]" : ""
+            isReframed ? "border-accent/40 shadow-[0_0_50px_rgba(0,0,0,0.8)]" : ""
           }`}
         >
           {/* Studio Top Chrome */}
@@ -87,11 +88,11 @@ export function SceneEcosystem() {
               <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
               <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-              <span className="ml-3 text-xs font-mono text-muted-foreground font-medium">Vichith Studio V1</span>
+              <span className="ml-3 text-xs font-mono text-muted-foreground font-medium">Vichith Editor</span>
             </div>
 
             <div className="text-[11px] font-mono text-muted-foreground px-3 py-1 rounded bg-background/60 border border-line">
-              Sequence_01 · 24.00 FPS · 4K Rec.709
+              Sequence_01 · 24.00 FPS · MP4
             </div>
 
             <div className="flex items-center gap-2">
@@ -112,12 +113,37 @@ export function SceneEcosystem() {
                     backgroundImage: `url('${CLIPS[activeClipIndex].src}')`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
-                    filter: isMoodier ? "hue-rotate(15deg) saturate(1.25) brightness(0.8) contrast(1.15)" : "none",
                   }}
                 />
 
+                {/* The reframe, shown as the crop it is: everything outside the
+                    9:16 window dims, and a caption sits clear of the bottom
+                    third where the platform puts its own interface. */}
+                {isReframed && (
+                  <>
+                    <div className="pointer-events-none absolute inset-0 bg-background/70" />
+                    {/* Centred with left-1/2 and a translate, not with flex:
+                        an absolutely positioned child is out of flex flow, so
+                        justify-center would never have centred it. */}
+                    <div
+                      className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 aspect-[9/16] border-x-2 border-accent/70 overflow-hidden"
+                      style={{
+                        backgroundImage: `url('${CLIPS[activeClipIndex].src}')`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    >
+                      {/* The caption rides inside the crop, above the bottom
+                          third the platform covers with its own interface. */}
+                      <span className="absolute inset-x-2 top-[36%] text-center px-2 py-0.5 rounded bg-black/70 text-white text-sm font-semibold tracking-tight">
+                        सुबह की <span className="text-accent">रोशनी</span>
+                      </span>
+                    </div>
+                  </>
+                )}
+
                 {/* Chithra intent badge banner */}
-                {isMoodier && (
+                {isReframed && (
                   <div className="absolute top-3 left-3 px-3 py-1 rounded-md bg-accent/90 text-accent-foreground text-xs font-semibold backdrop-blur-md shadow-md animate-in fade-in duration-300">
                     Chithra: split at 0:12, captions retimed, reframed 9:16
                   </div>
@@ -176,10 +202,10 @@ export function SceneEcosystem() {
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-mono text-muted-foreground block mb-1">COLOR PROFILE</label>
+                    <label className="text-[10px] font-mono text-muted-foreground block mb-1">FRAMING</label>
                     <div className="p-2 rounded bg-background/60 border border-line text-[11px] font-mono text-foreground flex items-center justify-between">
-                      <span>{isMoodier ? "Moodier Grade LUT" : "Neutral Rec.709"}</span>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isMoodier ? "bg-accent" : "bg-muted-foreground"}`} />
+                      <span>{isReframed ? "9:16 · 1080×1920" : "16:9 · source"}</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isReframed ? "bg-accent" : "bg-muted-foreground"}`} />
                     </div>
                   </div>
                 </div>

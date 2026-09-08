@@ -18,7 +18,7 @@ const syne = Syne({ subsets: ["latin"], variable: "--font-syne", display: "swap"
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono", display: "swap", weight: ["400", "500"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
-  title: "Vichith — From a sentence to a finished frame.",
+  title: "Vichith — Where your ideas become video.",
   description: "Vichith is a creative workspace where you describe what you're making. Chithra turns it into a project — characters, references, storyboard, and generations — on the web, with a desktop editor to finish the work.",
   icons: {
     icon: "/favicon_io/favicon-32x32.png",

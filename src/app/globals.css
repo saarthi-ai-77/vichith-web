@@ -350,3 +350,34 @@
   .studio-result  { opacity: 1; transform: none; }
   .studio-badge   { opacity: 1; transform: none; }
 }
+
+/* ── Image Editor scene: the repair, staged ────────────────────────────────
+ * A generated frame arrives with broken lettering. The panel shows that
+ * alone, then lays a plate over it, sets real type, and selects the layer —
+ * the actual sequence of work, not a finished screenshot.
+ *
+ * 8s loop, same construction as the Studio panel: each step owns a fixed
+ * share so the plate is fully in before the type reads, and the selection
+ * only appears once there is a layer to select.
+ */
+@keyframes img-plate-in {
+  0%, 30%   { opacity: 0; transform: translateY(10px) scale(0.98); }
+  44%, 100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes img-type-in {
+  0%, 44%   { opacity: 0; }
+  56%, 100% { opacity: 1; }
+}
+@keyframes img-selection-in {
+  0%, 58%   { opacity: 0; }
+  68%, 100% { opacity: 1; }
+}
+
+.img-plate     { opacity: 0; animation: img-plate-in 8s var(--ease-cine) infinite; }
+.img-type      { opacity: 0; animation: img-type-in 8s var(--ease-cine) infinite; }
+.img-selection { opacity: 0; animation: img-selection-in 8s var(--ease-cine) infinite; }
+
+/* Reduced motion gets the repaired frame — the outcome is the argument. */
+@media (prefers-reduced-motion: reduce) {
+  .img-plate, .img-type, .img-selection { animation: none; opacity: 1; transform: none; }
+}
