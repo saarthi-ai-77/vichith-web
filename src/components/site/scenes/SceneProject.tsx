@@ -57,7 +57,7 @@ export function SceneProject() {
         {/* Editorial Section Header */}
         <div className="text-center max-w-3xl mb-12 md:mb-16 z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">03 / One Project</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">All four, one file</span>
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-tight mb-4 text-foreground">

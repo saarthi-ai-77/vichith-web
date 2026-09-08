@@ -8,10 +8,10 @@ import { SECTION_IDS, STAGE_SCROLL } from "@/lib/spatial";
 gsap.registerPlugin(ScrollTrigger);
 
 const STAGES = [
-  { id: 0, label: "01 Intent", name: "Prompting" },
-  { id: 1, label: "02 Clarify", name: "Directorial Framing" },
-  { id: 2, label: "03 Model", name: "Proposal & Approval" },
-  { id: 3, label: "04 Develop", name: "Shot Generation" },
+  { id: 0, label: "01 Ask", name: "What you want" },
+  { id: 1, label: "02 Reason", name: "What it can do" },
+  { id: 2, label: "03 Propose", name: "Model and cost" },
+  { id: 3, label: "04 Act", name: "Into your project" },
 ];
 
 export function SceneConversation() {
@@ -120,7 +120,7 @@ export function SceneConversation() {
         <div className="flex flex-col items-center text-center max-w-3xl z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">02 / Chithra</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">01 / Chithra</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-light tracking-tight leading-tight mb-3">

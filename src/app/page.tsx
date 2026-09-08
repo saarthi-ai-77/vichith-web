@@ -12,11 +12,11 @@ export default function Home() {
     <main className="relative bg-background text-foreground selection:bg-accent/30 selection:text-foreground">
       <Nav />
       <SceneIdea />
-      <SceneContext />
       <SceneConversation />
-      <SceneProject />
+      <SceneContext />
       <SceneEcosystem />
       <SceneImage />
+      <SceneProject />
       <SceneClosing />
     </main>
   );

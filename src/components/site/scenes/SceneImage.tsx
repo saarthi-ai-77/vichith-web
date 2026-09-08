@@ -30,7 +30,7 @@ export function SceneImage() {
         {/* Left: the argument */}
         <div className="lg:col-span-5 flex flex-col items-start z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-6">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">05 / Image Editor</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">04 / Image Editor</span>
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-[1.08] mb-6 text-foreground">

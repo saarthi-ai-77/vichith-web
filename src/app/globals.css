@@ -281,3 +281,72 @@
   border-radius: var(--radius-xl);
   box-shadow: 0 8px 32px oklch(0 0 0 / 15%);
 }
+
+/* ── Creative Studio scene: the generate flow, staged ──────────────────────
+ * Type the prompt, wait, receive the frame — the same sequence as
+ * app.vichith.in/studio/create, on a loop so a visitor sees the whole thing
+ * without clicking. Pure CSS: one more scroll-driven GSAP timeline on this
+ * page would be a third motion system fighting the two already here.
+ *
+ * The loop is 9s and every step is a fixed share of it, so the caret stops
+ * exactly when the bar starts and the frame lands exactly when the bar ends.
+ * Percentages that do not line up are what make a mock feel fake.
+ */
+@keyframes studio-type {
+  0%, 4%   { max-width: 0; }
+  30%, 100% { max-width: 100%; }
+}
+@keyframes studio-caret-blink {
+  0%, 32%  { opacity: 1; }
+  33%, 100% { opacity: 0; }
+}
+@keyframes studio-progress-fill {
+  0%, 32%  { width: 0; }
+  62%      { width: 100%; }
+  100%     { width: 100%; }
+}
+@keyframes studio-progress-out {
+  0%, 60%  { opacity: 1; }
+  70%, 100% { opacity: 0; }
+}
+@keyframes studio-result-in {
+  0%, 62%   { opacity: 0; transform: scale(1.04); }
+  74%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes studio-badge-in {
+  0%, 74%   { opacity: 0; transform: translateY(6px); }
+  84%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+.studio-typing {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  animation: studio-type 9s var(--ease-cine) infinite;
+}
+.studio-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  vertical-align: text-bottom;
+  background: var(--color-accent);
+  margin-left: 2px;
+  animation: studio-caret-blink 9s steps(1) infinite;
+}
+.studio-bar      { width: 0; animation: studio-progress-fill 9s var(--ease-cine) infinite; }
+.studio-progress { animation: studio-progress-out 9s var(--ease-cine) infinite; }
+.studio-result   { opacity: 0; animation: studio-result-in 9s var(--ease-cine) infinite; }
+.studio-badge    { opacity: 0; animation: studio-badge-in 9s var(--ease-cine) infinite; }
+
+/* Reduced motion gets the OUTCOME, not a frozen empty state — the point of the
+ * panel is the finished frame, so that is what stays on screen. */
+@media (prefers-reduced-motion: reduce) {
+  .studio-typing, .studio-caret, .studio-bar,
+  .studio-progress, .studio-result, .studio-badge { animation: none; }
+  .studio-typing  { max-width: 100%; }
+  .studio-caret   { opacity: 0; }
+  .studio-progress{ opacity: 0; }
+  .studio-result  { opacity: 1; transform: none; }
+  .studio-badge   { opacity: 1; transform: none; }
+}

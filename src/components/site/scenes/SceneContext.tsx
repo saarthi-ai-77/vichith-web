@@ -59,7 +59,7 @@ export function SceneContext() {
         {/* Left Column: Editorial Narrative (High Legibility & Hierarchy) */}
         <div className="lg:col-span-5 flex flex-col items-start z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-6">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">01 / Creative Studio</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">02 / Creative Studio</span>
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-[1.08] mb-6 text-foreground">
@@ -95,91 +95,68 @@ export function SceneContext() {
           </div>
         </div>
 
-        {/* Right Column: Interactive 3D Spatial Constellation */}
-        <div className="lg:col-span-7 relative w-full h-[460px] sm:h-[520px] md:h-[580px] flex items-center justify-center preserve-3d perspective-1000">
+        {/* Right Column: the actual Create flow — type, generate, receive.
+            Mirrors app.vichith.in/studio/create rather than describing it. The
+            result is one of our own frames, so nothing here is a stock lie. */}
+        <div className="lg:col-span-7 relative w-full h-[460px] sm:h-[520px] md:h-[580px] flex items-center justify-center perspective-1000">
           <div
             ref={orbitRef}
-            className="relative w-full max-w-[560px] h-[440px] preserve-3d transition-transform duration-200 ease-out"
+            className="relative w-full max-w-[560px] preserve-3d transition-transform duration-200 ease-out"
             style={{ transform: "rotateX(0deg) rotateY(0deg)" }}
           >
-            {/* Card 1: Character Reference (Top Left) */}
-            <div
-              className="absolute top-2 left-2 sm:left-4 w-48 sm:w-56 h-64 sm:h-72 glass-panel shadow-float p-3 flex flex-col justify-between hover:border-accent/50 transition-colors"
-              style={{ transform: "translateZ(60px) rotateY(6deg) rotateX(-3deg)" }}
-            >
-              <div
-                className="w-full h-44 sm:h-52 rounded-lg overflow-hidden relative bg-surface-2"
-                style={{ backgroundImage: "url('/man.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
-                <span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-background/80 text-[10px] font-mono text-accent">
-                  ACTIVE REF
+            <div className="glass-panel shadow-float rounded-2xl overflow-hidden border border-line-strong">
+              {/* Window chrome, matching the product's own */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-line bg-surface/60">
+                <span className="w-2 h-2 rounded-full bg-accent/70" />
+                <span className="text-[10px] font-mono text-muted-foreground tracking-widest uppercase">
+                  Creative Studio · Simple
                 </span>
+                <span className="ml-auto text-[10px] font-mono text-muted-foreground">1 credit</span>
               </div>
-              <div className="px-1 pt-1 flex items-center justify-between">
-                <span className="text-xs font-semibold">Character 01</span>
-                <span className="text-[10px] font-mono text-muted-foreground">Identity Locked</span>
+
+              {/* The prompt, typed */}
+              <div className="px-4 pt-4 pb-3">
+                <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">
+                  Describe the shot
+                </div>
+                <div className="rounded-xl border border-line bg-surface/40 px-3.5 py-3 text-sm text-foreground leading-relaxed">
+                  <span className="studio-typing">Tea being poured in morning light, shot on 35mm, shallow depth</span>
+                  <span className="studio-caret" />
+                </div>
+              </div>
+
+              {/* Generating, then the frame */}
+              <div className="px-4 pb-4">
+                <div className="relative rounded-xl overflow-hidden border border-line aspect-[16/10] bg-surface-2">
+                  {/* The result. Ours, not stock. */}
+                  <div
+                    className="studio-result absolute inset-0"
+                    style={{
+                      backgroundImage: "url('/pouring_tea.jpg')",
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                  {/* The wait, which is honest about what it is doing */}
+                  <div className="studio-progress absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface-2">
+                    <div className="w-40 h-1 rounded-full bg-line overflow-hidden">
+                      <div className="studio-bar h-full bg-accent rounded-full" />
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+                      Seedream 4.5 · generating
+                    </span>
+                  </div>
+
+                  <div className="studio-badge absolute bottom-3 left-3 px-2.5 py-1 rounded-md bg-background/85 backdrop-blur-sm border border-accent/30">
+                    <span className="text-[10px] font-mono text-accent uppercase tracking-widest">
+                      Added to project
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Card 2: Storyboard Sequence (Bottom Right) */}
-            <div
-              className="absolute bottom-2 right-2 sm:right-4 w-64 sm:w-80 h-44 sm:h-48 glass-panel shadow-float p-3 flex flex-col justify-between hover:border-accent/50 transition-colors"
-              style={{ transform: "translateZ(100px) rotateY(-8deg) rotateZ(2deg)" }}
-            >
-              <div className="w-full h-28 sm:h-32 grid grid-cols-3 gap-1.5 rounded-lg overflow-hidden p-1 bg-surface/50 border border-line">
-                <div
-                  className="rounded h-full overflow-hidden relative"
-                  style={{ backgroundImage: "url('/pouring_tea.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
-                />
-                <div
-                  className="rounded h-full overflow-hidden relative"
-                  style={{ backgroundImage: "url('/split_pour.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
-                />
-                <div
-                  className="rounded h-full overflow-hidden relative"
-                  style={{ backgroundImage: "url('/shot.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
-                />
-              </div>
-              <div className="px-1 flex items-center justify-between">
-                <span className="text-xs font-semibold">Storyboard Sequence</span>
-                <span className="text-[10px] font-mono text-accent">3 Shots</span>
-              </div>
-            </div>
-
-            {/* Card 3: Cinematic Prompt Chip (Top Right) */}
-            <div
-              className="absolute top-8 right-6 sm:right-10 w-48 sm:w-56 glass-panel shadow-float p-3.5 flex flex-col gap-1.5 hover:border-accent/40 transition-colors"
-              style={{ transform: "translateZ(120px) rotateX(6deg) rotateY(-4deg)" }}
-            >
-              <div className="eyebrow text-[9px] text-accent">Style Descriptor</div>
-              <p className="serif-accent text-sm text-foreground leading-snug">
-                &ldquo;Cinematic golden light, anamorphic blur, soft grain&rdquo;
-              </p>
-            </div>
-
-            {/* Card 4: Target Match Meter (Bottom Left) */}
-            <div
-              className="absolute bottom-8 left-4 sm:left-12 w-44 sm:w-52 glass-panel shadow-float p-3 flex flex-col gap-2 hover:border-accent/40 transition-colors"
-              style={{ transform: "translateZ(40px) rotateY(4deg)" }}
-            >
-              <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-                <span>STYLE MATCH</span>
-                <span className="text-accent font-semibold">94%</span>
-              </div>
-              <div className="w-full h-1.5 bg-line rounded-full overflow-hidden">
-                <div className="w-[94%] h-full bg-accent rounded-full" />
-              </div>
-            </div>
-
-            {/* Subtle SVG Depth Connectors */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25" aria-hidden="true">
-              <path d="M 180 180 Q 280 220 380 280" stroke="var(--color-accent)" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
-              <path d="M 280 120 Q 320 180 340 260" stroke="var(--color-line-strong)" strokeWidth="1" fill="none" />
-            </svg>
           </div>
         </div>
-
       </div>
     </section>
   );

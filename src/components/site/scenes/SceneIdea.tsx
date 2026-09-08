@@ -132,12 +132,6 @@ export function SceneIdea() {
         ref={textRef}
         className="relative z-10 flex flex-col items-center justify-center text-center max-w-5xl select-none"
       >
-        {/* Eyebrow / Brand Kick */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/40 backdrop-blur-md mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="eyebrow text-muted-foreground text-[11px] tracking-[0.2em]">One project · Four workspaces</span>
-        </div>
-
         {/* Display Typography */}
         <div className="w-full flex flex-col items-center justify-center">
           <div className="w-full max-w-[760px] flex justify-start mb-2">
@@ -161,15 +155,28 @@ export function SceneIdea() {
 
           <div className="w-full max-w-[760px] flex justify-end mt-2 md:mt-[-1vw]">
             <span className="text-5xl sm:text-6xl md:text-[6vw] font-bold tracking-tighter text-accent drop-shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent)_45%,transparent)]">
-              finished.
+              video.
             </span>
           </div>
         </div>
 
-        {/* Narrative Value Proposition */}
-        <p className="mt-8 md:mt-10 max-w-[46ch] text-base sm:text-lg md:text-xl font-normal leading-relaxed text-muted-foreground px-4">
-          Every AI tool splits your process into pieces. Vichith keeps it connected: plan it with Chithra, generate it in Creative Studio, cut it in the Editor, fix the thumbnail in the Image Editor. One project, start to export.
+        {/* The thesis. Stated, not captioned. */}
+        <p className="mt-10 md:mt-14 max-w-[24ch] font-display text-2xl sm:text-3xl md:text-[2.6rem] font-medium leading-[1.14] tracking-tight text-foreground px-4 text-balance">
+          Every AI tool splits your process into pieces.
+          <span className="text-accent"> Vichith keeps it connected.</span>
         </p>
+
+        {/* The four workspaces, named under the promise they deliver. */}
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 px-4">
+          {["Chithra · plan", "Creative Studio · generate", "Editor · cut", "Image Editor · finish"].map((w) => (
+            <span
+              key={w}
+              className="px-3 py-1 rounded-full border border-line bg-surface/40 backdrop-blur-md text-[11px] font-mono text-muted-foreground tracking-wider"
+            >
+              {w}
+            </span>
+          ))}
+        </div>
 
         {/* Interactive CTA Group */}
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
