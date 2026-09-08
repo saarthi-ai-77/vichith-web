@@ -8,10 +8,13 @@ const LOGIN_URL = "https://app.vichith.in/login";
 const logo = { url: "/favicon_io/android-chrome-192x192.png" };
 
 const NAV_LINKS = [
-  { label: "Continuity", href: `#${SECTION_IDS.context}` },
+  // The four workspaces, named the way they are named inside the product —
+  // a visitor who clicks "Editor" here should land on the scene about the
+  // Editor and then find something called the Editor when they sign in.
+  { label: "Studio", href: `#${SECTION_IDS.context}` },
   { label: "Chithra", href: `#${SECTION_IDS.chithra}` },
-  { label: "Canvas", href: `#${SECTION_IDS.canvas}` },
-  { label: "Studio", href: `#${SECTION_IDS.studio}` },
+  { label: "Editor", href: `#${SECTION_IDS.studio}` },
+  { label: "Images", href: `#${SECTION_IDS.image}` },
 ];
 
 export function Nav() {

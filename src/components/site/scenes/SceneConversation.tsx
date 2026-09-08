@@ -120,15 +120,15 @@ export function SceneConversation() {
         <div className="flex flex-col items-center text-center max-w-3xl z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">02 / The Orchestrator</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">02 / Chithra</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-light tracking-tight leading-tight mb-3">
-            Chithra speaks the language of <span className="serif-accent text-accent">film.</span>
+            The AI that tells you <span className="serif-accent text-accent">what it can't do.</span>
           </h2>
 
           <p className="text-sm md:text-base text-muted-foreground max-w-lg mx-auto">
-            Not a generic chatbot. Chithra plans sequences, recommends the optimal AI model, and guides shots directly into your timeline.
+            Chithra knows its own reach. Before it plans anything it is told exactly which tools exist — so it builds what it can and says the rest out loud, instead of describing a video it cannot make.
           </p>
 
           {/* Interactive Step Navigator */}
@@ -164,7 +164,7 @@ export function SceneConversation() {
                 <span className="text-[11px] font-mono text-accent">Beat 01</span>
               </div>
               <p className="text-lg sm:text-xl font-light text-foreground leading-relaxed">
-                &ldquo;I want a cinematic shot of a solitary lighthouse at sunset, warm golden light.&rdquo;
+                &ldquo;Cut this interview down to 45 seconds, caption it for Reels, and grade it warm.&rdquo;
               </p>
             </div>
           </div>
@@ -181,14 +181,14 @@ export function SceneConversation() {
                 <span className="text-xs font-mono text-accent uppercase tracking-widest">Chithra</span>
               </div>
               <p className="text-base sm:text-lg font-normal text-foreground">
-                One shot, or a short sequence building up to it?
+                I can cut it against the transcript and caption it word by word. I can't grade footage yet — I'll build it without that, and tell you when I can.
               </p>
             </div>
 
             <div className="w-full max-w-md glass-panel shadow-float p-5 rounded-2xl border border-line-strong ml-auto">
               <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2 text-right">Director</div>
               <p className="text-base sm:text-lg font-light text-foreground text-right">
-                Just one shot. Make it feel like a memory, not a postcard.
+                Do it. Ping me when grading lands.
               </p>
             </div>
           </div>

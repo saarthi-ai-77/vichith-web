@@ -8,29 +8,29 @@ import { SECTION_IDS } from "@/lib/spatial";
 const HERO_CARDS = [
   {
     src: "/shot.jpg",
-    title: "Cinematic Shot",
-    tag: "Frame 01",
+    title: "Chithra",
+    tag: "Plans the work",
     className: "hidden lg:block top-[18%] left-[6%] w-52 h-64 rotate-[-6deg]",
     z: 90,
   },
   {
     src: "/pouring_tea.jpg",
-    title: "Sequence Ref",
-    tag: "Lighting Test",
+    title: "Creative Studio",
+    tag: "Generates the shots",
     className: "hidden md:block top-[22%] right-[7%] w-60 h-44 rotate-[5deg]",
     z: 110,
   },
   {
     src: "/man.jpg",
-    title: "Character Ref",
-    tag: "Identity Anchor",
+    title: "Editor",
+    tag: "Cuts and captions",
     className: "hidden xl:block bottom-[16%] left-[8%] w-56 h-72 rotate-[4deg]",
     z: 130,
   },
   {
     src: "/lighthouse.jpg",
-    title: "Golden Hour",
-    tag: "Final Generation",
+    title: "Image Editor",
+    tag: "Fixes the thumbnail",
     className: "hidden md:block bottom-[18%] right-[8%] w-64 h-48 rotate-[-4deg]",
     z: 100,
   },
@@ -135,7 +135,7 @@ export function SceneIdea() {
         {/* Eyebrow / Brand Kick */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/40 backdrop-blur-md mb-8">
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="eyebrow text-muted-foreground text-[11px] tracking-[0.2em]">The Creative Instrument</span>
+          <span className="eyebrow text-muted-foreground text-[11px] tracking-[0.2em]">One project · Four workspaces</span>
         </div>
 
         {/* Display Typography */}
@@ -161,14 +161,14 @@ export function SceneIdea() {
 
           <div className="w-full max-w-[760px] flex justify-end mt-2 md:mt-[-1vw]">
             <span className="text-5xl sm:text-6xl md:text-[6vw] font-bold tracking-tighter text-accent drop-shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent)_45%,transparent)]">
-              visuals.
+              finished.
             </span>
           </div>
         </div>
 
         {/* Narrative Value Proposition */}
         <p className="mt-8 md:mt-10 max-w-[46ch] text-base sm:text-lg md:text-xl font-normal leading-relaxed text-muted-foreground px-4">
-          Every AI tool splits your process into pieces. Vichith keeps it connected — from the first idea to the finished frame.
+          Every AI tool splits your process into pieces. Vichith keeps it connected: plan it with Chithra, generate it in Creative Studio, cut it in the Editor, fix the thumbnail in the Image Editor. One project, start to export.
         </p>
 
         {/* Interactive CTA Group */}

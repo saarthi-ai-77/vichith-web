@@ -22,12 +22,12 @@ export function SceneClosing() {
         </div>
 
         <h2 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl leading-[1.02] tracking-tighter font-medium mb-8 text-foreground">
-          Make what you <br className="hidden sm:block" />
-          <span className="serif-accent text-accent sm:ml-4">imagined.</span>
+          Bring an idea. <br className="hidden sm:block" />
+          <span className="serif-accent text-accent sm:ml-4">Leave with the film.</span>
         </h2>
 
         <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-          The creative instrument for AI film and visual generation. Request access or join our creative cohort.
+          Plan it, generate it, cut it, caption it, and fix the thumbnail — in one project, in any language, without a second tool. Every part of it is free to do by hand.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">

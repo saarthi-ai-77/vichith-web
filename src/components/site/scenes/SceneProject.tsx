@@ -57,26 +57,26 @@ export function SceneProject() {
         {/* Editorial Section Header */}
         <div className="text-center max-w-3xl mb-12 md:mb-16 z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">03 / Provenance</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">03 / One Project</span>
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-tight mb-4 text-foreground">
-            The <span className="serif-accent text-accent">Project</span> Canvas.
+            Four rooms. <span className="serif-accent text-accent">One project.</span>
           </h2>
 
           <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Every reference, prompt, and generation — connected in one visual trace of how the work came together.
+            Chithra plans it. Creative Studio generates it. The Editor cuts it. The Image Editor fixes the thumbnail. Nothing is re-uploaded, nothing is exported halfway, and every step remembers the one before it.
           </p>
 
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <span className="px-3 py-1 rounded-full border border-line/80 bg-surface/40 text-xs font-mono text-muted-foreground">
-              Non-destructive Lineage
+              Chithra · plan
             </span>
             <span className="px-3 py-1 rounded-full border border-line/80 bg-surface/40 text-xs font-mono text-muted-foreground">
-              Bidirectional Dependencies
+              Studio · generate
             </span>
             <span className="px-3 py-1 rounded-full border border-line/80 bg-surface/40 text-xs font-mono text-muted-foreground">
-              Direct Timeline Anchors
+              Editor · cut &amp; caption
             </span>
           </div>
         </div>

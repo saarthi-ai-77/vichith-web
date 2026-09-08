@@ -47,16 +47,16 @@ export function SceneEcosystem() {
         {/* Editorial Section Header */}
         <div className="text-center max-w-3xl mb-12 md:mb-16 z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">04 / The Instrument</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">04 / Editor</span>
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-tight mb-4 text-foreground">
-            Create freely. <br />
-            <span className="serif-accent text-accent">Control deeply.</span>
+            A real timeline.<br />
+            <span className="serif-accent text-accent">Not a preview.</span>
           </h2>
 
           <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            From the first visual to the final edit, your project stays in one unified workspace. Multi-track timeline, non-destructive retiming, and instant directorial revisions.
+            Multiple video and audio tracks. Split at the playhead, trim by the handle, retime a clip and watch everything after it move. Captions styled word by word and placed clear of the platform's own interface. Export MP4.
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-3">
@@ -119,7 +119,7 @@ export function SceneEcosystem() {
                 {/* Chithra intent badge banner */}
                 {isMoodier && (
                   <div className="absolute top-3 left-3 px-3 py-1 rounded-md bg-accent/90 text-accent-foreground text-xs font-semibold backdrop-blur-md shadow-md animate-in fade-in duration-300">
-                    Chithra Grade Applied: Contrast +15% · Warm Shift
+                    Chithra: split at 0:12, captions retimed, reframed 9:16
                   </div>
                 )}
 

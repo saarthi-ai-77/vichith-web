@@ -9,6 +9,7 @@ export const SECTION_IDS = {
   chithra: "chithra",
   canvas: "canvas",
   studio: "studio",
+  image: "image",
   closing: "closing",
 } as const;
 

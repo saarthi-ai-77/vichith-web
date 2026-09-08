@@ -59,37 +59,37 @@ export function SceneContext() {
         {/* Left Column: Editorial Narrative (High Legibility & Hierarchy) */}
         <div className="lg:col-span-5 flex flex-col items-start z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-6">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">01 / Continuity</span>
+            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">01 / Creative Studio</span>
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-[1.08] mb-6 text-foreground">
-            Gathering the <br />
-            <span className="serif-accent text-accent">Thread.</span>
+            Describe it.<br />
+            <span className="serif-accent text-accent">Watch it arrive.</span>
           </h2>
 
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl">
-            Context isn't lost. Characters, references, and storyboards wrap around your idea, holding everything in place across every shot you make.
+            The generation workspace. Write what you want in your own words, or build it step by step on the node canvas. Vichith picks the model, shows the cost before it spends anything, and keeps every shot in one project.
           </p>
 
           <div className="flex flex-col gap-4 w-full">
             <div className="p-4 rounded-xl border border-line/60 bg-surface/30 backdrop-blur-sm transition-colors hover:border-line-strong">
-              <div className="text-sm font-semibold text-foreground mb-1">Persistent Character Identity</div>
+              <div className="text-sm font-semibold text-foreground mb-1">Say it plainly, or control every dial</div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Retain wardrobe, facial likeness, and lighting atmosphere across cuts without tedious re-prompting.
+                Simple Mode takes a sentence. Workflow Mode gives you a node canvas for multi-step pipelines. Same engine, two depths.
               </p>
             </div>
 
             <div className="p-4 rounded-xl border border-line/60 bg-surface/30 backdrop-blur-sm transition-colors hover:border-line-strong">
-              <div className="text-sm font-semibold text-foreground mb-1">Storyboard Sequence Linking</div>
+              <div className="text-sm font-semibold text-foreground mb-1">The model is chosen for you</div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Connect multiple scene angles directly to their visual references in a spatial constellation.
+                Routed by what the shot actually needs and what it will cost — not by a dropdown you have to research first.
               </p>
             </div>
 
             <div className="p-4 rounded-xl border border-line/60 bg-surface/30 backdrop-blur-sm transition-colors hover:border-line-strong">
-              <div className="text-sm font-semibold text-foreground mb-1">Style Target Lock</div>
+              <div className="text-sm font-semibold text-foreground mb-1">Characters that stay themselves</div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Enforce consistent grain, lens depth, and color palettes so your video feels like one film.
+                Save a character once and reuse them across shots, so the face and the wardrobe survive the cut.
               </p>
             </div>
           </div>
