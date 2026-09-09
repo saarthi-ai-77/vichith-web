@@ -208,7 +208,7 @@ export function SceneConversation() {
               </div>
               <p className="text-sm sm:text-base font-normal text-foreground leading-relaxed">
                 I can cut it against the transcript and caption it word by word.{" "}
-                <span className="text-amber-300/95 font-medium underline decoration-amber-400/40 underline-offset-4">
+                <span className="text-accent/95 font-medium underline decoration-accent/40 underline-offset-4">
                   I can't grade footage yet
                 </span>{" "}
                 — I'll build it without that, and tell you when I can.

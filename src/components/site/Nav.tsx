@@ -4,22 +4,19 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { SECTION_IDS } from "@/lib/spatial";
 
 const REQUEST_ACCESS_URL = "https://app.vichith.in/request-access";
-const LOGIN_URL = "https://app.vichith.in/login";
 const logo = { url: "/favicon_io/android-chrome-192x192.png" };
 
 const NAV_LINKS = [
-  // The four workspaces, named the way they are named inside the product —
-  // a visitor who clicks "Editor" here should land on the scene about the
-  // Editor and then find something called the Editor when they sign in.
   { label: "Chithra", href: `#${SECTION_IDS.chithra}` },
-  { label: "Studio", href: `#${SECTION_IDS.context}` },
-  { label: "Editor", href: `#${SECTION_IDS.studio}` },
-  { label: "Images", href: `#${SECTION_IDS.image}` },
+  { label: "Workflow", href: `#${SECTION_IDS.intent}` },
+  { label: "Control", href: `#${SECTION_IDS.control}` },
+  { label: "Canvas", href: `#${SECTION_IDS.canvas}` },
+  { label: "Horizons", href: `#${SECTION_IDS.future}` },
 ];
 
 export function Nav() {
   const { scrollY } = useScroll();
-  const bg = useTransform(scrollY, [0, 80], ["rgba(16, 17, 20, 0)", "rgba(16, 17, 20, 0.75)"]);
+  const bg = useTransform(scrollY, [0, 80], ["rgba(8, 8, 10, 0)", "rgba(8, 8, 10, 0.85)"]);
   const border = useTransform(scrollY, [0, 80], ["rgba(255,255,255,0)", "rgba(255,255,255,0.08)"]);
 
   const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -41,7 +38,7 @@ export function Nav() {
         {/* Brand */}
         <a href="/" className="flex items-center gap-2.5 group">
           <img src={logo.url} alt="Vichith" className="h-6 w-6 rounded transition-transform duration-200 group-hover:scale-105" />
-          <span className="font-display text-[15px] font-semibold tracking-tight text-foreground">
+          <span className="font-display text-[15px] font-bold tracking-tight text-foreground">
             vichith
           </span>
         </a>
@@ -60,19 +57,13 @@ export function Nav() {
           ))}
         </div>
 
-        {/* Actions */}
+        {/* Action: Exclusively Early Access */}
         <div className="flex items-center gap-3">
           <a
-            href={LOGIN_URL}
-            className="hidden px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors duration-150 hover:text-foreground sm:inline-flex"
-          >
-            Sign in
-          </a>
-          <a
             href={REQUEST_ACCESS_URL}
-            className="rounded-full bg-foreground px-4 py-1.5 text-[13px] font-semibold text-background transition-all duration-150 hover:bg-accent hover:text-background active:scale-[0.97] shadow-sm"
+            className="rounded-full bg-white text-black px-4 py-1.5 text-[12px] sm:text-[13px] font-semibold transition-all duration-150 hover:bg-accent active:scale-[0.97] shadow-sm"
           >
-            Request Access
+            Request Early Access
           </a>
         </div>
       </nav>

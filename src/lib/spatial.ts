@@ -4,19 +4,23 @@
  */
 
 export const SECTION_IDS = {
-  hero: "idea",
-  context: "context",
+  arrival: "arrival",
+  fragmentation: "fragmentation",
   chithra: "chithra",
+  intent: "intent",
+  control: "control",
   canvas: "canvas",
-  studio: "studio",
-  image: "image",
-  closing: "closing",
-} as const;
+  refine: "refine",
+  loop: "loop",
+  future: "future",
+  access: "access",
 
-/** Pinned scroll distances for narrative stages that require focused interactive choreography */
-export const STAGE_SCROLL = {
-  chithra: 1800, // Distance for Chithra's 4-beat generative dialogue
-  studio: 1400,  // Distance for Studio workbench clip landing and intent demonstration
+  // Legacy aliases for compatibility
+  hero: "arrival",
+  context: "fragmentation",
+  studio: "control",
+  image: "canvas",
+  closing: "access",
 } as const;
 
 /** Canonical easing tokens */
@@ -25,3 +29,10 @@ export const EASINGS = {
   smoothOut: "cubic-bezier(0.23, 1, 0.32, 1)",
   expressive: "cubic-bezier(0.77, 0, 0.175, 1)",
 } as const;
+
+export const STAGE_SCROLL = {
+  chithra: 1800,
+  studio: 1400,
+} as const;
+
+
