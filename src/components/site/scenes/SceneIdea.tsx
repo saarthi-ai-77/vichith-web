@@ -134,28 +134,21 @@ export function SceneIdea() {
       >
         {/* Display Typography */}
         <div className="w-full flex flex-col items-center justify-center">
-          <div className="w-full max-w-[760px] flex justify-start mb-2">
-            <span className="text-2xl sm:text-3xl md:text-5xl font-light tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-accent/80 to-foreground/60">
-              Where
+          <div className="w-full max-w-[820px] flex justify-start mb-2">
+            <span className="text-xl sm:text-2xl md:text-4xl font-light tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-accent/90 to-foreground/70">
+              AI does the work.
             </span>
           </div>
 
           <div className="flex items-baseline justify-center">
-            <span className="text-2xl sm:text-3xl md:text-5xl font-light tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-accent/80 to-foreground/60 mr-4 md:mr-8">
-              your
-            </span>
             <h1 className="leading-[0.85] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-foreground via-foreground to-foreground/20 mix-blend-plus-lighter">
-              <span className="text-[19vw] sm:text-[16vw] md:text-[14vw]">IDEA</span>
-              <span className="text-[9vw] sm:text-[7vw] md:text-[5vw] ml-1">s</span>
+              <span className="text-[16vw] sm:text-[13.5vw] md:text-[11.5vw]">THE CRAFT</span>
             </h1>
-            <span className="text-2xl sm:text-3xl md:text-5xl font-light tracking-widest text-transparent bg-clip-text bg-gradient-to-l from-accent/80 to-foreground/60 ml-4 md:ml-8">
-              become
-            </span>
           </div>
 
-          <div className="w-full max-w-[760px] flex justify-end mt-2 md:mt-[-1vw]">
-            <span className="text-5xl sm:text-6xl md:text-[6vw] font-bold tracking-tighter text-accent drop-shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent)_45%,transparent)]">
-              video.
+          <div className="w-full max-w-[820px] flex justify-end mt-2 md:mt-[-0.5vw]">
+            <span className="text-3xl sm:text-4xl md:text-[4.2vw] font-bold tracking-tight text-accent drop-shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent)_45%,transparent)]">
+              stays in your hands.
             </span>
           </div>
         </div>
