@@ -14,8 +14,11 @@ export function Section10EarlyAccess() {
     >
       {/* Background Volumetric Depth */}
       <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-        <div className="w-[850px] h-[500px] rounded-full bg-accent/[0.05] blur-[180px]" />
+        <div className="w-[850px] h-[500px] rounded-full bg-accent/[0.07] blur-[180px]" />
       </div>
+
+      {/* Noise texture overlay for depth */}
+      <div className="noise-overlay" aria-hidden="true" />
 
       <div className="max-w-4xl mx-auto flex flex-col items-center z-10">
         
@@ -34,7 +37,7 @@ export function Section10EarlyAccess() {
 
         {/* The Direct Question */}
         <h2 className="font-display text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight text-white my-6 sm:my-10 leading-[0.98]">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-white to-white/90">
+          <span className="text-white">
             Want in?
           </span>
         </h2>

@@ -14,31 +14,31 @@ const HORIZONS = [
     icon: IconFilm,
     title: "Long-Form to Multi-Platform Shorts",
     desc: "Intelligent narrative extraction to produce matching horizontal cinema cuts and vertical Reels/Shorts from one source project.",
-    status: "We're building toward this.",
+    status: "// Designing",
   },
   {
     icon: IconTypography,
     title: "Multilingual & Vernacular Dubbing",
     desc: "Deep voice-match translation preserving natural vocal cadence, emotional emphasis, and localized RSVP typography across languages.",
-    status: "We're building toward this.",
+    status: "// In Research",
   },
   {
     icon: IconAperture,
     title: "Persistent Creator Memory",
     desc: "A personal creative model that remembers your pacing rhythm, typography favorites, color grading taste, and directorial signatures.",
-    status: "We're building toward this.",
+    status: "// Prototyping",
   },
   {
     icon: IconSliders,
     title: "Hybrid Web & Desktop Architecture",
     desc: "Browser-speed collaborative ideation seamlessly linked with the high-throughput native desktop engine for instant ProRes timeline rendering.",
-    status: "We're building toward this.",
+    status: "// Architecture",
   },
   {
     icon: IconGraph,
     title: "Autonomous Agent Tooling",
     desc: "Opening timeline AST and track hooks so external generative vision and audio agents can perform surgical clip modifications safely.",
-    status: "We're building toward this.",
+    status: "// On Deck",
   },
 ];
 
@@ -77,6 +77,8 @@ export function Section09Future() {
                 key={idx}
                 className={`p-6 rounded-2xl border border-white/[0.08] bg-[#0c0c10] flex flex-col justify-between space-y-4 hover:border-white/[0.18] transition-colors shadow-sm ${
                   idx === HORIZONS.length - 1 ? "md:col-span-2" : ""
+                } ${
+                  idx === 0 ? "border-l-2 border-l-accent/30" : ""
                 }`}
               >
                 <div className="space-y-3">

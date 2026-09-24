@@ -242,6 +242,14 @@ export function Section04IntentToVideo() {
                   </div>
                 </div>
 
+                {/* Subtle CRT scan-line texture */}
+                <div
+                  className="pointer-events-none absolute inset-0 z-40"
+                  style={{
+                    backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)",
+                  }}
+                />
+
               </div>
 
               {/* Clean Monochromatic Multi-Track Timeline */}

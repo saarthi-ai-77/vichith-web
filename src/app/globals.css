@@ -381,3 +381,52 @@
 @media (prefers-reduced-motion: reduce) {
   .img-plate, .img-type, .img-selection { animation: none; opacity: 1; transform: none; }
 }
+
+/* ── Subtle noise grain overlay ─────────────────────────────────────────────
+ * Used in hero and CTA section to remove the too-clean digital look.
+ * SVG-based noise filter, opacity ~3% — invisible unless you look for it.
+ * The shift keyframe slowly pans the noise pattern so it breathes.
+ */
+@keyframes noise-shift {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-2%, -3%); }
+  40%  { transform: translate(-4%, 1%); }
+  60%  { transform: translate(3%, -2%); }
+  80%  { transform: translate(2%, 4%); }
+  100% { transform: translate(0, 0); }
+}
+
+@utility noise-overlay {
+  position: absolute;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  animation: noise-shift 8s steps(1) infinite;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noise-overlay { animation: none; }
+}
+
+/* ── Horizontal rule separator, full editorial weight ───────────────────────
+ * thicker than rule-x — used to open major sections
+ */
+@utility rule-heavy {
+  border-top: 1px solid var(--color-line-strong);
+}
+
+/* ── Wordmark — the vichith brand name text treatment ──────────────────────
+ * Used in Nav and Footer: Syne ExtraBold, tightly tracked
+ */
+@utility wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+}

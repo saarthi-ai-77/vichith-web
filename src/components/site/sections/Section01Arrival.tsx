@@ -1,131 +1,258 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+/**
+ * Section01Arrival — 3-Act Pinned Hero
+ *
+ * Architecture: 200vh outer container (scrollable) + sticky inner viewport
+ * (stays fixed at top:0 for the full scroll budget). GSAP ScrollTrigger
+ * scrubs a timeline through three acts as the user scrolls.
+ *
+ * Act I   (0 → 0.25):  Timecode fades in
+ * Act II  (0.25 → 0.65): Timecode out → headline in (two lines, staggered)
+ * Act III (0.65 → 1.0):  Rule slides, sub-headline + CTA fade in
+ */
+
+import { useRef } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 import { SECTION_IDS } from "@/lib/spatial";
-import { IconPlayhead } from "@/components/site/icons/CreativeIcons";
 
 const EARLY_ACCESS_URL = "https://app.vichith.in/request-access";
 
+gsap.registerPlugin(ScrollTrigger);
+
 export function Section01Arrival() {
   const containerRef = useRef<HTMLElement>(null);
-  const playheadRef = useRef<HTMLDivElement>(null);
-  const [lineTwoVisible, setLineTwoVisible] = useState(false);
-  const [timecode, setTimecode] = useState("00:00:00:00");
+  const timecodeRef  = useRef<HTMLDivElement>(null);
+  const line1Ref     = useRef<HTMLDivElement>(null);
+  const line2Ref     = useRef<HTMLDivElement>(null);
+  const ruleRef      = useRef<HTMLDivElement>(null);
+  const subRef       = useRef<HTMLDivElement>(null);
+  const ctaRef       = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLineTwoVisible(true);
-    }, 800);
+  useGSAP(
+    () => {
+      // ── Reduced-motion: skip animation, show final state immediately ──
+      const prefersReduced = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
 
-    let frame = 0;
-    const interval = setInterval(() => {
-      frame = (frame + 1) % 72;
-      const sec = Math.floor(frame / 24);
-      const fr = frame % 24;
-      setTimecode(`00:00:0${sec}:${fr < 10 ? "0" + fr : fr}`);
-    }, 41.67);
+      if (prefersReduced) {
+        gsap.set(timecodeRef.current, { opacity: 0 });
+        gsap.set([line1Ref.current, line2Ref.current], { opacity: 1, y: 0 });
+        gsap.set(ruleRef.current, { scaleX: 1, opacity: 1 });
+        gsap.set([subRef.current, ctaRef.current], { opacity: 1, y: 0 });
+        return;
+      }
 
-    const onMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current || !playheadRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const relativeX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-      const percentage = (relativeX / rect.width) * 100;
-      gsap.to(playheadRef.current, {
-        left: `${percentage}%`,
-        duration: 0.5,
-        ease: "power2.out",
+      // ── Scrubbed timeline (duration = 1 normalized unit; scrub maps it
+      //    across the 200vh scroll budget of the outer section) ──
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 1.2,
+        },
       });
-    };
 
-    window.addEventListener("mousemove", onMouseMove, { passive: true });
+      // Act I — timecode enters (0 → 0.25)
+      tl.fromTo(
+        timecodeRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" },
+        0
+      );
 
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-      window.removeEventListener("mousemove", onMouseMove);
-    };
-  }, []);
+      // Act II — timecode exits (0.2 → 0.4)
+      tl.to(
+        timecodeRef.current,
+        { opacity: 0, y: -24, duration: 0.2, ease: "power2.in" },
+        0.2
+      );
+
+      // Act II — headline line 1 enters (0.3 → 0.6)
+      tl.fromTo(
+        line1Ref.current,
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
+        0.3
+      );
+
+      // Act II — headline line 2 enters with stagger (0.42 → 0.72)
+      tl.fromTo(
+        line2Ref.current,
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
+        0.42
+      );
+
+      // Act III — horizontal rule slides in from left (0.58 → 0.83)
+      tl.fromTo(
+        ruleRef.current,
+        { scaleX: 0, opacity: 0, transformOrigin: "left center" },
+        { scaleX: 1, opacity: 1, duration: 0.25, ease: "power2.out" },
+        0.58
+      );
+
+      // Act III — sub-headline fades in (0.65 → 0.9)
+      tl.fromTo(
+        subRef.current,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" },
+        0.65
+      );
+
+      // Act III — CTA fades in (0.72 → 0.97)
+      tl.fromTo(
+        ctaRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" },
+        0.72
+      );
+    },
+    { scope: containerRef }
+  );
 
   return (
+    /*
+     * Outer section is 200vh tall — it acts as the scroll runway.
+     * The inner sticky div locks to the viewport for that entire journey.
+     */
     <section
       id={SECTION_IDS.arrival}
       ref={containerRef}
-      className="relative min-h-screen w-full flex flex-col justify-between items-center px-6 sm:px-10 md:px-16 pt-32 pb-16 bg-[#070709] text-foreground overflow-hidden"
+      className="relative w-full"
+      style={{ height: "200vh" }}
     >
-      {/* Background Volumetric Depth (Signature Vichith Cyan Atmosphere) */}
-      <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-        <div className="w-[850px] h-[500px] rounded-full bg-accent/[0.04] blur-[180px]" />
-      </div>
+      {/* ── Sticky viewport shell ── */}
+      <div className="sticky top-0 h-screen w-full flex flex-col justify-center items-center overflow-hidden bg-[#070709]">
 
-      {/* Top Label: Architectural wordmark */}
-      <div className="relative z-10 flex flex-col items-center">
-        <span className="font-mono text-[10px] sm:text-[11px] tracking-[0.35em] text-white/40 uppercase font-medium">
-          Vichith
-        </span>
-        <div className="mt-2 h-px w-5 bg-white/20" />
-      </div>
+        {/* ── Background layer stack (pointer-events: none, behind content) ── */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          {/* Soft radial glow centred on the hero */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-[900px] h-[500px] rounded-full bg-accent/[0.035] blur-[200px]" />
+          </div>
 
-      {/* Monumental Progressive Thesis: Clean, Straight, Modern Typography */}
-      <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center select-none my-auto">
-        
-        {/* Line 1: AI DOES THE WORK. */}
-        <h1 className="font-display text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-extrabold tracking-tight md:tracking-[-0.03em] leading-[1.02] text-white">
-          AI DOES THE WORK.
-        </h1>
+          {/* Faint perspective grid — masked to an ellipse so edges fade out */}
+          <div
+            className="absolute inset-0 grid-field"
+            style={{
+              maskImage:
+                "radial-gradient(ellipse 60% 50% at 50% 50%, #000 20%, transparent 70%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 60% 50% at 50% 50%, #000 20%, transparent 70%)",
+            }}
+          />
+        </div>
 
-        {/* Dynamic Minimal Bridge: The Vector Creative Playhead Signal in Signature Cyan */}
-        <div className="w-full max-w-lg my-6 sm:my-8 md:my-10 relative">
-          <div className="h-px w-full bg-white/[0.08] relative">
-            <div
-              ref={playheadRef}
-              className="absolute -top-3.5 left-1/4 -translate-x-1/2 flex flex-col items-center cursor-pointer group"
+        {/* Animated noise grain overlay (from globals.css @utility noise-overlay) */}
+        <div className="noise-overlay" aria-hidden="true" />
+
+        {/* ───────────────────────────────────────────────────────────────── */}
+        {/* Act I — Timecode                                                  */}
+        {/* ───────────────────────────────────────────────────────────────── */}
+        <div
+          ref={timecodeRef}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+          style={{ opacity: 0 }}
+          aria-hidden="true"
+        >
+          <span
+            className="font-mono text-white/30 tracking-[0.15em]"
+            style={{ fontSize: "clamp(2.5rem, 8vw, 7rem)" }}
+          >
+            00:00:00:00
+          </span>
+        </div>
+
+        {/* ───────────────────────────────────────────────────────────────── */}
+        {/* Act II + III — Headline, rule, sub, CTA                           */}
+        {/* ───────────────────────────────────────────────────────────────── */}
+        <div className="relative z-10 px-6 md:px-10 max-w-5xl w-full mx-auto">
+
+          {/* Headline line 1 */}
+          <div
+            ref={line1Ref}
+            className="font-display font-extrabold text-white leading-[1.01] select-none"
+            style={{
+              fontSize: "clamp(2.8rem, 7.5vw, 7.5rem)",
+              letterSpacing: "-0.035em",
+              opacity: 0,
+            }}
+          >
+            AI DOES THE WORK.
+          </div>
+
+          {/* Headline line 2 */}
+          <div
+            ref={line2Ref}
+            className="font-display font-extrabold text-white leading-[1.01] select-none"
+            style={{
+              fontSize: "clamp(2.8rem, 7.5vw, 7.5rem)",
+              letterSpacing: "-0.035em",
+              opacity: 0,
+            }}
+          >
+            YOU KEEP THE CRAFT.
+          </div>
+
+          {/* Act III — Horizontal rule */}
+          <div
+            ref={ruleRef}
+            className="mt-8 md:mt-10 h-px max-w-[480px] bg-white/15"
+            style={{ opacity: 0, transformOrigin: "left center" }}
+          />
+
+          {/* Act III — Sub-headline */}
+          <div
+            ref={subRef}
+            className="mt-5 max-w-md"
+            style={{ opacity: 0 }}
+          >
+            <p className="font-sans text-base md:text-lg text-white/55 font-light leading-relaxed">
+              Chithra is the intelligence.{" "}
+              <span className="text-white/75">Vichith</span> is the studio.
+            </p>
+          </div>
+
+          {/* Act III — CTA */}
+          <div
+            ref={ctaRef}
+            className="mt-8"
+            style={{ opacity: 0 }}
+          >
+            <a
+              href={EARLY_ACCESS_URL}
+              className="
+                inline-flex items-center gap-2
+                px-8 py-3.5 rounded-full
+                bg-white text-black
+                font-semibold text-xs sm:text-sm tracking-wider uppercase
+                transition-all duration-200
+                hover:bg-accent hover:text-black
+                active:scale-[0.97]
+                shadow-xl shadow-black/50
+              "
             >
-              <IconPlayhead size={14} className="text-accent drop-shadow-[0_0_8px_rgba(54,226,206,0.6)]" />
-              <span className="mt-2 font-mono text-[9px] text-white/40 tracking-wider">
-                {timecode}
-              </span>
-            </div>
+              Request Early Access
+              <span aria-hidden="true">→</span>
+            </a>
           </div>
         </div>
 
-        {/* Line 2: YOU KEEP THE CRAFT. (Sleek subtle gradient, zero italic/curved slant) */}
+        {/* ── Scroll indicator (no GSAP, always visible) ── */}
         <div
-          className={`transition-all duration-1000 transform ${
-            lineTwoVisible
-              ? "opacity-100 translate-y-0 filter blur-0"
-              : "opacity-0 translate-y-6 filter blur-sm pointer-events-none"
-          }`}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          aria-hidden="true"
         >
-          <h2 className="font-display text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-extrabold tracking-tight md:tracking-[-0.03em] leading-[1.02]">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-white to-white/80">
-              YOU KEEP THE CRAFT.
-            </span>
-          </h2>
+          <span className="font-mono text-[9px] tracking-[0.3em] uppercase text-white/25">
+            SCROLL
+          </span>
+          <div className="w-px h-6 bg-gradient-to-b from-white/30 to-transparent" />
         </div>
-
-        {/* Minimal early access CTA */}
-        <div
-          className={`mt-10 sm:mt-12 flex flex-col sm:flex-row items-center gap-4 transition-all duration-1000 delay-200 ${
-            lineTwoVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-          }`}
-        >
-          <a
-            href={EARLY_ACCESS_URL}
-            className="px-8 py-3.5 rounded-full bg-white text-black font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 hover:bg-accent hover:text-black active:scale-[0.97] shadow-xl shadow-black/60 flex items-center gap-2 group"
-          >
-            <span>REQUEST EARLY ACCESS</span>
-            <span className="text-xs transition-transform duration-200 group-hover:translate-x-1">→</span>
-          </a>
-        </div>
-      </div>
-
-      {/* Subtle bottom scroll cue */}
-      <div className="relative z-10 flex flex-col items-center gap-2 opacity-35 hover:opacity-80 transition-opacity duration-300">
-        <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-white/40">
-          Scroll to enter the workflow
-        </span>
-        <div className="w-px h-5 bg-gradient-to-b from-white/30 to-transparent" />
       </div>
     </section>
   );
