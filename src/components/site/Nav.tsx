@@ -1,15 +1,15 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { SECTION_IDS } from "@/lib/spatial";
+import { SECTION_IDS, THEATER_ACTS } from "@/lib/spatial";
 
 const REQUEST_ACCESS_URL = "https://app.vichith.in/request-access";
 
 // Three focused nav anchors — quality over quantity
 const NAV_LINKS = [
   { label: "Chithra", href: `#${SECTION_IDS.chithra}` },
-  { label: "Studio", href: `#${SECTION_IDS.intent}` },
-  { label: "Access", href: `#${SECTION_IDS.access}` },
+  { label: "Studio", href: `#${SECTION_IDS.studio}` },
+  { label: "Access", href: `#${SECTION_IDS.closing}` },
 ];
 
 export function Nav() {
@@ -22,9 +22,19 @@ export function Nav() {
   const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith("#")) {
       e.preventDefault();
-      const target = document.querySelector(href);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      const targetId = href.replace("#", "");
+      const act = THEATER_ACTS.find((a) => a.id === targetId || (SECTION_IDS as Record<string, string>)[targetId] === a.id);
+      if (act && typeof window !== "undefined") {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        window.scrollTo({
+          top: act.progress * maxScroll,
+          behavior: "smooth",
+        });
+      } else {
+        const target = document.querySelector(href);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       }
     }
   };
