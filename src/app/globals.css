@@ -241,12 +241,12 @@
   border-top: 1px solid var(--color-line);
 }
 
-/* modern editorial accent word, set in clean straight display face */
+/* italic editorial accent word, set in the serif face already loaded for the brand */
 @utility serif-accent {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 /* 
@@ -280,153 +280,4 @@
   backdrop-filter: blur(12px);
   border-radius: var(--radius-xl);
   box-shadow: 0 8px 32px oklch(0 0 0 / 15%);
-}
-
-/* ── Creative Studio scene: the generate flow, staged ──────────────────────
- * Type the prompt, wait, receive the frame — the same sequence as
- * app.vichith.in/studio/create, on a loop so a visitor sees the whole thing
- * without clicking. Pure CSS: one more scroll-driven GSAP timeline on this
- * page would be a third motion system fighting the two already here.
- *
- * The loop is 9s and every step is a fixed share of it, so the caret stops
- * exactly when the bar starts and the frame lands exactly when the bar ends.
- * Percentages that do not line up are what make a mock feel fake.
- */
-@keyframes studio-type {
-  0%, 4%   { max-width: 0; }
-  30%, 100% { max-width: 100%; }
-}
-@keyframes studio-caret-blink {
-  0%, 32%  { opacity: 1; }
-  33%, 100% { opacity: 0; }
-}
-@keyframes studio-progress-fill {
-  0%, 32%  { width: 0; }
-  62%      { width: 100%; }
-  100%     { width: 100%; }
-}
-@keyframes studio-progress-out {
-  0%, 60%  { opacity: 1; }
-  70%, 100% { opacity: 0; }
-}
-@keyframes studio-result-in {
-  0%, 62%   { opacity: 0; transform: scale(1.04); }
-  74%, 100% { opacity: 1; transform: scale(1); }
-}
-@keyframes studio-badge-in {
-  0%, 74%   { opacity: 0; transform: translateY(6px); }
-  84%, 100% { opacity: 1; transform: translateY(0); }
-}
-
-.studio-typing {
-  display: inline-block;
-  overflow: hidden;
-  white-space: nowrap;
-  vertical-align: bottom;
-  animation: studio-type 9s var(--ease-cine) infinite;
-}
-.studio-caret {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  vertical-align: text-bottom;
-  background: var(--color-accent);
-  margin-left: 2px;
-  animation: studio-caret-blink 9s steps(1) infinite;
-}
-.studio-bar      { width: 0; animation: studio-progress-fill 9s var(--ease-cine) infinite; }
-.studio-progress { animation: studio-progress-out 9s var(--ease-cine) infinite; }
-.studio-result   { opacity: 0; animation: studio-result-in 9s var(--ease-cine) infinite; }
-.studio-badge    { opacity: 0; animation: studio-badge-in 9s var(--ease-cine) infinite; }
-
-/* Reduced motion gets the OUTCOME, not a frozen empty state — the point of the
- * panel is the finished frame, so that is what stays on screen. */
-@media (prefers-reduced-motion: reduce) {
-  .studio-typing, .studio-caret, .studio-bar,
-  .studio-progress, .studio-result, .studio-badge { animation: none; }
-  .studio-typing  { max-width: 100%; }
-  .studio-caret   { opacity: 0; }
-  .studio-progress{ opacity: 0; }
-  .studio-result  { opacity: 1; transform: none; }
-  .studio-badge   { opacity: 1; transform: none; }
-}
-
-/* ── Image Editor scene: the repair, staged ────────────────────────────────
- * A generated frame arrives with broken lettering. The panel shows that
- * alone, then lays a plate over it, sets real type, and selects the layer —
- * the actual sequence of work, not a finished screenshot.
- *
- * 8s loop, same construction as the Studio panel: each step owns a fixed
- * share so the plate is fully in before the type reads, and the selection
- * only appears once there is a layer to select.
- */
-@keyframes img-plate-in {
-  0%, 30%   { opacity: 0; transform: translateY(10px) scale(0.98); }
-  44%, 100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes img-type-in {
-  0%, 44%   { opacity: 0; }
-  56%, 100% { opacity: 1; }
-}
-@keyframes img-selection-in {
-  0%, 58%   { opacity: 0; }
-  68%, 100% { opacity: 1; }
-}
-
-.img-plate     { opacity: 0; animation: img-plate-in 8s var(--ease-cine) infinite; }
-.img-type      { opacity: 0; animation: img-type-in 8s var(--ease-cine) infinite; }
-.img-selection { opacity: 0; animation: img-selection-in 8s var(--ease-cine) infinite; }
-
-/* Reduced motion gets the repaired frame — the outcome is the argument. */
-@media (prefers-reduced-motion: reduce) {
-  .img-plate, .img-type, .img-selection { animation: none; opacity: 1; transform: none; }
-}
-
-/* ── Subtle noise grain overlay ─────────────────────────────────────────────
- * Used in hero and CTA section to remove the too-clean digital look.
- * SVG-based noise filter, opacity ~3% — invisible unless you look for it.
- * The shift keyframe slowly pans the noise pattern so it breathes.
- */
-@keyframes noise-shift {
-  0%   { transform: translate(0, 0); }
-  20%  { transform: translate(-2%, -3%); }
-  40%  { transform: translate(-4%, 1%); }
-  60%  { transform: translate(3%, -2%); }
-  80%  { transform: translate(2%, 4%); }
-  100% { transform: translate(0, 0); }
-}
-
-@utility noise-overlay {
-  position: absolute;
-  inset: -20%;
-  width: 140%;
-  height: 140%;
-  opacity: 0.035;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-  animation: noise-shift 8s steps(1) infinite;
-  z-index: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .noise-overlay { animation: none; }
-}
-
-/* ── Horizontal rule separator, full editorial weight ───────────────────────
- * thicker than rule-x — used to open major sections
- */
-@utility rule-heavy {
-  border-top: 1px solid var(--color-line-strong);
-}
-
-/* ── Wordmark — the vichith brand name text treatment ──────────────────────
- * Used in Nav and Footer: Syne ExtraBold, tightly tracked
- */
-@utility wordmark {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: -0.02em;
-  color: var(--color-foreground);
 }

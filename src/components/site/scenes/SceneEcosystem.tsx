@@ -1,342 +1,246 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { SECTION_IDS } from "@/lib/spatial";
+import { DEPTH } from "@/lib/spatial";
+
+// `Math.random()` in render draws a different value on the server than on
+// the client's own hydration pass, so the waveform below used to trigger a
+// real hydration mismatch on every homepage load. A deterministic function
+// of the bar's own index looks equally "random" but produces the exact
+// same value in both environments -- no seed to keep in sync, nothing
+// stored, just the same pure function called with the same input twice.
+function pseudoRandomHeight(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  const frac = x - Math.floor(x);
+  return frac * 80 + 20;
+}
 
 export function SceneEcosystem() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const workbenchRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isReframed, setIsReframed] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const assetRef = useRef<HTMLDivElement>(null);
+  const layerAudioRef = useRef<HTMLDivElement>(null);
+  const layerMaskRef = useRef<HTMLDivElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const webCoreRef = useRef<HTMLDivElement>(null);
+  const webNodesRef = useRef<HTMLDivElement[]>([]);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      if (workbenchRef.current) {
-        gsap.fromTo(
-          workbenchRef.current,
-          { opacity: 0, y: 32 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1.1,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: workbenchRef.current,
-              start: "top 85%",
-            },
-          }
-        );
-      }
-    }, sectionRef);
+    let ctx = gsap.context(() => {
+      let mm = gsap.matchMedia();
+
+      mm.add({
+        isDesktop: "(min-width: 768px)",
+        isMobile: "(max-width: 767px)"
+      }, (context) => {
+        let { isDesktop } = context.conditions as { isDesktop: boolean };
+        
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 });
+
+        // 1. Web exploration phase (Fluid nodes pulse)
+        tl.to(webNodesRef.current, {
+          opacity: 1,
+          boxShadow: "0 0 15px var(--color-accent)",
+          stagger: 0.2,
+          duration: 0.4,
+          ease: "power2.out",
+        })
+        // Generation core activates
+        .to(webCoreRef.current, {
+          scale: 1.1,
+          boxShadow: "0 0 30px var(--color-accent)",
+          duration: 0.5,
+          ease: "back.out(1.5)",
+        }, "-=0.2")
+        .to(webNodesRef.current, {
+          boxShadow: "0 0 0px transparent",
+          opacity: 0.4,
+          stagger: 0.2,
+          duration: 0.4,
+        }, "-=0.2");
+
+        // 2. Creative Asset emerges from Web core
+        tl.set(assetRef.current, {
+          opacity: 0,
+          x: isDesktop ? -250 : 0, // Inside Web panel
+          y: isDesktop ? 50 : -200,
+          scale: 0.5,
+          width: "8rem",
+          height: "5rem",
+          borderRadius: "0.5rem"
+        })
+        .to(assetRef.current, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "back.out(1.2)",
+        })
+        
+        // 3. Asset travels to App panel
+        .to(assetRef.current, {
+          x: isDesktop ? 250 : 0, // Into App timeline
+          y: isDesktop ? 90 : 130, // Adjusted to land perfectly on the top track
+          duration: 1.5,
+          ease: "power2.inOut",
+        })
+
+        // 4. Asset transforms into Timeline Layers (Fractures into deep control)
+        .to(assetRef.current, {
+          width: "18rem", // Stretches into a video track
+          height: "1.5rem",
+          borderRadius: "0.25rem",
+          duration: 0.5,
+          ease: "power3.out",
+        })
+        
+        // Audio and Mask layers reveal from behind the main video track
+        .set([layerAudioRef.current, layerMaskRef.current], {
+           opacity: 0,
+           y: -20, // Start slightly hidden behind the main track
+        })
+        .to(layerAudioRef.current, {
+           opacity: 1,
+           y: 0,
+           duration: 0.4,
+           ease: "power2.out",
+        }, "-=0.2")
+        .to(layerMaskRef.current, {
+           opacity: 1,
+           y: 0,
+           duration: 0.4,
+           ease: "power2.out",
+        }, "-=0.2")
+
+        // 5. Playhead sweeps across layers (Control & Precision)
+        .set(playheadRef.current, { opacity: 1, x: -140 })
+        .to(playheadRef.current, {
+           x: 140,
+           duration: 1.5,
+           ease: "none",
+        })
+
+        // Fade out to reset loop
+        .to([assetRef.current, layerAudioRef.current, layerMaskRef.current, playheadRef.current, webCoreRef.current], {
+           opacity: 0,
+           duration: 0.5,
+        })
+        .set(webCoreRef.current, { scale: 1 });
+
+      });
+    });
 
     return () => ctx.revert();
   }, []);
 
-  const handleTriggerIntent = () => {
-    setIsReframed((prev) => !prev);
-  };
-
-  const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    }
-  };
-
   return (
-    <section
-      id={SECTION_IDS.studio}
-      ref={sectionRef}
-      className="relative w-full py-24 md:py-36 px-4 sm:px-6 md:px-12 border-t border-line/40 bg-background overflow-hidden"
+    <div
+      className="scene absolute inset-0 flex items-center justify-center preserve-3d"
+      style={{ transform: `translateZ(${DEPTH.ecosystem}px)` }}
+      data-z={DEPTH.ecosystem}
     >
-      {/* Background ambient glow */}
-      <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-        <div className="w-[700px] h-[400px] rounded-full bg-accent/[0.04] blur-[150px]" />
-      </div>
-
-      <div className="max-w-[1240px] mx-auto flex flex-col items-center">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl flex flex-col items-center justify-center scale-[0.4] sm:scale-[0.55] md:scale-100 preserve-3d pointer-events-none">
         
-        {/* Editorial Section Header */}
-        <div className="text-center max-w-3xl mb-12 md:mb-16 z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-surface/60 backdrop-blur-md mb-4">
-            <span className="text-[10px] font-mono text-accent uppercase tracking-widest">03 / Editor</span>
-          </div>
-
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight leading-tight mb-4 text-foreground">
-            A real timeline.<br />
-            <span className="serif-accent text-accent">Not a preview.</span>
-          </h2>
-
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Multiple video and audio tracks. Split at the playhead, trim by the handle, retime a clip and watch everything after it move. Captions styled word by word and placed clear of the platform&apos;s own interface. Export MP4.
-          </p>
-
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <button
-              onClick={handleTriggerIntent}
-              className={`px-4 py-2 rounded-full border text-xs font-mono transition-all duration-200 active:scale-[0.97] flex items-center gap-2 ${
-                isReframed
-                  ? "bg-accent text-accent-foreground border-accent font-semibold shadow-md shadow-accent/20"
-                  : "bg-surface/60 border-line text-muted-foreground hover:text-foreground hover:border-line-strong"
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${isReframed ? "bg-black" : "bg-accent animate-pulse"}`} />
-              {isReframed ? "Reels cut applied" : "Simulate: 'Cut this for Reels'"}
-            </button>
-          </div>
+        {/* Typographic Anchor */}
+        <div className="text-center mb-16 md:mb-24 z-10 pointer-events-auto" style={{ transform: "translateZ(150px)" }}>
+           <h2 className="text-5xl md:text-7xl font-light tracking-tight leading-tight">
+             Create freely.<br />
+             <span className="serif-accent text-accent">Control deeply.</span>
+           </h2>
         </div>
 
-        {/* Workstation Console (Transferred from Hero sequence) */}
-        <div
-          ref={workbenchRef}
-          className={`w-full max-w-5xl rounded-2xl border bg-surface/30 backdrop-blur-xl shadow-2xl overflow-hidden transition-all duration-500 ${
-            isReframed ? "border-accent/50 shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "border-line-strong shadow-float"
-          }`}
-        >
-          {/* Top Window Chrome */}
-          <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-line bg-surface/70 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-line-strong" />
-                <span className="w-2.5 h-2.5 rounded-full bg-line-strong" />
-                <span className="w-2.5 h-2.5 rounded-full bg-line-strong" />
+        {/* Split Layout */}
+        <div className="w-full flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 preserve-3d relative pointer-events-auto">
+           
+           {/* LEFT: VICHITH WEB (Exploration) */}
+           <div className="w-full max-w-[450px] h-[500px] glass-panel shadow-float flex flex-col p-6 md:p-8 relative" style={{ transform: "translateZ(50px) rotateY(10deg)" }}>
+              <div className="flex justify-between items-center mb-12 border-b border-line pb-4">
+                 <span className="font-mono text-sm tracking-widest text-muted-foreground">VICHITH WEB</span>
+                 <span className="text-[10px] uppercase tracking-wider bg-surface px-2 py-1 rounded text-foreground">Available Now</span>
               </div>
-              <span className="text-xs font-mono text-muted-foreground hidden sm:inline-block">
-                project / desert_dawn_reels.vch
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              <span className="text-[11px] font-mono text-accent font-medium">
-                {isReframed ? "Chithra AI · Reels Reframed" : "Chithra AI · Sequence Synced"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground">
-              <span className="hidden md:inline-block px-2 py-0.5 rounded bg-surface border border-line text-[10px]">
-                {isReframed ? "9:16 60fps" : "4K 60fps"}
-              </span>
-              <span className="text-foreground/80 font-semibold">00:00:14:18</span>
-            </div>
-          </div>
-
-          {/* Workstation Body */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 bg-background/60">
-            
-            {/* Left Column: AI Intent & Directive (The "AI does the work" pillar) */}
-            <div className="lg:col-span-4 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-line flex flex-col justify-between bg-surface/20">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs">✨</span>
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      Chithra Directive
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono text-accent bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded">
-                    Generated
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl border border-line bg-surface/40 text-xs text-foreground/90 leading-relaxed font-sans">
-                  &ldquo;Pull transcript silence, cut on sunrise match flare, and lock 1-word RSVP captions.&rdquo;
-                </div>
-
-                <div className="mt-4 space-y-2.5">
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-muted-foreground">Transcript Cuts:</span>
-                    <span className="text-accent font-semibold">14 cuts applied</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-muted-foreground">Model Routed:</span>
-                    <span className="text-foreground">Seedream 4.5</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-muted-foreground">Word Captions:</span>
-                    <span className="text-accent font-semibold">Synced (Track C1)</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-muted-foreground">Framing Target:</span>
-                    <span className="text-foreground font-medium">
-                      {isReframed ? "9:16 (1080×1920) · Vertical" : "16:9 (3840×2160) · Widescreen"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-5">
-                  <button
-                    onClick={handleTriggerIntent}
-                    className={`w-full py-2 px-3 rounded-lg border text-xs font-mono transition-all duration-200 flex items-center justify-center gap-2 ${
-                      isReframed
-                        ? "bg-accent/20 border-accent text-accent font-semibold"
-                        : "bg-surface/50 border-line text-muted-foreground hover:text-foreground hover:border-line-strong"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${isReframed ? "bg-accent" : "bg-muted-foreground"}`} />
-                    {isReframed ? "Reframe Active: 9:16" : "Toggle 9:16 Reframe"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-line flex items-center justify-between text-[11px] font-mono text-muted-foreground">
-                <span>Execution status:</span>
-                <span className="text-accent font-medium flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  Ready on timeline
-                </span>
-              </div>
-            </div>
-
-            {/* Right Column: Live Monitor & Timeline Canvas (The "You keep the craft" pillar) */}
-            <div className="lg:col-span-8 p-4 sm:p-6 flex flex-col justify-between">
               
-              {/* Preview Stage */}
-              <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-black border border-line-strong shadow-2xl">
-                <video
-                  ref={videoRef}
-                  src="/Cinematic.mp4"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  poster="/shot.jpg"
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* HUD Overlay */}
-                <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-background/70 backdrop-blur-md text-[10px] font-mono text-foreground border border-line z-10 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  <span>REC · 24.00 fps</span>
-                </div>
+              <div className="flex-1 relative flex items-center justify-center">
+                 {/* Fluid Nodes */}
+                 <div ref={el => { if (el) webNodesRef.current[0] = el; }} className="absolute top-0 left-0 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">Idea & Context</div>
+                 <div ref={el => { if (el) webNodesRef.current[1] = el; }} className="absolute top-1/4 right-0 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">Chithra</div>
+                 <div ref={el => { if (el) webNodesRef.current[2] = el; }} className="absolute bottom-1/4 left-4 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">References</div>
+                 <div ref={el => { if (el) webNodesRef.current[3] = el; }} className="absolute bottom-0 right-4 px-4 py-2 bg-surface/40 rounded-full border border-line text-xs opacity-40">Iterate</div>
 
-                {/* 9:16 Reframe Visual Overlay */}
-                {isReframed && (
-                  <>
-                    <div className="pointer-events-none absolute inset-0 bg-background/75 backdrop-blur-[1px] z-10" />
-                    <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 aspect-[9/16] border-x-2 border-accent/80 shadow-[0_0_30px_rgba(255,255,255,0.06)] overflow-hidden z-20">
-                      <div className="absolute top-3 left-2 right-2 text-center">
-                        <span className="px-2 py-0.5 rounded bg-accent/90 text-accent-foreground text-[10px] font-mono font-semibold backdrop-blur-md shadow-md">
-                          Reels Crop 9:16
-                        </span>
-                      </div>
-                      <div className="absolute bottom-6 inset-x-2 flex justify-center">
-                        <span className="px-3 py-1 rounded bg-black/80 backdrop-blur-md text-xs sm:text-sm font-bold text-accent tracking-wide uppercase shadow-lg border border-accent/40 animate-pulse">
-                          The Creator Keeps The Craft
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                 {/* Generation Core */}
+                 <div ref={webCoreRef} className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-transparent border border-accent/40 flex items-center justify-center relative shadow-[inset_0_0_20px_rgba(var(--color-accent),0.2)]">
+                    <div className="w-12 h-12 rounded-full bg-accent/30 blur-md"></div>
+                    <div className="absolute inset-0 rounded-full border border-dashed border-accent/60 animate-[spin_10s_linear_infinite]"></div>
+                 </div>
+              </div>
+           </div>
 
-                {/* Simulated RSVP Word Caption (when widescreen) */}
-                {!isReframed && (
-                  <div className="absolute bottom-4 inset-x-0 flex justify-center z-10">
-                    <span className="px-3 py-1 rounded bg-black/75 backdrop-blur-md text-xs sm:text-sm font-bold text-accent tracking-wide uppercase shadow-lg border border-accent/30 animate-pulse">
-                      The Creator Keeps The Craft
-                    </span>
-                  </div>
-                )}
+           {/* BRIDGE ANIMATION ELEMENT (The Creative Asset) */}
+           <div 
+             ref={assetRef}
+             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-accent to-accent-deep border border-accent/80 shadow-[0_0_30px_color-mix(in_oklab,var(--color-accent),transparent_60%)] z-20 flex items-center justify-center opacity-0 pointer-events-none overflow-hidden"
+             style={{ transform: "translateZ(100px)" }}
+           >
+             <div className="absolute inset-0 bg-white/20 mix-blend-overlay"></div>
+             {/* Abstract thumbnail detail */}
+             <div className="w-1/2 h-1/2 rounded-full bg-white/30 blur-sm"></div>
+           </div>
 
-                {/* Transport Controls Bar */}
-                <div className="absolute bottom-3 inset-x-3 h-9 px-3 rounded-lg bg-background/80 backdrop-blur-md border border-line flex items-center justify-between z-30">
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={togglePlay}
-                      className="w-6 h-6 rounded flex items-center justify-center text-foreground hover:text-accent transition-colors"
-                      aria-label={isPlaying ? "Pause" : "Play"}
-                    >
-                      {isPlaying ? (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <rect x="6" y="4" width="4" height="16" />
-                          <rect x="14" y="4" width="4" height="16" />
-                        </svg>
-                      ) : (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M5 3l14 9-14 9V3z" />
-                        </svg>
-                      )}
-                    </button>
-                    <span className="text-[11px] font-mono text-muted-foreground">00:00:14:18</span>
-                  </div>
-
-                  <div className="text-[10px] font-mono text-muted-foreground">
-                    H.264 · 24.00 fps · {isReframed ? "1080×1920" : "3840×2160"}
-                  </div>
-                </div>
+           {/* RIGHT: VICHITH DESKTOP (Precision Control) -- CONFIRMED BUG,
+               FIXED (marketing audit Phase 1): this said "VICHITH APP",
+               ambiguous with the real, live web app at app.vichith.in
+               sitting right next to it. This panel visualizes the desktop
+               editor specifically (timeline, audio/mask tracks, playhead) --
+               name it as that, matching Footer.tsx's already-correct
+               "Desktop app" label, which the homepage itself never rendered. */}
+           <div className="w-full max-w-[450px] h-[500px] glass-panel shadow-float flex flex-col p-6 md:p-8 relative" style={{ transform: "translateZ(50px) rotateY(-10deg)" }}>
+              <div className="flex justify-between items-center mb-4 border-b border-line pb-4">
+                 <span className="font-mono text-sm tracking-widest text-muted-foreground">VICHITH DESKTOP</span>
+                 <span className="text-[10px] uppercase tracking-wider border border-accent/50 text-accent px-2 py-1 rounded shadow-[0_0_10px_color-mix(in_oklab,var(--color-accent)_40%,transparent)]">Coming Soon</span>
               </div>
 
-              {/* Multi-track Timeline Bar (Tactile Craft in Action) */}
-              <div className="mt-4 pt-3 border-t border-line space-y-1.5">
-                <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mb-1">
-                  <span>TIMELINE WORKBENCH</span>
-                  <span className="text-accent font-mono">00:00:14:18 / 00:00:45:00</span>
-                </div>
+              {/* Marketing audit Phase 4: "Control deeply" previously had no
+                  concrete referent in this panel -- just a wireframe mockup.
+                  One line naming what deep control actually means. */}
+              <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+                Frame-accurate timeline editing, precision color and audio — for the shots that need a human&rsquo;s final touch.
+              </p>
 
-                {/* Track C1 - Word Captions */}
-                <div className="h-5 rounded-md bg-surface/30 border border-line/60 flex items-center gap-1 p-0.5 overflow-hidden">
-                  <span className="text-[9px] font-mono text-muted-foreground px-1.5 shrink-0">C1</span>
-                  <div className="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar">
-                    {["THE", "CREATOR", "KEEPS", "THE", "CRAFT"].map((word, idx) => (
-                      <span
-                        key={idx}
-                        className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${
-                          idx === 2
-                            ? "bg-accent/30 text-accent border border-accent/50 font-bold"
-                            : "bg-surface/70 text-muted-foreground border border-line"
-                        }`}
-                      >
-                        {word}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Track V1 */}
-                <div className="h-6 rounded-md bg-surface/50 border border-line flex items-center gap-1 p-0.5 overflow-hidden">
-                  <span className="text-[9px] font-mono text-muted-foreground px-1.5 shrink-0">V1</span>
-                  <div className="h-full bg-accent/25 hover:bg-accent/35 border border-accent/40 rounded-xs flex-1 flex items-center px-2 text-[9px] font-mono text-foreground truncate">
-                    dune_approach.mp4
-                  </div>
-                  <div className="h-full bg-accent/35 hover:bg-accent/45 border border-accent/50 rounded-xs w-32 flex items-center px-2 text-[9px] font-mono text-foreground truncate">
-                    sunrise_flare.mp4
-                  </div>
-                  <div className="h-full bg-accent/25 hover:bg-accent/35 border border-accent/40 rounded-xs flex-1 flex items-center px-2 text-[9px] font-mono text-foreground truncate">
-                    portrait_close.mp4
-                  </div>
-                </div>
-
-                {/* Track A1 with animated waveform indicator */}
-                <div className="h-5 rounded-md bg-surface/40 border border-line flex items-center gap-1 p-0.5 overflow-hidden">
-                  <span className="text-[9px] font-mono text-muted-foreground px-1.5 shrink-0">A1</span>
-                  <div className="h-full bg-cyan-500/20 rounded-xs flex-1 flex items-center px-2 justify-between">
-                    <span className="text-[8px] font-mono text-cyan-200">voiceover_master.wav</span>
-                    <div className="flex items-center gap-0.5 h-2">
-                      <span className="w-0.5 h-full bg-cyan-400 animate-pulse" />
-                      <span className="w-0.5 h-1.5 bg-cyan-400 animate-pulse" />
-                      <span className="w-0.5 h-2 bg-cyan-400 animate-pulse" />
-                      <span className="w-0.5 h-1 bg-cyan-400 animate-pulse" />
+              <div className="flex-1 flex flex-col relative">
+                 {/* Composition View */}
+                 <div className="w-full h-40 bg-background/50 rounded-lg border border-line flex items-center justify-center mb-6 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-surface to-transparent"></div>
+                    <span className="text-sm text-muted-foreground eyebrow z-10">Composition View</span>
+                 </div>
+                 
+                 {/* Deep Timeline Workspace */}
+                 <div className="flex-1 border border-line rounded-lg bg-surface/30 p-4 flex flex-col justify-center gap-3 relative overflow-hidden">
+                    
+                    {/* The Playhead */}
+                    <div ref={playheadRef} className="absolute top-0 bottom-0 w-px bg-accent z-30 opacity-0 shadow-[0_0_10px_var(--color-accent)]">
+                       <div className="w-2 h-2 rounded-full bg-accent absolute -top-1 -left-[3px]"></div>
                     </div>
-                  </div>
-                </div>
+
+                    {/* Timeline Tracks (Asset lands on top, these reveal below it) */}
+                    <div className="h-6 w-full relative"></div> {/* Placeholder for main asset track */}
+                    
+                    <div ref={layerAudioRef} className="h-6 w-full bg-surface/80 rounded border border-line flex items-center px-2 opacity-0">
+                       <span className="text-[10px] text-muted-foreground font-mono w-12">AUDIO</span>
+                       <div className="flex-1 flex items-center gap-[2px] px-2 h-full py-1">
+                          {[...Array(24)].map((_, i) => (
+                            <div key={i} className="flex-1 bg-muted-foreground/40 rounded-full" style={{ height: `${pseudoRandomHeight(i)}%` }}></div>
+                          ))}
+                       </div>
+                    </div>
+                    
+                    <div ref={layerMaskRef} className="h-6 w-full bg-surface/80 rounded border border-line flex items-center px-2 opacity-0">
+                       <span className="text-[10px] text-muted-foreground font-mono w-12">MASK</span>
+                       <div className="flex-1 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                    </div>
+
+                 </div>
               </div>
-
-            </div>
-
-          </div>
+           </div>
 
         </div>
-
       </div>
-    </section>
+    </div>
   );
 }

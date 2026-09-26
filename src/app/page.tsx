@@ -1,12 +1,35 @@
 import { Nav } from "@/components/site/Nav";
-import { TheaterCanvas } from "@/components/site/theater/TheaterCanvas";
+import { SpatialCanvas } from "@/components/site/SpatialCanvas";
+import { SceneIdea } from "@/components/site/scenes/SceneIdea";
+import { SceneContext } from "@/components/site/scenes/SceneContext";
+import { SceneConversation } from "@/components/site/scenes/SceneConversation";
+import { SceneProject } from "@/components/site/scenes/SceneProject";
+import { SceneEditing } from "@/components/site/scenes/SceneEditing";
+import { SceneMotion } from "@/components/site/scenes/SceneMotion";
+import { SceneClosing } from "@/components/site/scenes/SceneClosing";
+import { GlobalMatrix } from "@/components/site/GlobalMatrix";
 
 export default function Home() {
   return (
-    <main className="relative bg-[#070709] text-foreground selection:bg-accent/30 selection:text-foreground overflow-x-clip">
+    <main className="relative bg-background">
       <Nav />
-      {/* 3D Theater Scroll Experience */}
-      <TheaterCanvas />
+      {/*
+        The SpatialCanvas handles the global GSAP ScrollTrigger timeline.
+        It pins the view and moves the camera along the Z-axis.
+      */}
+      <SpatialCanvas>
+        <GlobalMatrix />
+        <SceneIdea />
+        <SceneContext />
+        {/* SceneChithra (one static "meet the orchestrator" moment) replaced
+            by SceneConversation -- a real 8-beat exchange, scroll-driven,
+            occupying a wider Z band (see src/lib/spatial.ts DEPTH). */}
+        <SceneConversation />
+        <SceneProject />
+        <SceneEditing />
+        <SceneMotion />
+        <SceneClosing />
+      </SpatialCanvas>
     </main>
   );
 }
