@@ -4,33 +4,30 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Vichith design system — calm, near-black, single cyan accent.
+ * Vichith Pure Minimalism & Sleek Product Design System
+ * Deep near-black charcoal, controlled cyan accent, faded silver badges, pill buttons.
  */
 
 @theme {
-  --color-ink: oklch(0.16 0.008 200);
-  --color-accent: oklch(0.82 0.15 178);
-  --color-accent-deep: oklch(0.62 0.12 180);
-  --color-line: oklch(1 0 0 / 8%);
-  --color-line-strong: oklch(1 0 0 / 16%);
-  --color-surface: oklch(0.19 0.008 200);
-  --color-surface-2: oklch(0.23 0.009 200);
-  --ease-cine: cubic-bezier(0.16, 1, 0.3, 1);
+  --color-background: #0A0C0C;
+  --color-foreground: #F4F4F5;
+  --color-muted: #161819;
+  --color-muted-foreground: #8E9196;
+  --color-accent: #83D0BE;
+  --color-accent-hover: #98dec9;
+  --color-accent-deep: #479080;
+  --color-surface: #121416;
+  --color-surface-hover: #181B1E;
+  --color-surface-active: #202327;
+  --color-line: rgba(255, 255, 255, 0.07);
+  --color-line-strong: rgba(255, 255, 255, 0.14);
+  --color-silver: #A1A1AA;
+  --color-silver-light: #D4D4D8;
 }
 
-/* V1 redesign Stage B — font tokens now reference next/font's runtime CSS
- * vars (set via className on <html>, layout.tsx), so this needs `inline`
- * (Tailwind v4 resolves the var() at usage time rather than inlining a
- * build-time constant) -- kept as its own block, deliberately separate from
- * the dead shadcn @theme inline block below (unused defaults, see that
- * block's own header comment), so this doesn't get entangled with it.
- * Inter/Newsreader/Syne now match apps/app/src/app/layout.tsx exactly --
- * one brand voice, one set of files defining it, not two. */
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-syne), var(--font-inter), ui-sans-serif, sans-serif;
-  --font-syne: var(--font-syne), ui-sans-serif, sans-serif;
-  --font-editorial: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-syne), var(--font-inter), sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
@@ -168,116 +165,119 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: #070809;
+    color: #F4F4F5;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     backface-visibility: hidden;
     overflow-x: hidden;
+    position: relative;
+    background-image: 
+      radial-gradient(circle 900px at 50% -150px, rgba(131, 208, 190, 0.08), transparent 70%),
+      radial-gradient(circle 800px at 85% 35%, rgba(131, 208, 190, 0.03), transparent 70%),
+      radial-gradient(circle 800px at 15% 65%, rgba(131, 208, 190, 0.025), transparent 70%),
+      linear-gradient(to right, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    background-attachment: fixed, fixed, fixed, scroll, scroll;
   }
 
   h1,
   h2,
-  h3 {
-    font-family: var(--font-display);
-    letter-spacing: -0.035em;
+  h3,
+  h4 {
+    letter-spacing: -0.03em;
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-accent) 30%, transparent);
+    background: rgba(131, 208, 190, 0.25);
+    color: #83D0BE;
   }
 }
 
 @utility glass {
-  background: linear-gradient(
-    160deg,
-    color-mix(in oklab, var(--color-surface) 82%, transparent),
-    color-mix(in oklab, var(--color-background) 88%, transparent)
-  );
-  border: 1px solid var(--color-line);
-  backdrop-filter: blur(18px);
+  background: rgba(18, 20, 22, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 @utility panel {
-  background: color-mix(in oklab, var(--color-surface) 70%, transparent);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
+  background: #111315;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
 }
 
 @utility text-dim {
-  color: var(--color-muted-foreground);
+  color: #8E9196;
 }
 
-@utility grid-field {
-  background-image:
-    linear-gradient(to right, oklch(1 0 0 / 3.5%) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(1 0 0 / 3.5%) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 20%, transparent 80%);
-}
-
-@utility accent-text {
-  background: linear-gradient(
-    100deg,
-    var(--color-accent),
-    color-mix(in oklab, var(--color-accent) 55%, oklch(0.72 0.09 240))
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-@utility eyebrow {
+@utility pill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.25rem 0.75rem;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-muted-foreground);
+  color: #A1A1AA;
 }
 
-/* hairline top border, used to rule off full-bleed editorial sections */
+@utility pill-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: #83D0BE;
+  color: #0A0C0C;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@utility pill-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.03);
+  color: #E4E4E7;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@utility subtle-glow {
+  box-shadow: 0 0 50px -15px rgba(131, 208, 190, 0.12);
+}
+
+@utility product-window {
+  background-color: #0E1012;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 30px 100px -20px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
 @utility rule-x {
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-/* italic editorial accent word, set in the serif face already loaded for the brand */
-@utility serif-accent {
-  font-family: var(--font-editorial);
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-}
-
-/* 
- * Antigravity 3D CSS Utilities 
- */
-
-@utility preserve-3d {
-  transform-style: preserve-3d;
-}
-
-@utility perspective-1000 {
-  perspective: 1000px;
-}
-
-@utility backface-hidden {
-  backface-visibility: hidden;
-}
-
-@utility will-change-transform {
-  will-change: transform;
-}
-
-/* An ultra-soft, diffused shadow for floating elements */
-@utility shadow-float {
-  box-shadow: 0 20px 40px oklch(0 0 0 / 20%), 0 1px 3px oklch(0 0 0 / 10%), inset 0 1px 1px oklch(1 1 1 / 5%);
-}
-
-@utility glass-panel {
-  background: color-mix(in oklab, var(--color-surface) 30%, transparent);
-  border: 1px solid oklch(1 1 1 / 8%);
-  backdrop-filter: blur(12px);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 8px 32px oklch(0 0 0 / 15%);
+/* Reduced motion optimization */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

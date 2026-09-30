@@ -1,25 +1,58 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Newsreader, Syne, JetBrains_Mono } from "next/font/google";
+import { Inter, Syne, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 
-// V1 redesign Stage B — self-hosted via next/font/google, replacing the raw
-// <link> Google Fonts load (no preconnect benefit, no font-display control
-// beyond the URL param). Three-tier system now identical to the app
-// (app.vichith.in): Inter for UI/body, Newsreader italic for editorial
-// accents, Syne for wordmark-scale moments — Outfit and Plus Jakarta Sans
-// are dropped; the wordmark ("vichith" in Nav/Footer) was their only live
-// usage, and Syne was already the intended wordmark face on the app side
-// (see apps/app/src/app/layout.tsx's own comment) — this was a divergence
-// to close, not a new decision.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", weight: ["300", "400", "500", "600", "700", "800"] });
-const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-newsreader", display: "swap", weight: ["300", "400", "500", "600", "700", "800"], style: ["normal", "italic"] });
-const syne = Syne({ subsets: ["latin"], variable: "--font-syne", display: "swap", weight: ["600", "700", "800"] });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono", display: "swap", weight: ["400", "500"], style: ["normal", "italic"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const syne = Syne({
+  subsets: ["latin"],
+  variable: "--font-syne",
+  display: "swap",
+  weight: ["600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+  weight: ["400", "500"],
+});
 
 export const metadata: Metadata = {
-  title: "Vichith — From a sentence to a finished frame.",
-  description: "Vichith is a creative workspace where you describe what you're making. Chithra turns it into a project — characters, references, storyboard, and generations — on the web, with a desktop editor to finish the work.",
+  title: "Vichith — AI-native creative production",
+  description:
+    "Vichith is an AI-native creative production environment bringing ideation, generation, timeline editing, and motion into one connected project.",
+  keywords: [
+    "AI creative production",
+    "AI video editor",
+    "creative workflows",
+    "timeline editing",
+    "motion design",
+    "Chithra",
+    "generative video",
+  ],
+  authors: [{ name: "Vichith" }],
+  openGraph: {
+    title: "Vichith — AI-native creative production",
+    description:
+      "Vichith brings ideation, generation, editing, and motion into one connected creative environment.",
+    url: "https://vichith.in",
+    siteName: "Vichith",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vichith — AI-native creative production",
+    description:
+      "Vichith brings ideation, generation, editing, and motion into one connected creative environment.",
+  },
   icons: {
     icon: "/favicon_io/favicon-32x32.png",
     apple: "/favicon_io/apple-touch-icon.png",
@@ -29,7 +62,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
+  themeColor: "#0A0C0C",
 };
 
 export default function RootLayout({
@@ -38,8 +72,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${newsreader.variable} ${syne.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased min-h-screen bg-background text-foreground selection:bg-accent/20">
+    <html
+      lang="en"
+      className={`${inter.variable} ${syne.variable} ${jetbrainsMono.variable} scroll-smooth dark`}
+    >
+      <body className="antialiased min-h-screen bg-[#0A0C0C] text-[#F4F4F5] selection:bg-[#83D0BE]/25 selection:text-[#83D0BE]">
         {children}
         <Analytics />
       </body>

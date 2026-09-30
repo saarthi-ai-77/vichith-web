@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Nav } from '@/components/site/Nav';
-import { SiteFooter } from '@/components/site/Footer';
+import { Footer } from '@/components/site/Footer';
 
 const inputClass =
   'w-full rounded-lg border border-line bg-black/20 px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-dim focus:border-accent/50';
@@ -323,7 +323,7 @@ export default function ReportPage() {
         </div>
       </main>
 
-      <SiteFooter />
+      <Footer />
     </div>
   );
 }

@@ -1,35 +1,46 @@
-import { Nav } from "@/components/site/Nav";
-import { SpatialCanvas } from "@/components/site/SpatialCanvas";
-import { SceneIdea } from "@/components/site/scenes/SceneIdea";
-import { SceneContext } from "@/components/site/scenes/SceneContext";
-import { SceneConversation } from "@/components/site/scenes/SceneConversation";
-import { SceneProject } from "@/components/site/scenes/SceneProject";
-import { SceneEditing } from "@/components/site/scenes/SceneEditing";
-import { SceneMotion } from "@/components/site/scenes/SceneMotion";
-import { SceneClosing } from "@/components/site/scenes/SceneClosing";
-import { GlobalMatrix } from "@/components/site/GlobalMatrix";
+"use client";
+
+import React from "react";
+import { Navbar }          from "@/components/site/Navbar";
+import { SectionHero }     from "@/components/site/SectionHero";
+import { SectionProblem }  from "@/components/site/SectionProblem";
+import { SectionAnswer }   from "@/components/site/SectionAnswer";
+import { SectionChithra }  from "@/components/site/SectionChithra";
+import { SectionWorkspace } from "@/components/site/SectionWorkspace";
+import { SectionPricing }  from "@/components/site/SectionPricing";
+import { SectionFinalCTA } from "@/components/site/SectionFinalCTA";
+import { Footer }          from "@/components/site/Footer";
 
 export default function Home() {
   return (
-    <main className="relative bg-background">
-      <Nav />
-      {/*
-        The SpatialCanvas handles the global GSAP ScrollTrigger timeline.
-        It pins the view and moves the camera along the Z-axis.
-      */}
-      <SpatialCanvas>
-        <GlobalMatrix />
-        <SceneIdea />
-        <SceneContext />
-        {/* SceneChithra (one static "meet the orchestrator" moment) replaced
-            by SceneConversation -- a real 8-beat exchange, scroll-driven,
-            occupying a wider Z band (see src/lib/spatial.ts DEPTH). */}
-        <SceneConversation />
-        <SceneProject />
-        <SceneEditing />
-        <SceneMotion />
-        <SceneClosing />
-      </SpatialCanvas>
+    <main className="relative min-h-screen bg-[#070809] text-[#F4F4F5] selection:bg-[#83D0BE]/25 selection:text-[#83D0BE] overflow-x-hidden">
+      
+      {/* Navbar — transparent on load, glass on scroll */}
+      <Navbar />
+
+      {/* 1. Hero — typographic statement + blurred image orbs */}
+      <SectionHero />
+
+      {/* 2. Problem — tool shards in chaos, then convergence */}
+      <SectionProblem />
+
+      {/* 3. Answer — one workspace materialises */}
+      <SectionAnswer />
+
+      {/* 4. Chithra — scroll-driven conversation replay */}
+      <SectionChithra />
+
+      {/* 5. Workspace — grid→timeline Studio transition */}
+      <SectionWorkspace />
+
+      {/* 6. Pricing — clean row table */}
+      <SectionPricing />
+
+      {/* 7. Final CTA — circular return to Hero energy */}
+      <SectionFinalCTA />
+
+      {/* 8. Footer — single minimal row */}
+      <Footer />
     </main>
   );
 }

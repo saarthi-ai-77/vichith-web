@@ -46,6 +46,8 @@ export const SECTION_IDS = {
   loop: "loop",
   future: "future",
   access: "access",
+  problem: "problem",
+  unified: "unified",
 
   // Legacy aliases
   hero: "arrival",
